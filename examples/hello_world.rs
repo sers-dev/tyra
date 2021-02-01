@@ -18,6 +18,9 @@ struct HelloWorld {
 }
 
 impl ActorTrait for HelloWorld {
+    fn is_running(&self) {
+        unimplemented!()
+    }
 }
 
 impl Handler<Message> for HelloWorld {

@@ -1,3 +1,3 @@
 use serde::{Serialize};
 
-pub trait MessageTrait: Sized + Serialize {}
+pub trait MessageTrait: Send + Sync {}

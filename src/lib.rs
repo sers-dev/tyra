@@ -7,7 +7,7 @@ mod handler;
 
 
 pub mod prelude {
-    pub use crate::system::*;
+    pub use crate::system::ActorSystem;
     pub use crate::actor::*;
     pub use crate::context::*;
     pub use crate::message::*;

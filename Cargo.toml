@@ -18,5 +18,7 @@ glob = "0.3.0"
 serde = { version = "1.0", features = ["derive"] }
 num_cpus = "^1.10.1"
 threadpool = "1.0"
-
+crossbeam-channel = "*"
+dashmap = "4.0.2"
+hostname = "0.3.1"
 [dev-dependencies]
