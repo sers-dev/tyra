@@ -13,6 +13,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use dashmap::{DashMap};
 use std::collections::HashMap;
 
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ActorAddress {
+    remote: String,
+    system: String,
+    pool: String,
+    actor: String,
+}
+
 #[derive(Clone)]
 pub struct ActorBuilder {
     name: String,
@@ -30,48 +38,43 @@ impl ActorBuilder {
 
 #[derive(Clone)]
 pub struct ActorSystem {
+    name: String,
     is_running: Arc<AtomicBool>,
     config: TractorConfig,
     thread_pools: Arc<DashMap<String, usize>>,
-    //// we need a threadsafe multi assoc dashmap where the key is the ID/Name of the actor system
-    //// this dash map is required to have multiple different actorsystems, that might not run in the same process (aka cluster)
-    //// the inner dashmap uses the ID/Name of the actual Actor as key
-    //// value is then the wrapper that holds the sender
-    //// this is used to send messages between actors by Name/ID
-    //wip: Arc<DashMap<String, DashMap<String, Sender<Arc<dyn MessageTrait>>>>,
-    //// we need a threadsafe DashMap where the key is the Name of the threadpool
-    //// the value needs to be a Receiver, that stores the Actor as well as the corresponding Sender
-    //// threadpools select their entry in the dashmap
-    //// then pull an Actor from the Receiver, pull the next Message (non-blocking) from the Mailbox and execute the handler
-    //// lastly the actor is pushed into the Sender again, so that it can be pulled again
-    //wip: Arc<DashMap<String, Arc<Receiver<Arc<dyn ActorTrait>>>>>
-    //one sender+receiver pair per Worker Pool
-    //one sender+receiver pair per Actor
-    sender: Sender<Arc<dyn ActorTrait>>,
-    receiver: Receiver<Arc<dyn ActorTrait>>,
+    actor_queue: Arc<DashMap<ActorAddress, (Sender<String>, Receiver<String>)>>,
+    //actor_mailboxes: Arc<DashMap<ActorAddress, (Sender<String>, Receiver<String>)>>,
 }
 
 impl ActorSystem {
     pub fn new(config: TractorConfig) -> Self {
-        let (sender, receiver) = unbounded();
         let thread_pools :Arc<DashMap<String, usize>> = Arc::new(DashMap::new());
-        thread_pools.insert(String::from("system"), config.actor.system_thread_pool_size);
-        thread_pools.insert(String::from("default"), config.actor.default_thread_pool_size);
-        //let thread_pools :Arc<DashMap<String, String>> = Arc::new(DashMap::new());
-        //thread_pools.insert(String::from("system"), String::from("Arc::new(ThreadPool::new(config.actor.system_thread_pool_size))"));
-        //thread_pools.insert(String::from("default"), String::from("Arc::new(ThreadPool::new(config.actor.thread_pool_size))"));
-        ActorSystem {
+
+        let actor_queue = Arc::new(DashMap::new());
+        let system = ActorSystem {
+            name: config.actor.name.clone(),
             is_running: Arc::new(AtomicBool::new(true)),
             config,
             thread_pools,
-            sender,
-            receiver,
-        }
+            actor_queue
+        };
+        system.add_pool("system", system.config.actor.system_thread_pool_size);
+        system.add_pool("default", system.config.actor.default_thread_pool_size);
+
+        system
 
     }
 
     pub fn add_pool(&self, name: &str, threads: usize) {
         if !self.thread_pools.contains_key(name) {
+            let (sender, receiver) = unbounded();
+            let address = ActorAddress {
+                system: self.name.clone(),
+                pool: String::from(name),
+                actor: String::from(""),
+                remote: String::from("local")
+            };
+            self.actor_queue.insert(address, (sender, receiver));
             self.thread_pools.insert(String::from(name), threads);
         }
     }
@@ -99,15 +102,57 @@ impl ActorSystem {
                     let system = self.clone();
                     let pool_name = key.clone();
                     pools.get(&key).unwrap().execute(move || {
+                        let address = ActorAddress {
+                            system: system.name.clone(),
+                            pool: pool_name.clone(),
+                            actor: String::from(""),
+                            remote: String::from("local")
+                        };
+                        let tuple = system.actor_queue.get(&address).unwrap();
+                        let (sender, receiver) = tuple.value();
                         loop {
-                            println!("I AM: {}-{}", pool_name, i);
-
-                            sleep(Duration::from_secs((1) as u64));
+                            //test start
                             if !system.thread_pools.contains_key("sers") {
-                                system.thread_pools.insert(String::from("SERS"), 3);
-                            }
+                                system.add_pool("sers", 16);
 
-                            //println!("I AM: {}-{}", key.clone(), key.clone());
+                                let sers_address = ActorAddress {
+                                    system: system.name.clone(),
+                                    pool: String::from("sers"),
+                                    actor: String::from(""),
+                                    remote: String::from("local")
+                                };
+                                let tuple = system.actor_queue.get(&sers_address).unwrap();
+                                let (sender, _) = tuple.value();
+
+
+                                sender.send(String::from("A1"));
+                                sender.send(String::from("A2"));
+                                sender.send(String::from("A3"));
+                                sender.send(String::from("A4"));
+                                sender.send(String::from("A5"));
+                                sender.send(String::from("A6"));
+
+                                sender.send(String::from("B1"));
+                                sender.send(String::from("B2"));
+                                sender.send(String::from("B3"));
+                                sender.send(String::from("B4"));
+                                sender.send(String::from("B5"));
+                                sender.send(String::from("B6"));
+
+                                sender.send(String::from("C1"));
+                                sender.send(String::from("C2"));
+                                sender.send(String::from("C3"));
+                                sender.send(String::from("C4"));
+                                sender.send(String::from("C5"));
+                                sender.send(String::from("C6"));
+
+                            }
+                            //test end
+
+                            let actor_ref = receiver.recv().unwrap();
+                            println!("{}-{}-{}-{}: is working", system.name, pool_name, actor_ref, i);
+
+                            sender.send(actor_ref);
                             //system.is_running.swap(false, Ordering::Relaxed);
                         }
                     });
@@ -148,12 +193,16 @@ impl ActorSystem {
 
     }
 
+    pub fn stop(&self) {
+    }
+
     pub fn await_shutdown(&self) {
         while self.is_running.load(Ordering::Relaxed) {
             println!("I'm working here");
             sleep(Duration::from_secs(1));
 
         }
+        self.stop();
         println!("system_thread_pool_size: {}", self.config.actor.system_thread_pool_size);
         println!("thread_pool_size: {}", self.config.actor.default_thread_pool_size);
 

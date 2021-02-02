@@ -6,8 +6,7 @@
 
 [Default Config](src/config/default.toml)
 
-There are multiple ways to configure Tractor
- - adding `config/conf.d/tractor.toml`
+There are two ways to configure Tractor
  - environment variables in the form of `TRACTOR_CONFIG_<KEY>` i.e. `TRACTOR_CONFIG_NAME=custom`
  - creating the configuration as mutable and overwriting the values in your code
    ```rust

@@ -1,4 +1,3 @@
-use glob::glob;
 use config::{Config, File, Environment, FileFormat, ConfigError};
 use serde::{Serialize, Deserialize};
 
@@ -22,11 +21,6 @@ impl TractorConfig {
         let default: &str = std::include_str!("default.toml");
 
         config.merge(File::from_str(default, FileFormat::Toml)).expect("Could not load default Config");
-
-        config.merge(glob("config/conf.d/tractor.toml")
-            .unwrap()
-            .map(|path| File::from(path.unwrap()))
-            .collect::<Vec<_>>()).expect("Could not parse config/conf.d/tractor.toml");
 
         config.merge(Environment::with_prefix("TRACTOR").separator("_CONFIG_")).expect("Could not parse ENV variables");
 
