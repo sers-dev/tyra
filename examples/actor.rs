@@ -22,8 +22,6 @@ fn main() {
     let actor_config = TractorConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    actor_system.start();
-
     sleep(Duration::from_secs(3));
 
     actor_system.add_pool("aye", 7);

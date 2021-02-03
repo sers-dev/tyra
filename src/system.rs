@@ -41,26 +41,24 @@ pub struct ActorSystem {
     name: String,
     is_running: Arc<AtomicBool>,
     config: TractorConfig,
-    thread_pools: Arc<DashMap<String, usize>>,
-    actor_queue: Arc<DashMap<ActorAddress, (Sender<String>, Receiver<String>)>>,
-    //actor_mailboxes: Arc<DashMap<ActorAddress, (Sender<String>, Receiver<String>)>>,
+    thread_pools: Arc<DashMap<String, (usize, Sender<String>, Receiver<String>)>>,
+    actor_mailboxes: Arc<DashMap<ActorAddress, (Sender<String>, Receiver<String>)>>,
 }
 
 impl ActorSystem {
     pub fn new(config: TractorConfig) -> Self {
-        let thread_pools :Arc<DashMap<String, usize>> = Arc::new(DashMap::new());
-
-        let actor_queue = Arc::new(DashMap::new());
+        let thread_pools = Arc::new(DashMap::new());
+        let actor_mailboxes = Arc::new(DashMap::new());
         let system = ActorSystem {
             name: config.actor.name.clone(),
             is_running: Arc::new(AtomicBool::new(true)),
             config,
             thread_pools,
-            actor_queue
+            actor_mailboxes
         };
         system.add_pool("system", system.config.actor.system_thread_pool_size);
         system.add_pool("default", system.config.actor.default_thread_pool_size);
-
+        system.start();
         system
 
     }
@@ -68,18 +66,11 @@ impl ActorSystem {
     pub fn add_pool(&self, name: &str, threads: usize) {
         if !self.thread_pools.contains_key(name) {
             let (sender, receiver) = unbounded();
-            let address = ActorAddress {
-                system: self.name.clone(),
-                pool: String::from(name),
-                actor: String::from(""),
-                remote: String::from("local")
-            };
-            self.actor_queue.insert(address, (sender, receiver));
-            self.thread_pools.insert(String::from(name), threads);
+            self.thread_pools.insert(String::from(name), (threads, sender, receiver));
         }
     }
 
-    pub fn start(&self)  {
+    fn start(&self)  {
         let background_pool = ThreadPool::new(1);
         let s = self.clone();
         background_pool.execute(move || s.manage_threads());
@@ -94,35 +85,24 @@ impl ActorSystem {
         loop {
             for pool in self.thread_pools.iter() {
                 let key = pool.key().clone();
+                let (pool_size, pool_sender, pool_receiver) = pool.value().clone();
                 if !pools.contains_key(&key) {
-                    pools.insert(key.clone(), ThreadPool::new(pool.value().clone()));
+                    pools.insert(key.clone(), ThreadPool::new(pool_size.clone()));
                 }
                 let current = pools.get(&key).unwrap();
                 for i in current.active_count()..current.max_count() {
+                    let sender = pool_sender.clone();
+                    let receiver = pool_receiver.clone();
                     let system = self.clone();
                     let pool_name = key.clone();
                     pools.get(&key).unwrap().execute(move || {
-                        let address = ActorAddress {
-                            system: system.name.clone(),
-                            pool: pool_name.clone(),
-                            actor: String::from(""),
-                            remote: String::from("local")
-                        };
-                        let tuple = system.actor_queue.get(&address).unwrap();
-                        let (sender, receiver) = tuple.value();
                         loop {
                             //test start
                             if !system.thread_pools.contains_key("sers") {
                                 system.add_pool("sers", 16);
 
-                                let sers_address = ActorAddress {
-                                    system: system.name.clone(),
-                                    pool: String::from("sers"),
-                                    actor: String::from(""),
-                                    remote: String::from("local")
-                                };
-                                let tuple = system.actor_queue.get(&sers_address).unwrap();
-                                let (sender, _) = tuple.value();
+                                let tuple = system.thread_pools.get("sers").unwrap();
+                                let (_, sender, _) = tuple.value();
 
 
                                 sender.send(String::from("A1"));
