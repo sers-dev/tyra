@@ -3,7 +3,7 @@ use crate::config::TractorConfig;
 use std::time::Duration;
 use threadpool::ThreadPool;
 use std::thread::sleep;
-use crate::actor::{ActorTrait, Handler, HelloWorld};
+use crate::actor::{ActorTrait, Handler, ActorAddress};
 use std::borrow::Borrow;
 use std::sync::Arc;
 use serde::{Deserialize, Serialize};
@@ -12,29 +12,13 @@ use crate::message::MessageTrait;
 use std::sync::atomic::{AtomicBool, Ordering};
 use dashmap::{DashMap};
 use std::collections::HashMap;
+use crate::builder::ActorBuilder;
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ActorAddress {
-    remote: String,
-    system: String,
-    pool: String,
-    actor: String,
-}
+pub const DEFAULT_POOL: &str = "default";
+pub const SYSTEM_POOL: &str = "system";
 
-#[derive(Clone)]
-pub struct ActorBuilder {
-    name: String,
-    pool: String,
-    mailbox_size: usize,
-    actor: Arc<dyn ActorTrait>,
 
-}
 
-impl ActorBuilder {
-    pub fn build(&self) {
-
-    }
-}
 
 #[derive(Clone)]
 pub struct ActorSystem {
@@ -56,8 +40,8 @@ impl ActorSystem {
             thread_pools,
             actor_mailboxes
         };
-        system.add_pool("system", system.config.actor.system_thread_pool_size);
-        system.add_pool("default", system.config.actor.default_thread_pool_size);
+        system.add_pool(SYSTEM_POOL, system.config.actor.system_thread_pool_size);
+        system.add_pool(DEFAULT_POOL, system.config.actor.default_thread_pool_size);
         system.start();
         system
 
@@ -105,32 +89,30 @@ impl ActorSystem {
                                 let (_, sender, _) = tuple.value();
 
 
-                                sender.send(String::from("A1"));
-                                sender.send(String::from("A2"));
-                                sender.send(String::from("A3"));
-                                sender.send(String::from("A4"));
-                                sender.send(String::from("A5"));
-                                sender.send(String::from("A6"));
-
-                                sender.send(String::from("B1"));
-                                sender.send(String::from("B2"));
-                                sender.send(String::from("B3"));
-                                sender.send(String::from("B4"));
-                                sender.send(String::from("B5"));
-                                sender.send(String::from("B6"));
-
-                                sender.send(String::from("C1"));
-                                sender.send(String::from("C2"));
-                                sender.send(String::from("C3"));
-                                sender.send(String::from("C4"));
-                                sender.send(String::from("C5"));
-                                sender.send(String::from("C6"));
+                                //sender.send(String::from("A1"));
+                                //sender.send(String::from("A2"));
+                                //sender.send(String::from("A3"));
+                                //sender.send(String::from("A4"));
+                                //sender.send(String::from("A5"));
+                                //sender.send(String::from("A6"));
+                                //sender.send(String::from("B1"));
+                                //sender.send(String::from("B2"));
+                                //sender.send(String::from("B3"));
+                                //sender.send(String::from("B4"));
+                                //sender.send(String::from("B5"));
+                                //sender.send(String::from("B6"));
+                                //sender.send(String::from("C1"));
+                                //sender.send(String::from("C2"));
+                                //sender.send(String::from("C3"));
+                                //sender.send(String::from("C4"));
+                                //sender.send(String::from("C5"));
+                                //sender.send(String::from("C6"));
 
                             }
                             //test end
 
                             let actor_ref = receiver.recv().unwrap();
-                            println!("{}-{}-{}-{}: is working", system.name, pool_name, actor_ref, i);
+                            //println!("{}-{}-{}-{}: is working", system.name, pool_name, actor_ref, i);
 
                             sender.send(actor_ref);
                             //system.is_running.swap(false, Ordering::Relaxed);
@@ -146,31 +128,8 @@ impl ActorSystem {
 
     }
 
-    pub fn actor_of(&self, name: String, actor: impl ActorTrait + 'static) {
-        self.spawn(ActorBuilder{
-            name,
-            actor: Arc::new(actor),
-            pool: String::from("default"),
-            mailbox_size: 0
-        });
-    }
-
-    pub fn spawn(&self, builder: ActorBuilder) {
-        let sender :Sender<String>;
-        let receiver :Receiver<String>;
-        if builder.mailbox_size == 0 {
-            let (s, r)= unbounded();
-            sender = s;
-            receiver = r;
-        }
-        else {
-            let (s, r)= bounded(builder.mailbox_size);
-            sender = s;
-            receiver = r;
-        }
-        sender.send(String::from("sers"));
-
-
+    pub fn spawn(&self, name: impl Into<String>) -> ActorBuilder {
+        ActorBuilder::new(self.clone(), name.into())
     }
 
     pub fn stop(&self) {

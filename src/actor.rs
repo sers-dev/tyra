@@ -1,6 +1,7 @@
 use crate::message::MessageTrait;
 use serde::{Deserialize, Serialize};
 use crate::context::Context;
+use std::sync::Arc;
 
 pub trait ActorTrait: Send + Sync {
 }
@@ -17,51 +18,30 @@ struct Envelope {
     content: dyn MessageTrait
 }
 
-struct ActorRef {
-    actor: Box<dyn ActorTrait>,
-    context: Context
+pub struct ActorRef<M>
+where
+    M: MessageTrait {
+    actor: Arc<dyn Handler<M>>,
 }
 
-impl ActorRef {
-   fn tell<M>(&self, msg: M) {
-
-   }
-
-    fn is_running(&self) {
-        println!("ACTOR-{}", "self.actor");
-
+impl<M> ActorRef<M>
+where
+    M: MessageTrait {
+    pub fn new(actor: Arc<dyn Handler<M>>) -> Self {
+        Self {
+            actor
+        }
     }
-
-}
-/////
-
-//////
-
-pub struct HelloWorld {
-    pub text: String
-}
-
-impl ActorTrait for HelloWorld {
-    //fn handle(&self, msg: impl MessageTrait) {
-//
-    //}
-}
-
-impl Handler<Message> for HelloWorld {
-    fn handle(&self, msg: Message) {
-        let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
-        println!("{}", text)
+    pub fn send(&self, msg: M) {
+        self.actor.handle(msg);
+        println!("AAAAAAAAAAAAAAA")
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub struct Message {
-    pub text: String
-
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ActorAddress {
+    pub remote: String,
+    pub system: String,
+    pub pool: String,
+    pub actor: String,
 }
-
-impl Message {
-
-}
-
-impl MessageTrait for Message {}

@@ -4,6 +4,7 @@ mod system;
 mod message;
 mod config;
 mod handler;
+mod builder;
 
 
 pub mod prelude {
