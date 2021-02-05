@@ -18,21 +18,26 @@ struct Envelope {
     content: dyn MessageTrait
 }
 
-pub struct ActorRef<M>
+pub struct ActorRef<A>
 where
-    M: MessageTrait {
-    actor: Arc<dyn Handler<M>>,
+    A: ActorTrait {
+    actor: Arc<A>,
 }
 
-impl<M> ActorRef<M>
+impl<A> ActorRef<A>
 where
-    M: MessageTrait {
-    pub fn new(actor: Arc<dyn Handler<M>>) -> Self {
+    A: ActorTrait,
+{
+    pub fn new(actor: Arc<A>) -> Self {
         Self {
             actor
         }
     }
-    pub fn send(&self, msg: M) {
+    pub fn send<M>(&self, msg: M)
+    where
+        A: Handler<M>,
+        M: MessageTrait
+    {
         self.actor.handle(msg);
         println!("AAAAAAAAAAAAAAA")
     }

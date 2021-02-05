@@ -34,9 +34,9 @@ impl ActorBuilder {
         self
     }
 
-    pub fn build<M>(&self, actor: impl Handler<M> + 'static) -> ActorRef<M>
+    pub fn build<A>(&self, actor: A) -> ActorRef<A>
     where
-        M: MessageTrait {
+        A: ActorTrait {
         ActorRef::new(Arc::new(actor))
 
     }
