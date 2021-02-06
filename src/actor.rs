@@ -1,7 +1,7 @@
 use crate::message::MessageTrait;
 use serde::{Deserialize, Serialize};
 use crate::context::Context;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 pub trait ActorTrait: Send + Sync {
 }
@@ -11,7 +11,7 @@ where
     Self: ActorTrait,
     M: MessageTrait
 {
-    fn handle(&self, msg: M);
+    fn handle(&mut self, msg: M);
 }
 
 struct Envelope {
@@ -21,24 +21,25 @@ struct Envelope {
 pub struct ActorRef<A>
 where
     A: ActorTrait {
-    actor: Arc<A>,
+    actor: Arc<RwLock<A>>,
 }
 
 impl<A> ActorRef<A>
 where
     A: ActorTrait,
 {
-    pub fn new(actor: Arc<A>) -> Self {
+    pub fn new(actor: Arc<RwLock<A>>) -> Self {
         Self {
             actor
         }
     }
-    pub fn send<M>(&self, msg: M)
+    pub fn send<M>(&mut self, msg: M)
     where
         A: Handler<M>,
         M: MessageTrait
     {
-        self.actor.handle(msg);
+        let mut actor = self.actor.write().unwrap();
+        actor.handle(msg);
         println!("AAAAAAAAAAAAAAA")
     }
 }

@@ -9,7 +9,6 @@ struct MessageA {
 
 struct MessageB {
     text: String
-
 }
 
 impl MessageTrait for MessageA {
@@ -28,23 +27,26 @@ struct MessageUnsupported {
 impl MessageTrait for MessageUnsupported {}
 
 struct HelloWorld {
-    text: String
+    text: String,
+    count: usize,
 }
 
 impl ActorTrait for HelloWorld {
 }
 
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&self, msg: MessageA) {
+    fn handle(&mut self, msg: MessageA) {
         let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
-        println!("AAAA: {}", text)
+        self.count += 1;
+        println!("AAAA: {} Count: {}", text, self.count)
     }
 }
 
 impl Handler<MessageB> for HelloWorld {
-    fn handle(&self, msg: MessageB) {
+    fn handle(&mut self, msg: MessageB) {
         let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
-        println!("BBBB: {}", text)
+        self.count -= 1;
+        println!("BBBB: {} Count: {}", text, self.count)
     }
 }
 
@@ -54,14 +56,17 @@ fn main() {
     let actor_config = TractorConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    sleep(Duration::from_secs(3));
-
     actor_system.add_pool("aye", 7);
-    actor_system.add_pool("aye", 100);
 
-    let x = actor_system.spawn("sers-actor").set_mailbox_size(7).set_pool("na-geil").build(HelloWorld{ text: String::from("sers")});
-    x.send(MessageA {text: String::from("sers")});
-    x.send(MessageB {text: String::from("sers")});
+    let hw = HelloWorld{ text: String::from("sers"), count: 0};
+
+    let mut x = actor_system.spawn("sers-actor").set_mailbox_size(7).set_pool("default").build(hw);
+    x.send(MessageA {text: String::from("sers+1")});
+    x.send(MessageA {text: String::from("sers+2")});
+    x.send(MessageB {text: String::from("sers-1")});
+    x.send(MessageA {text: String::from("sers+3")});
+    x.send(MessageA {text: String::from("sers+4")});
+    x.send(MessageA {text: String::from("sers+5")});
 
     //x.send(MessageUnsupported{text: String::from("sers")});
 

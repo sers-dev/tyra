@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use crate::actor::{ActorTrait, ActorRef, Handler};
 use crate::system::{DEFAULT_POOL, ActorSystem};
 use crate::message::MessageTrait;
@@ -37,7 +37,7 @@ impl ActorBuilder {
     pub fn build<A>(&self, actor: A) -> ActorRef<A>
     where
         A: ActorTrait {
-        ActorRef::new(Arc::new(actor))
+        ActorRef::new(Arc::new(RwLock::new(actor)))
 
     }
 }
