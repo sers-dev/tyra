@@ -1,7 +1,8 @@
 use std::sync::{Arc, RwLock};
-use crate::actor::{ActorTrait, ActorRef, Handler};
+use crate::actor::{ActorTrait, Handler};
 use crate::system::{DEFAULT_POOL, ActorSystem};
 use crate::message::MessageTrait;
+use crate::actor_ref::ActorRef;
 
 #[derive(Clone)]
 pub struct ActorBuilder {

@@ -5,6 +5,7 @@ mod message;
 mod config;
 mod handler;
 mod builder;
+mod actor_ref;
 
 
 pub mod prelude {
