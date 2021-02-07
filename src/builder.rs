@@ -7,7 +7,7 @@ use crate::actor_ref::ActorRef;
 #[derive(Clone)]
 pub struct ActorBuilder {
     system: ActorSystem,
-    name: String,
+    pub name: String,
     pool: String,
     mailbox_size: usize,
     //pub actor: Arc<dyn ActorTrait>,
@@ -37,8 +37,8 @@ impl ActorBuilder {
 
     pub fn build<A>(&self, actor: A) -> ActorRef<A>
     where
-        A: ActorTrait {
-        ActorRef::new(Arc::new(RwLock::new(actor)))
-
+        A: ActorTrait,
+    {
+        self.system.spawn(self.name.clone(), actor, self.mailbox_size, &self.pool)
     }
 }

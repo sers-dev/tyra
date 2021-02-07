@@ -5,7 +5,7 @@ use threadpool::ThreadPool;
 use std::thread::sleep;
 use crate::actor::{ActorTrait, Handler, ActorAddress};
 use std::borrow::Borrow;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use serde::{Deserialize, Serialize};
 use crossbeam_channel::{unbounded, Receiver, Sender, bounded};
 use crate::message::MessageTrait;
@@ -13,6 +13,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use dashmap::{DashMap};
 use std::collections::HashMap;
 use crate::builder::ActorBuilder;
+use crate::actor_ref::ActorRef;
 
 pub const DEFAULT_POOL: &str = "default";
 pub const SYSTEM_POOL: &str = "system";
@@ -112,7 +113,10 @@ impl ActorSystem {
                             //test end
 
                             let actor_ref = receiver.recv().unwrap();
-                            //println!("{}-{}-{}-{}: is working", system.name, pool_name, actor_ref, i);
+                            if actor_ref == "hello-world" {
+                                println!("{}-{}-{}-{}: is working", system.name, pool_name, actor_ref, i);
+
+                            }
 
                             sender.send(actor_ref);
                             //system.is_running.swap(false, Ordering::Relaxed);
@@ -128,8 +132,22 @@ impl ActorSystem {
 
     }
 
-    pub fn spawn(&self, name: impl Into<String>) -> ActorBuilder {
+    pub fn builder(&self, name: impl Into<String>) -> ActorBuilder {
         ActorBuilder::new(self.clone(), name.into())
+    }
+
+    pub fn spawn<A>(&self, name: String, actor: A, mailbox_size: usize, pool: &str) -> ActorRef<A>
+    where
+        A: ActorTrait,
+    {
+        let (sender, receiver) = unbounded();
+
+        let actor_ref = ActorRef::new(Arc::new(RwLock::new(actor)), sender, receiver);
+        let tuple = self.thread_pools.get(pool).unwrap();
+        let (_, sender, _) = tuple.value();
+        sender.send(String::from(name));
+        actor_ref
+
     }
 
     pub fn stop(&self) {

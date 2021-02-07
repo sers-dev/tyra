@@ -1,20 +1,29 @@
 use crate::actor::{ActorTrait, Handler};
 use std::sync::{Arc, RwLock};
 use crate::message::MessageTrait;
+use crossbeam_channel::{Sender, Receiver};
 
+#[derive(Clone)]
 pub struct ActorRef<A>
     where
-        A: ActorTrait {
+        A: ActorTrait,
+{
     actor: Arc<RwLock<A>>,
+    mailbox_in: Sender<String>,
+    mailbox_out: Receiver<String>
+
 }
 
 impl<A> ActorRef<A>
     where
         A: ActorTrait,
 {
-    pub fn new(actor: Arc<RwLock<A>>) -> Self {
+    pub fn new(actor: Arc<RwLock<A>>, sender: Sender<String>, receiver: Receiver<String>) -> Self {
+
         Self {
-            actor
+            actor,
+            mailbox_in: sender,
+            mailbox_out: receiver,
         }
     }
     pub fn send<M>(&mut self, msg: M)

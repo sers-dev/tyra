@@ -60,7 +60,7 @@ fn main() {
 
     let hw = HelloWorld{ text: String::from("sers"), count: 0};
 
-    let mut x = actor_system.spawn("sers-actor").set_mailbox_size(7).set_pool("default").build(hw);
+    let mut x = actor_system.builder("hello-world").set_mailbox_size(7).set_pool("aye").build(hw);
     x.send(MessageA {text: String::from("sers+1")});
     x.send(MessageA {text: String::from("sers+2")});
     x.send(MessageB {text: String::from("sers-1")});
