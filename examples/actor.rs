@@ -2,11 +2,13 @@ use tractor::prelude::{TractorConfig, ActorSystem, ActorTrait, Handler, MessageT
 use std::time::Duration;
 use std::thread::sleep;
 
+#[derive(Clone)]
 struct MessageA {
     text: String
 
 }
 
+#[derive(Clone)]
 struct MessageB {
     text: String
 }
@@ -19,6 +21,7 @@ impl MessageTrait for MessageB {
 
 }
 
+#[derive(Clone)]
 struct MessageUnsupported {
     text: String
 
