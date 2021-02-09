@@ -3,6 +3,12 @@ use std::sync::{Arc, RwLock};
 use crate::message::MessageTrait;
 use crossbeam_channel::{Sender, Receiver, unbounded};
 
+pub trait ActorRefTrait: Send + Sync {
+    fn get_actor(&self) -> Arc<RwLock<dyn ActorTrait>>;
+    fn sendi(&self, msg: Box<dyn MessageTrait>) -> Arc<RwLock<dyn ActorTrait>>;
+
+}
+
 #[derive(Clone)]
 pub struct ActorRef<A>
     where
@@ -11,6 +17,20 @@ pub struct ActorRef<A>
     actor: Arc<RwLock<A>>,
     mailbox_in: Sender<Arc<dyn MessageTrait>>,
     mailbox_out: Receiver<Arc<dyn MessageTrait>>,
+}
+
+impl<A> ActorRefTrait for ActorRef<A>
+where
+    A: ActorTrait + Clone + 'static
+{
+    fn get_actor(&self) -> Arc<RwLock<dyn ActorTrait>>
+    {
+        self.actor.clone()
+    }
+
+    fn sendi(&self, msg: Box<dyn MessageTrait>) -> Arc<RwLock<dyn ActorTrait>> {
+        unimplemented!()
+    }
 }
 
 impl<A> ActorRef<A>

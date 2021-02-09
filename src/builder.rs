@@ -37,7 +37,7 @@ impl ActorBuilder {
 
     pub fn build<A>(&self, actor: A) -> ActorRef<A>
     where
-        A: ActorTrait,
+        A: ActorTrait + Clone + 'static,
     {
         self.system.spawn(self.name.clone(), actor, self.mailbox_size, &self.pool)
     }

@@ -6,7 +6,7 @@ use std::sync::{Arc, RwLock};
 pub trait ActorTrait: Send + Sync {
 }
 
-pub trait Handler<M>
+pub trait Handler<M: ?Sized>
 where
     Self: ActorTrait,
     M: MessageTrait

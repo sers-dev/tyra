@@ -29,6 +29,7 @@ struct MessageUnsupported {
 
 impl MessageTrait for MessageUnsupported {}
 
+#[derive(Clone)]
 struct HelloWorld {
     text: String,
     count: usize,

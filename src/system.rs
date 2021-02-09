@@ -5,7 +5,7 @@ use threadpool::ThreadPool;
 use std::thread::sleep;
 use crate::actor::{ActorTrait, Handler, ActorAddress};
 use std::borrow::Borrow;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, RwLockWriteGuard};
 use serde::{Deserialize, Serialize};
 use crossbeam_channel::{unbounded, Receiver, Sender, bounded};
 use crate::message::MessageTrait;
@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use dashmap::{DashMap};
 use std::collections::HashMap;
 use crate::builder::ActorBuilder;
-use crate::actor_ref::ActorRef;
+use crate::actor_ref::{ActorRef, ActorRefTrait};
 
 pub const DEFAULT_POOL: &str = "default";
 pub const SYSTEM_POOL: &str = "system";
@@ -26,7 +26,7 @@ pub struct ActorSystem {
     name: String,
     is_running: Arc<AtomicBool>,
     config: TractorConfig,
-    thread_pools: Arc<DashMap<String, (usize, Sender<String>, Receiver<String>)>>,
+    thread_pools: Arc<DashMap<String, (usize, Sender<Arc<dyn ActorRefTrait>>, Receiver<Arc<dyn ActorRefTrait>>)>>,
     actor_mailboxes: Arc<DashMap<ActorAddress, (Sender<String>, Receiver<String>)>>,
 }
 
@@ -112,11 +112,12 @@ impl ActorSystem {
                             }
                             //test end
 
-                            let actor_ref = receiver.recv().unwrap();
-                            if actor_ref == "hello-world" {
-                                println!("{}-{}-{}-{}: is working", system.name, pool_name, actor_ref, i);
+                            let mut actor_ref = receiver.recv().unwrap();
+                            let a = actor_ref.get_actor();
 
-                            }
+                            //if actor_ref == "hello-world" {
+                            //    println!("{}-{}-{}-{}: is working", system.name, pool_name, actor_ref, i);
+                            //}
 
                             sender.send(actor_ref);
                             //system.is_running.swap(false, Ordering::Relaxed);
@@ -138,14 +139,15 @@ impl ActorSystem {
 
     pub fn spawn<A>(&self, name: String, actor: A, mailbox_size: usize, pool: &str) -> ActorRef<A>
     where
-        A: ActorTrait,
+        A: ActorTrait + Clone + 'static,
     {
         let (sender, receiver) = unbounded();
 
         let actor_ref = ActorRef::new(Arc::new(RwLock::new(actor)), sender, receiver);
         let tuple = self.thread_pools.get(pool).unwrap();
         let (_, sender, _) = tuple.value();
-        sender.send(String::from(name));
+        let abc = actor_ref.clone();
+        sender.send(Arc::new(abc));
         actor_ref
 
     }
