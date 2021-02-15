@@ -1,6 +1,9 @@
+#![allow(unused)]
+
 use tractor::prelude::{TractorConfig, ActorSystem, ActorTrait, Handler, MessageTrait};
 use std::time::Duration;
 use std::thread::sleep;
+use std::sync::Arc;
 
 #[derive(Clone)]
 struct MessageA {
@@ -39,18 +42,20 @@ impl ActorTrait for HelloWorld {
 }
 
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&mut self, msg: MessageA) {
-        let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
-        self.count += 1;
-        println!("AAAA: {} Count: {}", text, self.count)
+    fn handle(&mut self, msg: Arc<MessageA>) {
+        println!("GGGGGGGG111");
+        //let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
+        //self.count += 1;
+        //println!("AAAA: {} Count: {}", "text", self.count)
     }
 }
 
 impl Handler<MessageB> for HelloWorld {
-    fn handle(&mut self, msg: MessageB) {
-        let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
-        self.count -= 1;
-        println!("BBBB: {} Count: {}", text, self.count)
+    fn handle(&mut self, msg: Arc<MessageB>) {
+        println!("GGGGGGGG2222");
+        //let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
+        //self.count -= 1;
+        //println!("BBBB: {} Count: {}", "text", self.count)
     }
 }
 

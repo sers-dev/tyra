@@ -11,7 +11,7 @@ where
     Self: ActorTrait,
     M: MessageTrait
 {
-    fn handle(&mut self, msg: M);
+    fn handle(&mut self, msg: Arc<M>);
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]

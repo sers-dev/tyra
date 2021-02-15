@@ -5,7 +5,7 @@ use threadpool::ThreadPool;
 use std::thread::sleep;
 use crate::actor::{ActorTrait, Handler, ActorAddress};
 use std::borrow::Borrow;
-use std::sync::{Arc, RwLock, RwLockWriteGuard};
+use std::sync::{Arc, RwLock};
 use serde::{Deserialize, Serialize};
 use crossbeam_channel::{unbounded, Receiver, Sender, bounded};
 use crate::message::MessageTrait;
@@ -14,6 +14,7 @@ use dashmap::{DashMap};
 use std::collections::HashMap;
 use crate::builder::ActorBuilder;
 use crate::actor_ref::{ActorRef, ActorRefTrait};
+use std::ops::{DerefMut, Deref};
 
 pub const DEFAULT_POOL: &str = "default";
 pub const SYSTEM_POOL: &str = "system";
@@ -111,15 +112,29 @@ impl ActorSystem {
 
                             }
                             //test end
-
                             let mut actor_ref = receiver.recv().unwrap();
                             let a = actor_ref.get_actor();
+
+                            println!("Executor1");
+                            let rec = actor_ref.get_mailbox();
+                            let msg = rec.recv().unwrap();
+                            println!("Executor2");
+                            let real_msg = msg.clone();
+                            //ActorRef::handle_generic(a, msg, );
+                            unsafe {
+                                let c = std::mem::transmute::<Arc<RwLock<dyn ActorTrait>>, Arc<RwLock<dyn Handler<dyn MessageTrait>>>>(a);
+                                let mut d = c.write().unwrap();
+                                d.handle(real_msg);
+                                println!("Executor3");
+
+                            }
+                            //}
+                            sender.send(actor_ref);
 
                             //if actor_ref == "hello-world" {
                             //    println!("{}-{}-{}-{}: is working", system.name, pool_name, actor_ref, i);
                             //}
 
-                            sender.send(actor_ref);
                             //system.is_running.swap(false, Ordering::Relaxed);
                         }
                     });

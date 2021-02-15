@@ -2,9 +2,11 @@ use crate::actor::{ActorTrait, Handler};
 use std::sync::{Arc, RwLock};
 use crate::message::MessageTrait;
 use crossbeam_channel::{Sender, Receiver, unbounded};
+use std::borrow::BorrowMut;
 
 pub trait ActorRefTrait: Send + Sync {
     fn get_actor(&self) -> Arc<RwLock<dyn ActorTrait>>;
+    fn get_mailbox(&self) -> Receiver<Arc<dyn MessageTrait>>;
     fn sendi(&self, msg: Box<dyn MessageTrait>) -> Arc<RwLock<dyn ActorTrait>>;
 
 }
@@ -28,9 +30,14 @@ where
         self.actor.clone()
     }
 
+    fn get_mailbox(&self) -> Receiver<Arc<dyn MessageTrait>> {
+        self.mailbox_out.clone()
+    }
+
     fn sendi(&self, msg: Box<dyn MessageTrait>) -> Arc<RwLock<dyn ActorTrait>> {
         unimplemented!()
     }
+
 }
 
 impl<A> ActorRef<A>
@@ -50,9 +57,18 @@ impl<A> ActorRef<A>
             M: MessageTrait + Clone + 'static
     {
         let abcd = msg.clone();
+        let defg = msg.clone();
+
         self.mailbox_in.send(Arc::new(abcd));
-        let mut actor = self.actor.write().unwrap();
-        actor.handle(msg);
+        let mut actor = self.actor.clone();
+        //actor.handle(msg);
         println!("AAAAAAAAAAAAAAA")
+    }
+
+    pub fn handle_generic<F>(actor: Arc<dyn ActorTrait>, msg: Arc<dyn MessageTrait>, func: F)
+    where
+        F: Fn(Arc<dyn ActorTrait>, Arc<dyn MessageTrait>),
+    {
+        func(actor, msg)
     }
 }
