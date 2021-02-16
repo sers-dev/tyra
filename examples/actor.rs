@@ -4,6 +4,7 @@ use tractor::prelude::{TractorConfig, ActorSystem, ActorTrait, Handler, MessageT
 use std::time::Duration;
 use std::thread::sleep;
 use std::sync::Arc;
+use std::any::{TypeId, Any};
 
 #[derive(Clone)]
 struct MessageA {
@@ -42,20 +43,18 @@ impl ActorTrait for HelloWorld {
 }
 
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&mut self, msg: Arc<MessageA>) {
-        println!("GGGGGGGG111");
-        //let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
-        //self.count += 1;
-        //println!("AAAA: {} Count: {}", "text", self.count)
+    fn handle(&mut self, msg: MessageA) {
+        let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
+        self.count += 1;
+        println!("AAAA: {} Count: {}", "text", self.count)
     }
 }
 
 impl Handler<MessageB> for HelloWorld {
-    fn handle(&mut self, msg: Arc<MessageB>) {
-        println!("GGGGGGGG2222");
-        //let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
-        //self.count -= 1;
-        //println!("BBBB: {} Count: {}", "text", self.count)
+    fn handle(&mut self, msg: MessageB) {
+        let text :String = [self.text.clone(), String::from(msg.text)].join(" -> ");
+        self.count -= 1;
+        println!("BBBB: {} Count: {}", "text", self.count)
     }
 }
 
@@ -68,7 +67,6 @@ fn main() {
     actor_system.add_pool("aye", 7);
 
     let hw = HelloWorld{ text: String::from("sers"), count: 0};
-
     let mut x = actor_system.builder("hello-world").set_mailbox_size(7).set_pool("aye").build(hw);
     x.send(MessageA {text: String::from("sers+1")});
     x.send(MessageA {text: String::from("sers+2")});

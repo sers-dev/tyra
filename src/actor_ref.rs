@@ -1,13 +1,13 @@
 use crate::actor::{ActorTrait, Handler};
 use std::sync::{Arc, RwLock};
-use crate::message::MessageTrait;
+use crate::message::{MessageTrait, MessageEnvelopeTrait, MessageEnvelope};
 use crossbeam_channel::{Sender, Receiver, unbounded};
 use std::borrow::BorrowMut;
+use std::any::Any;
+use std::ops::DerefMut;
 
 pub trait ActorRefTrait: Send + Sync {
-    fn get_actor(&self) -> Arc<RwLock<dyn ActorTrait>>;
-    fn get_mailbox(&self) -> Receiver<Arc<dyn MessageTrait>>;
-    fn sendi(&self, msg: Box<dyn MessageTrait>) -> Arc<RwLock<dyn ActorTrait>>;
+    fn handle(&self);
 
 }
 
@@ -17,34 +17,28 @@ pub struct ActorRef<A>
         A: ActorTrait,
 {
     actor: Arc<RwLock<A>>,
-    mailbox_in: Sender<Arc<dyn MessageTrait>>,
-    mailbox_out: Receiver<Arc<dyn MessageTrait>>,
+    mailbox_in: Sender<MessageEnvelope<A>>,
+    mailbox_out: Receiver<MessageEnvelope<A>>,
 }
 
 impl<A> ActorRefTrait for ActorRef<A>
 where
     A: ActorTrait + Clone + 'static
 {
-    fn get_actor(&self) -> Arc<RwLock<dyn ActorTrait>>
-    {
-        self.actor.clone()
-    }
+    fn handle(&self) {
+        let mut msg = self.mailbox_out.recv().unwrap();
+        let mut a = self.actor.write().unwrap();
+        let mut ac = a.deref_mut();
+        msg.handle(ac);
 
-    fn get_mailbox(&self) -> Receiver<Arc<dyn MessageTrait>> {
-        self.mailbox_out.clone()
     }
-
-    fn sendi(&self, msg: Box<dyn MessageTrait>) -> Arc<RwLock<dyn ActorTrait>> {
-        unimplemented!()
-    }
-
 }
 
 impl<A> ActorRef<A>
     where
         A: ActorTrait,
 {
-    pub fn new(actor: Arc<RwLock<A>>, sender: Sender<Arc<dyn MessageTrait>>, receiver: Receiver<Arc<dyn MessageTrait>>) -> Self {
+    pub fn new(actor: Arc<RwLock<A>>, sender: Sender<MessageEnvelope<A>>, receiver: Receiver<MessageEnvelope<A>>) -> Self {
         Self {
             actor,
             mailbox_in: sender,
@@ -59,10 +53,8 @@ impl<A> ActorRef<A>
         let abcd = msg.clone();
         let defg = msg.clone();
 
-        self.mailbox_in.send(Arc::new(abcd));
+        self.mailbox_in.send(MessageEnvelope::new(abcd));
         let mut actor = self.actor.clone();
-        //actor.handle(msg);
-        println!("AAAAAAAAAAAAAAA")
     }
 
     pub fn handle_generic<F>(actor: Arc<dyn ActorTrait>, msg: Arc<dyn MessageTrait>, func: F)

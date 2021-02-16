@@ -13,6 +13,7 @@ mod actor_ref;
 pub mod prelude {
     pub use crate::system::ActorSystem;
     pub use crate::actor::*;
+    pub use crate::actor_ref::*;
     pub use crate::context::*;
     pub use crate::message::*;
     pub use crate::config::*;
