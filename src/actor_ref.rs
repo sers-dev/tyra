@@ -50,11 +50,7 @@ impl<A> ActorRef<A>
             A: Handler<M>,
             M: MessageTrait + Clone + 'static
     {
-        let abcd = msg.clone();
-        let defg = msg.clone();
-
-        self.mailbox_in.send(MessageEnvelope::new(abcd));
-        let mut actor = self.actor.clone();
+        self.mailbox_in.send(MessageEnvelope::new(msg));
     }
 
     pub fn handle_generic<F>(actor: Arc<dyn ActorTrait>, msg: Arc<dyn MessageTrait>, func: F)

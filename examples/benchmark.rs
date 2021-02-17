@@ -29,9 +29,9 @@ impl ActorTrait for Benchmark {
 impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, msg: MessageA) {
         if self.count == 0 {
-            println!("Sleep 25 now");
-            sleep(Duration::from_secs((25) as u64));
-            println!("Sleep 25 end");
+            println!("Sleep 20 now");
+            sleep(Duration::from_secs((20) as u64));
+            println!("Sleep 20 end");
             self.start = Instant::now();
         }
         self.count += 1;
