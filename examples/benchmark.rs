@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 #[derive(Clone)]
 struct MessageA {
-    text: String
+    id: usize
 
 }
 
@@ -30,7 +30,7 @@ impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, msg: MessageA) {
         if self.count == 0 {
             println!("Sleep 20 now");
-            sleep(Duration::from_secs((20) as u64));
+            sleep(Duration::from_secs((10) as u64));
             println!("Sleep 20 end");
             self.start = Instant::now();
         }
@@ -67,15 +67,16 @@ fn main() {
     println!("Actors have been created");
     let start = Instant::now();
 
+    let id = 0;
+    let mut a = actors.get_mut(&id).unwrap();
     for i in 0..message_count {
         for j in 0..actor_count {
-            let actor_id = j;
-            let mut a = actors.get_mut(&actor_id).unwrap();
-            a.send(MessageA { text: String::from("sers+1") });
+            //let actor_id = j;
+            //let mut a = actors.get_mut(&actor_id).unwrap()
+            let msg = MessageA { id: i as usize };
+            a.send(msg);
         }
     }
-    println!("Messages have been sent");
-
     let duration = start.elapsed();
     println!("It took {:?} to send {} messages", duration, message_count);
 
