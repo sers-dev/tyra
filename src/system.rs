@@ -83,35 +83,6 @@ impl ActorSystem {
                     let pool_name = key.clone();
                     pools.get(&key).unwrap().execute(move || {
                         loop {
-                            //test start
-                            if !system.thread_pools.contains_key("sers") {
-                                system.add_pool("sers", 16);
-
-                                let tuple = system.thread_pools.get("sers").unwrap();
-                                let (_, sender, _) = tuple.value();
-
-
-                                //sender.send(String::from("A1"));
-                                //sender.send(String::from("A2"));
-                                //sender.send(String::from("A3"));
-                                //sender.send(String::from("A4"));
-                                //sender.send(String::from("A5"));
-                                //sender.send(String::from("A6"));
-                                //sender.send(String::from("B1"));
-                                //sender.send(String::from("B2"));
-                                //sender.send(String::from("B3"));
-                                //sender.send(String::from("B4"));
-                                //sender.send(String::from("B5"));
-                                //sender.send(String::from("B6"));
-                                //sender.send(String::from("C1"));
-                                //sender.send(String::from("C2"));
-                                //sender.send(String::from("C3"));
-                                //sender.send(String::from("C4"));
-                                //sender.send(String::from("C5"));
-                                //sender.send(String::from("C6"));
-
-                            }
-                            //test end
                             let actor_ref = receiver.recv().unwrap();
                             actor_ref.handle();
                             sender.send(actor_ref);
@@ -152,9 +123,7 @@ impl ActorSystem {
 
     pub fn await_shutdown(&self) {
         while self.is_running.load(Ordering::Relaxed) {
-            println!("I'm working here");
             sleep(Duration::from_secs(1));
-
         }
         self.stop();
         println!("system_thread_pool_size: {}", self.config.actor.system_thread_pool_size);
