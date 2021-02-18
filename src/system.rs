@@ -84,7 +84,12 @@ impl ActorSystem {
                     pools.get(&key).unwrap().execute(move || {
                         loop {
                             let actor_ref = receiver.recv().unwrap();
-                            actor_ref.handle();
+                            //15 messages per actor seems to be the sweet spot
+                            //it needs to be determined if this cpu specific
+                            //it also needs to be determined how 'sleeping' actors will affect this behavior
+                            for j in 0..15 {
+                                actor_ref.handle();
+                            }
                             sender.send(actor_ref);
 
                         }
