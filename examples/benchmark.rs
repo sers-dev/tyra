@@ -29,19 +29,19 @@ impl ActorTrait for Benchmark {
 impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, msg: MessageA) {
         if self.count == 0 {
-            println!("Sleep 10 now");
-            sleep(Duration::from_secs((10) as u64));
-            println!("Sleep 10 end");
+            println!("Sleep 3 now");
+            sleep(Duration::from_secs((3) as u64));
+            println!("Sleep 3 end");
             self.start = Instant::now();
         }
         self.count += 1;
         let wip_print = self.total_msgs / 10;
         if self.count % wip_print == 0 {
-            println!("B-{} Counter: {}", self.name, self.count)
+            println!("{} Counter: {}", self.name, self.count)
         }
         if self.count % self.total_msgs == 0 {
             let duration = self.start.elapsed();
-            println!("B-{} It took {:?} to process {} messages", self.name, duration, self.total_msgs);
+            println!("{} It took {:?} to process {} messages", self.name, duration, self.total_msgs);
         }
     }
 }
@@ -51,31 +51,17 @@ fn main() {
     let actor_config = TractorConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    let actor_count :i32 = 1;
-    let message_count = 10000000 / actor_count;
+    let message_count = 10000000;
 
-
-    let pool_size = 32;
-    actor_system.add_pool("aye", pool_size as usize);
-
-    let mut actors :HashMap<i32, ActorRef<Benchmark>> = HashMap::new();
-    for i in 0..actor_count {
-        let a = Benchmark{ total_msgs: message_count as usize, name: (i.to_string()), count: 0, start: Instant::now()};
-        let mut r = actor_system.builder("hello-world").set_mailbox_size(7).set_pool("aye").build(a);
-        actors.insert(i, r);
-    }
+    let a = Benchmark{ total_msgs: message_count as usize, name: (String::from("benchmark")), count: 0, start: Instant::now()};
+    let mut actor = actor_system.builder("benchmark-single-actor").build(a);
     println!("Actors have been created");
     let start = Instant::now();
 
     let id = 0;
-    let mut a = actors.get_mut(&id).unwrap();
     for i in 0..message_count {
-        for j in 0..actor_count {
-            //let actor_id = j;
-            //let mut a = actors.get_mut(&actor_id).unwrap()
             let msg = MessageA { id: i as usize };
-            a.send(msg);
-        }
+            actor.send(msg);
     }
     let duration = start.elapsed();
     println!("It took {:?} to send {} messages", duration, message_count);
