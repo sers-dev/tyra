@@ -1,16 +1,17 @@
 #![allow(unused)]
 
-use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ActorTrait, Handler, MessageTrait, ActorRef};
-use std::time::{Duration, Instant};
-use std::thread::sleep;
-use std::sync::Arc;
-use std::any::{TypeId, Any};
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
+use tyractorsaur::prelude::{
+    ActorRef, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig,
+};
 
 #[derive(Clone)]
 struct MessageA {
-    id: usize
-
+    id: usize,
 }
 
 impl MessageTrait for MessageA {}
@@ -20,11 +21,10 @@ struct Benchmark {
     total_msgs: usize,
     name: String,
     count: usize,
-    start: Instant
+    start: Instant,
 }
 
-impl ActorTrait for Benchmark {
-}
+impl ActorTrait for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, msg: MessageA) {
@@ -41,11 +41,13 @@ impl Handler<MessageA> for Benchmark {
         }
         if self.count % self.total_msgs == 0 {
             let duration = self.start.elapsed();
-            println!("{} It took {:?} to process {} messages", self.name, duration, self.total_msgs);
+            println!(
+                "{} It took {:?} to process {} messages",
+                self.name, duration, self.total_msgs
+            );
         }
     }
 }
-
 
 fn main() {
     let actor_config = TyractorsaurConfig::new().unwrap();
@@ -53,19 +55,23 @@ fn main() {
 
     let message_count = 10000000;
 
-    let a = Benchmark{ total_msgs: message_count as usize, name: (String::from("benchmark")), count: 0, start: Instant::now()};
+    let a = Benchmark {
+        total_msgs: message_count as usize,
+        name: (String::from("benchmark")),
+        count: 0,
+        start: Instant::now(),
+    };
     let mut actor = actor_system.builder("benchmark-single-actor").build(a);
     println!("Actors have been created");
     let start = Instant::now();
 
     let id = 0;
     for i in 0..message_count {
-            let msg = MessageA { id: i as usize };
-            actor.send(msg);
+        let msg = MessageA { id: i as usize };
+        actor.send(msg);
     }
     let duration = start.elapsed();
     println!("It took {:?} to send {} messages", duration, message_count);
 
     actor_system.await_shutdown()
-
 }

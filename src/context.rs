@@ -1,3 +1,1 @@
-pub struct Context {
-
-}
+pub struct Context {}

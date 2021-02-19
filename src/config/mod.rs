@@ -1,5 +1,5 @@
-use config::{Config, File, Environment, FileFormat, ConfigError};
-use serde::{Serialize, Deserialize};
+use config::{Config, ConfigError, Environment, File, FileFormat};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ActorConfig {
@@ -13,18 +13,21 @@ pub struct TyractorsaurConfig {
     pub actor: ActorConfig,
 }
 
-
 impl TyractorsaurConfig {
     pub fn new() -> Result<Self, ConfigError> {
         let mut config = Config::new();
 
         let default: &str = std::include_str!("default.toml");
 
-        config.merge(File::from_str(default, FileFormat::Toml)).expect("Could not load default Config");
+        config
+            .merge(File::from_str(default, FileFormat::Toml))
+            .expect("Could not load default Config");
 
-        config.merge(Environment::with_prefix("TYRACTORSAUR").separator("_CONFIG_")).expect("Could not parse ENV variables");
+        config
+            .merge(Environment::with_prefix("TYRACTORSAUR").separator("_CONFIG_"))
+            .expect("Could not parse ENV variables");
 
-        let mut parsed :TyractorsaurConfig = config.try_into().expect("Could not parse Config");
+        let mut parsed: TyractorsaurConfig = config.try_into().expect("Could not parse Config");
         if parsed.actor.name == "$HOSTNAME" {
             parsed.actor.name = String::from(hostname::get().unwrap().to_str().unwrap());
         }
@@ -37,5 +40,4 @@ impl TyractorsaurConfig {
 
         Ok(parsed)
     }
-
 }

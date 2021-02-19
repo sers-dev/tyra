@@ -1,33 +1,39 @@
-use crate::context::Context;
+use crate::actor::{ActorAddress, ActorTrait, Handler};
+use crate::actor_ref::{ActorRef, ActorRefTrait};
+use crate::builder::ActorBuilder;
 use crate::config::TyractorsaurConfig;
+use crate::context::Context;
+use crate::message::MessageTrait;
+use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
+use dashmap::DashMap;
+use serde::{Deserialize, Serialize};
+use std::borrow::Borrow;
+use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, RwLock};
+use std::thread::sleep;
 use std::time::Duration;
 use threadpool::ThreadPool;
-use std::thread::sleep;
-use crate::actor::{ActorTrait, Handler, ActorAddress};
-use std::borrow::Borrow;
-use std::sync::{Arc, RwLock};
-use serde::{Deserialize, Serialize};
-use crossbeam_channel::{unbounded, Receiver, Sender, bounded};
-use crate::message::MessageTrait;
-use std::sync::atomic::{AtomicBool, Ordering};
-use dashmap::{DashMap};
-use std::collections::HashMap;
-use crate::builder::ActorBuilder;
-use crate::actor_ref::{ActorRef, ActorRefTrait};
-use std::ops::{DerefMut, Deref};
 
 pub const DEFAULT_POOL: &str = "default";
 pub const SYSTEM_POOL: &str = "system";
-
-
-
 
 #[derive(Clone)]
 pub struct ActorSystem {
     name: String,
     is_running: Arc<AtomicBool>,
     config: TyractorsaurConfig,
-    thread_pools: Arc<DashMap<String, (usize, Sender<Arc<dyn ActorRefTrait>>, Receiver<Arc<dyn ActorRefTrait>>)>>,
+    thread_pools: Arc<
+        DashMap<
+            String,
+            (
+                usize,
+                Sender<Arc<dyn ActorRefTrait>>,
+                Receiver<Arc<dyn ActorRefTrait>>,
+            ),
+        >,
+    >,
     actor_mailboxes: Arc<DashMap<ActorAddress, (Sender<String>, Receiver<String>)>>,
 }
 
@@ -40,33 +46,32 @@ impl ActorSystem {
             is_running: Arc::new(AtomicBool::new(true)),
             config,
             thread_pools,
-            actor_mailboxes
+            actor_mailboxes,
         };
         system.add_pool(SYSTEM_POOL, system.config.actor.system_thread_pool_size);
         system.add_pool(DEFAULT_POOL, system.config.actor.default_thread_pool_size);
         system.start();
         system
-
     }
 
     pub fn add_pool(&self, name: &str, threads: usize) {
         if !self.thread_pools.contains_key(name) {
             let (sender, receiver) = unbounded();
-            self.thread_pools.insert(String::from(name), (threads, sender, receiver));
+            self.thread_pools
+                .insert(String::from(name), (threads, sender, receiver));
         }
     }
 
-    fn start(&self)  {
+    fn start(&self) {
         let background_pool = ThreadPool::new(1);
         let s = self.clone();
         background_pool.execute(move || s.manage_threads());
         self.start_system_actors();
         println!("???");
-
     }
 
     fn manage_threads(&self) {
-        let mut pools :HashMap<String, ThreadPool> = HashMap::new();
+        let mut pools: HashMap<String, ThreadPool> = HashMap::new();
 
         loop {
             for pool in self.thread_pools.iter() {
@@ -91,7 +96,6 @@ impl ActorSystem {
                                 actor_ref.handle();
                             }
                             sender.send(actor_ref);
-
                         }
                     });
                 }
@@ -100,9 +104,7 @@ impl ActorSystem {
         }
     }
 
-    fn start_system_actors(&self) {
-
-    }
+    fn start_system_actors(&self) {}
 
     pub fn builder(&self, name: impl Into<String>) -> ActorBuilder {
         ActorBuilder::new(self.clone(), name.into())
@@ -120,20 +122,22 @@ impl ActorSystem {
         let abc = actor_ref.clone();
         sender.send(Arc::new(abc));
         actor_ref
-
     }
 
-    pub fn stop(&self) {
-    }
+    pub fn stop(&self) {}
 
     pub fn await_shutdown(&self) {
         while self.is_running.load(Ordering::Relaxed) {
             sleep(Duration::from_secs(1));
         }
         self.stop();
-        println!("system_thread_pool_size: {}", self.config.actor.system_thread_pool_size);
-        println!("thread_pool_size: {}", self.config.actor.default_thread_pool_size);
-
+        println!(
+            "system_thread_pool_size: {}",
+            self.config.actor.system_thread_pool_size
+        );
+        println!(
+            "thread_pool_size: {}",
+            self.config.actor.default_thread_pool_size
+        );
     }
 }
-

@@ -1,8 +1,8 @@
-use std::sync::{Arc, RwLock};
 use crate::actor::{ActorTrait, Handler};
-use crate::system::{DEFAULT_POOL, ActorSystem};
-use crate::message::MessageTrait;
 use crate::actor_ref::ActorRef;
+use crate::message::MessageTrait;
+use crate::system::{ActorSystem, DEFAULT_POOL};
+use std::sync::{Arc, RwLock};
 
 #[derive(Clone)]
 pub struct ActorBuilder {
@@ -11,13 +11,11 @@ pub struct ActorBuilder {
     pool: String,
     mailbox_size: usize,
     //pub actor: Arc<dyn ActorTrait>,
-
 }
-
 
 impl ActorBuilder {
     pub fn new(system: ActorSystem, name: String) -> ActorBuilder {
-        ActorBuilder{
+        ActorBuilder {
             system,
             name,
             pool: String::from(DEFAULT_POOL),
@@ -39,6 +37,7 @@ impl ActorBuilder {
     where
         A: ActorTrait + Clone + 'static,
     {
-        self.system.spawn(self.name.clone(), actor, self.mailbox_size, &self.pool)
+        self.system
+            .spawn(self.name.clone(), actor, self.mailbox_size, &self.pool)
     }
 }

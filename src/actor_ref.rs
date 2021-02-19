@@ -1,20 +1,19 @@
 use crate::actor::{ActorTrait, Handler};
-use std::sync::{Arc, RwLock};
-use crate::message::{MessageTrait, MessageEnvelopeTrait, MessageEnvelope};
-use crossbeam_channel::{Sender, Receiver, unbounded};
-use std::borrow::BorrowMut;
+use crate::message::{MessageEnvelope, MessageEnvelopeTrait, MessageTrait};
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use std::any::Any;
+use std::borrow::BorrowMut;
 use std::ops::DerefMut;
+use std::sync::{Arc, RwLock};
 
 pub trait ActorRefTrait: Send + Sync {
     fn handle(&self);
-
 }
 
 #[derive(Clone)]
 pub struct ActorRef<A>
-    where
-        A: ActorTrait,
+where
+    A: ActorTrait,
 {
     actor: Arc<RwLock<A>>,
     mailbox_in: Sender<MessageEnvelope<A>>,
@@ -23,32 +22,35 @@ pub struct ActorRef<A>
 
 impl<A> ActorRefTrait for ActorRef<A>
 where
-    A: ActorTrait + Clone + 'static
+    A: ActorTrait + Clone + 'static,
 {
     fn handle(&self) {
         let mut msg = self.mailbox_out.recv().unwrap();
         let mut a = self.actor.write().unwrap();
         let mut ac = a.deref_mut();
         msg.handle(ac);
-
     }
 }
 
 impl<A> ActorRef<A>
-    where
-        A: ActorTrait,
+where
+    A: ActorTrait,
 {
-    pub fn new(actor: Arc<RwLock<A>>, sender: Sender<MessageEnvelope<A>>, receiver: Receiver<MessageEnvelope<A>>) -> Self {
+    pub fn new(
+        actor: Arc<RwLock<A>>,
+        sender: Sender<MessageEnvelope<A>>,
+        receiver: Receiver<MessageEnvelope<A>>,
+    ) -> Self {
         Self {
             actor,
             mailbox_in: sender,
-            mailbox_out: receiver
+            mailbox_out: receiver,
         }
     }
     pub fn send<M>(&mut self, msg: M)
-        where
-            A: Handler<M>,
-            M: MessageTrait + Clone + 'static
+    where
+        A: Handler<M>,
+        M: MessageTrait + Clone + 'static,
     {
         self.mailbox_in.send(MessageEnvelope::new(msg));
     }

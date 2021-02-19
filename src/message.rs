@@ -1,11 +1,10 @@
-use serde::{Serialize};
-use crate::actor_ref::ActorRef;
 use crate::actor::{ActorTrait, Handler};
+use crate::actor_ref::ActorRef;
+use serde::Serialize;
 
 pub trait MessageTrait: Send + Sync {}
 
-pub trait MessageEnvelopeTrait<A>: Send + Sync
-{
+pub trait MessageEnvelopeTrait<A>: Send + Sync {
     fn handle(&mut self, actor: &mut A) {}
 }
 
@@ -13,14 +12,13 @@ pub struct MessageEnvelope<A>(Box<dyn MessageEnvelopeTrait<A> + Send + Sync>);
 
 impl<A> MessageEnvelope<A> {
     pub fn new<M>(msg: M) -> Self
-        where
-            A: Handler<M>,
-            M: MessageTrait + Send + Sync + 'static,
+    where
+        A: Handler<M>,
+        M: MessageTrait + Send + Sync + 'static,
     {
         MessageEnvelope(Box::new(SyncMessageEnvelope { msg: Some(msg) }))
     }
 }
-
 
 impl<A> MessageEnvelopeTrait<A> for MessageEnvelope<A> {
     fn handle(&mut self, act: &mut A) {
@@ -29,20 +27,20 @@ impl<A> MessageEnvelopeTrait<A> for MessageEnvelope<A> {
 }
 
 pub struct SyncMessageEnvelope<M>
-    where
-        M: MessageTrait + Send + Sync,
+where
+    M: MessageTrait + Send + Sync,
 {
     msg: Option<M>,
 }
 
 impl<A, M> MessageEnvelopeTrait<A> for SyncMessageEnvelope<M>
-    where
-        M: MessageTrait + Send + 'static,
-        A: Handler<M>,
+where
+    M: MessageTrait + Send + 'static,
+    A: Handler<M>,
 {
     fn handle(&mut self, act: &mut A) {
         if let Some(msg) = self.msg.take() {
-            act.handle( msg);
+            act.handle(msg);
         }
     }
 }
