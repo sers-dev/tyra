@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use tractor::prelude::{TractorConfig, ActorSystem, ActorTrait, Handler, MessageTrait, ActorRef};
+use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ActorTrait, Handler, MessageTrait, ActorRef};
 use std::time::{Duration, Instant};
 use std::thread::sleep;
 use std::sync::Arc;
@@ -48,7 +48,7 @@ impl Handler<MessageA> for Benchmark {
 
 
 fn main() {
-    let actor_config = TractorConfig::new().unwrap();
+    let actor_config = TyractorsaurConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
     let message_count = 10000000;

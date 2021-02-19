@@ -9,12 +9,12 @@ pub struct ActorConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TractorConfig {
+pub struct TyractorsaurConfig {
     pub actor: ActorConfig,
 }
 
 
-impl TractorConfig {
+impl TyractorsaurConfig {
     pub fn new() -> Result<Self, ConfigError> {
         let mut config = Config::new();
 
@@ -22,9 +22,9 @@ impl TractorConfig {
 
         config.merge(File::from_str(default, FileFormat::Toml)).expect("Could not load default Config");
 
-        config.merge(Environment::with_prefix("TRACTOR").separator("_CONFIG_")).expect("Could not parse ENV variables");
+        config.merge(Environment::with_prefix("TYRACTORSAUR").separator("_CONFIG_")).expect("Could not parse ENV variables");
 
-        let mut parsed :TractorConfig = config.try_into().expect("Could not parse Config");
+        let mut parsed :TyractorsaurConfig = config.try_into().expect("Could not parse Config");
         if parsed.actor.name == "$HOSTNAME" {
             parsed.actor.name = String::from(hostname::get().unwrap().to_str().unwrap());
         }

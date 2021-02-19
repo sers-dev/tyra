@@ -1,5 +1,5 @@
 use crate::context::Context;
-use crate::config::TractorConfig;
+use crate::config::TyractorsaurConfig;
 use std::time::Duration;
 use threadpool::ThreadPool;
 use std::thread::sleep;
@@ -26,13 +26,13 @@ pub const SYSTEM_POOL: &str = "system";
 pub struct ActorSystem {
     name: String,
     is_running: Arc<AtomicBool>,
-    config: TractorConfig,
+    config: TyractorsaurConfig,
     thread_pools: Arc<DashMap<String, (usize, Sender<Arc<dyn ActorRefTrait>>, Receiver<Arc<dyn ActorRefTrait>>)>>,
     actor_mailboxes: Arc<DashMap<ActorAddress, (Sender<String>, Receiver<String>)>>,
 }
 
 impl ActorSystem {
-    pub fn new(config: TractorConfig) -> Self {
+    pub fn new(config: TyractorsaurConfig) -> Self {
         let thread_pools = Arc::new(DashMap::new());
         let actor_mailboxes = Arc::new(DashMap::new());
         let system = ActorSystem {

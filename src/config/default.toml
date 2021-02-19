@@ -1,9 +1,9 @@
 [actor]
-# tractor: name of the actor system
+# name of the actor system
 # defaults to hostname
 name = "$HOSTNAME"
-# tractor: amount of threads to run actors on
+# amount of threads to run actors on
 default_thread_pool_size = 0
-# tractor: amount of threads to run system actors on
+# amount of threads to run system actors on
 system_thread_pool_size = 0
 
