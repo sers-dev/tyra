@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/sers-dev/tyractorsaur"
 homepage = "https://github.com/sers-dev/tyractorsaur"
 description = "Typed Actor System"
-keywords = ["typed", "actor", "scaling", "actor-model", "concurrency", "async", "tyractorsaur"]
+keywords = ["typed", "actor", "scaling", "concurrency", "tyractorsaur"]
 categories = ["network-programming", "asynchronous", "concurrency"]
 exclude = ["/.github", ".gitignore"]
 
