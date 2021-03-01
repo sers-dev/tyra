@@ -1,7 +1,6 @@
 use crate::actor::{ActorAddress, ActorTrait, Handler};
 use crate::actor_ref::{ActorRef, ActorRefTrait};
 use crate::builder::ActorBuilder;
-use crate::config::TyractorsaurConfig;
 use crate::context::Context;
 use crate::message::MessageTrait;
 use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
@@ -15,9 +14,7 @@ use std::sync::{Arc, RwLock};
 use std::thread::sleep;
 use std::time::Duration;
 use threadpool::ThreadPool;
-
-pub const DEFAULT_POOL: &str = "default";
-pub const SYSTEM_POOL: &str = "system";
+use crate::config::prelude::*;
 
 #[derive(Clone)]
 pub struct ActorSystem {
@@ -28,7 +25,7 @@ pub struct ActorSystem {
         DashMap<
             String,
             (
-                usize,
+                ThreadPoolConfig,
                 Sender<Arc<dyn ActorRefTrait>>,
                 Receiver<Arc<dyn ActorRefTrait>>,
             ),
@@ -41,6 +38,7 @@ impl ActorSystem {
     pub fn new(config: TyractorsaurConfig) -> Self {
         let thread_pools = Arc::new(DashMap::new());
         let actor_mailboxes = Arc::new(DashMap::new());
+        let thread_pool_config = config.thread_pool.clone();
         let system = ActorSystem {
             name: config.actor.name.clone(),
             is_running: Arc::new(AtomicBool::new(true)),
@@ -48,17 +46,28 @@ impl ActorSystem {
             thread_pools,
             actor_mailboxes,
         };
-        system.add_pool(SYSTEM_POOL, system.config.actor.system_thread_pool_size);
-        system.add_pool(DEFAULT_POOL, system.config.actor.default_thread_pool_size);
+
+        for (key, value) in thread_pool_config.config.iter() {
+            system.add_pool_with_config(key, value.clone());
+        }
+        system.add_pool(SYSTEM_POOL);
+        let system_pool_config = thread_pool_config.config.get(SYSTEM_POOL).unwrap();
+        system.add_pool_with_config(SYSTEM_POOL, system_pool_config.clone());
         system.start();
         system
     }
 
-    pub fn add_pool(&self, name: &str, threads: usize) {
+    pub fn add_pool(&self, name: &str) {
+        let default_config = self.config.thread_pool.config.get(DEFAULT_POOL).unwrap();
+        let config = self.config.thread_pool.config.get(name).unwrap_or(default_config);
+        self.add_pool_with_config(name, config.clone());
+    }
+
+    pub fn add_pool_with_config(&self, name: &str, thread_pool_config: ThreadPoolConfig) {
         if !self.thread_pools.contains_key(name) {
             let (sender, receiver) = unbounded();
             self.thread_pools
-                .insert(String::from(name), (threads, sender, receiver));
+                .insert(String::from(name), (thread_pool_config, sender, receiver));
         }
     }
 
@@ -75,24 +84,22 @@ impl ActorSystem {
 
         loop {
             for pool in self.thread_pools.iter() {
-                let key = pool.key().clone();
-                let (pool_size, pool_sender, pool_receiver) = pool.value().clone();
-                if !pools.contains_key(&key) {
-                    pools.insert(key.clone(), ThreadPool::new(pool_size.clone()));
+                let pool_name = pool.key().clone();
+                let (pool_config, pool_sender, pool_receiver) = pool.value().clone();
+                if !pools.contains_key(&pool_name) {
+                    pools.insert(pool_name.clone(), ThreadPool::new(pool_config.size.clone()));
                 }
-                let current = pools.get(&key).unwrap();
+                let current = pools.get(&pool_name).unwrap();
                 for i in current.active_count()..current.max_count() {
                     let sender = pool_sender.clone();
                     let receiver = pool_receiver.clone();
                     let system = self.clone();
-                    let pool_name = key.clone();
-                    pools.get(&key).unwrap().execute(move || {
+                    let pool_name = pool_name.clone();
+                    let pool_config = pool_config.clone();
+                    pools.get(&pool_name).unwrap().execute(move || {
                         loop {
                             let actor_ref = receiver.recv().unwrap();
-                            //15 messages per actor seems to be the sweet spot
-                            //it needs to be determined if this cpu specific
-                            //it also needs to be determined how 'sleeping' actors will affect this behavior
-                            for j in 0..15 {
+                            for j in 0..pool_config.message_throughput {
                                 actor_ref.handle();
                             }
                             sender.send(actor_ref);
@@ -131,13 +138,5 @@ impl ActorSystem {
             sleep(Duration::from_secs(1));
         }
         self.stop();
-        println!(
-            "system_thread_pool_size: {}",
-            self.config.actor.system_thread_pool_size
-        );
-        println!(
-            "thread_pool_size: {}",
-            self.config.actor.default_thread_pool_size
-        );
     }
 }

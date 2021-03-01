@@ -1,43 +1,9 @@
-use config::{Config, ConfigError, Environment, File, FileFormat};
-use serde::{Deserialize, Serialize};
+mod pool_config;
+mod actor_config;
+mod tyractorsaur_config;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActorConfig {
-    pub name: String,
-    pub default_thread_pool_size: usize,
-    pub system_thread_pool_size: usize,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TyractorsaurConfig {
-    pub actor: ActorConfig,
-}
-
-impl TyractorsaurConfig {
-    pub fn new() -> Result<Self, ConfigError> {
-        let mut config = Config::new();
-
-        let default: &str = std::include_str!("default.toml");
-
-        config
-            .merge(File::from_str(default, FileFormat::Toml))
-            .expect("Could not load default Config");
-
-        config
-            .merge(Environment::with_prefix("TYRACTORSAUR").separator("_CONFIG_"))
-            .expect("Could not parse ENV variables");
-
-        let mut parsed: TyractorsaurConfig = config.try_into().expect("Could not parse Config");
-        if parsed.actor.name == "$HOSTNAME" {
-            parsed.actor.name = String::from(hostname::get().unwrap().to_str().unwrap());
-        }
-        if parsed.actor.default_thread_pool_size == 0 {
-            parsed.actor.default_thread_pool_size = num_cpus::get() + (num_cpus::get() / 2);
-        }
-        if parsed.actor.system_thread_pool_size == 0 {
-            parsed.actor.system_thread_pool_size = num_cpus::get() / 2;
-        }
-
-        Ok(parsed)
-    }
+pub mod prelude {
+    pub use crate::config::tyractorsaur_config::*;
+    pub use crate::config::actor_config::*;
+    pub use crate::config::pool_config::*;
 }

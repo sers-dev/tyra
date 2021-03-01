@@ -55,7 +55,9 @@ fn main() {
     let actor_config = TyractorsaurConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    actor_system.add_pool("aye", 7);
+    actor_system.add_pool("aye");
+    actor_system.add_pool("aye2");
+
 
     let hw = HelloWorld {
         text: String::from("sers"),

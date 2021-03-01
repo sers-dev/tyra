@@ -1,9 +1,21 @@
+# general actor settings
 [actor]
 # name of the actor system
-# defaults to hostname
+# magic default: system hostname
 name = "$HOSTNAME"
-# amount of threads to run actors on
-default_thread_pool_size = 0
-# amount of threads to run system actors on
-system_thread_pool_size = 0
 
+# default pool settings
+[thread_pool.config.default]
+# amount of threads to run actors on
+# magic default: 1.5 times the number of cores
+size = 0
+# maximum amount of consecutive messages to handle before switching actor
+message_throughput = 15
+
+# same as `thread_pool`, but only applies to internal system_pool
+[thread_pool.config.system]
+# amount of threads to run actors on
+# magic default: 0.5 times number of cores
+size = 0
+# maximum amount of consecutive messages to handle before switching actor
+message_throughput = 15
