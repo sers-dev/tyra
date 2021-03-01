@@ -4,7 +4,9 @@ use std::any::{Any, TypeId};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, ActorRefTrait};
+use tyractorsaur::prelude::{
+    ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig,
+};
 
 #[derive(Clone)]
 struct MessageA {
@@ -57,7 +59,6 @@ fn main() {
 
     actor_system.add_pool("aye");
     actor_system.add_pool("aye2");
-
 
     let hw = HelloWorld {
         text: String::from("sers"),

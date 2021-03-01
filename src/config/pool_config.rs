@@ -9,6 +9,5 @@ pub struct ThreadPoolConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PoolConfig {
-    pub config: HashMap<String, ThreadPoolConfig>
+    pub config: HashMap<String, ThreadPoolConfig>,
 }
-

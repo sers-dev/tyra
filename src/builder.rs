@@ -1,10 +1,10 @@
 use crate::actor::{ActorTrait, Handler};
-use crate::actor_ref::ActorRef;
-use crate::message::MessageTrait;
-use crate::system::{ActorSystem};
-use std::sync::{Arc, RwLock};
-use crate::config::prelude::DEFAULT_POOL;
 use crate::actor_config::ActorConfig;
+use crate::actor_ref::ActorRef;
+use crate::config::prelude::DEFAULT_POOL;
+use crate::message::MessageTrait;
+use crate::system::ActorSystem;
+use std::sync::{Arc, RwLock};
 
 #[derive(Clone)]
 pub struct ActorBuilder {
@@ -16,11 +16,11 @@ impl ActorBuilder {
     pub fn new(system: ActorSystem, actor_name: String) -> ActorBuilder {
         let config = system.get_config();
 
-        let actor_config = ActorConfig{
+        let actor_config = ActorConfig {
             actor_name,
             pool_name: String::from(DEFAULT_POOL),
             mailbox_size: config.global.default_mailbox_size,
-            message_throughput: config.global.default_message_throughput
+            message_throughput: config.global.default_message_throughput,
         };
 
         ActorBuilder {
@@ -52,7 +52,6 @@ impl ActorBuilder {
     where
         A: ActorTrait + Clone + 'static,
     {
-        self.system
-            .spawn(actor, self.actor_config.clone())
+        self.system.spawn(actor, self.actor_config.clone())
     }
 }

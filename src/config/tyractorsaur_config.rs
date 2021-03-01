@@ -32,7 +32,6 @@ impl TyractorsaurConfig {
             parsed.global.name = String::from(hostname::get().unwrap().to_str().unwrap());
         }
 
-
         for (key, value) in parsed.thread_pool.config.iter_mut() {
             if key == DEFAULT_POOL {
                 if value.thread_count == 0 {

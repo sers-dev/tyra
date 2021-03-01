@@ -1,6 +1,8 @@
 use crate::actor::{ActorAddress, ActorTrait, Handler};
+use crate::actor_config::ActorConfig;
 use crate::actor_ref::{ActorRef, ActorRefTrait};
 use crate::builder::ActorBuilder;
+use crate::config::prelude::*;
 use crate::context::Context;
 use crate::message::MessageTrait;
 use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
@@ -14,8 +16,6 @@ use std::sync::{Arc, RwLock};
 use std::thread::sleep;
 use std::time::Duration;
 use threadpool::ThreadPool;
-use crate::config::prelude::*;
-use crate::actor_config::ActorConfig;
 
 #[derive(Clone)]
 pub struct ActorSystem {
@@ -60,7 +60,12 @@ impl ActorSystem {
 
     pub fn add_pool(&self, name: &str) {
         let default_config = self.config.thread_pool.config.get(DEFAULT_POOL).unwrap();
-        let config = self.config.thread_pool.config.get(name).unwrap_or(default_config);
+        let config = self
+            .config
+            .thread_pool
+            .config
+            .get(name)
+            .unwrap_or(default_config);
         self.add_pool_with_config(name, config.clone());
     }
 
@@ -92,7 +97,10 @@ impl ActorSystem {
                 let pool_name = pool.key().clone();
                 let (pool_config, pool_sender, pool_receiver) = pool.value().clone();
                 if !pools.contains_key(&pool_name) {
-                    pools.insert(pool_name.clone(), ThreadPool::new(pool_config.thread_count.clone()));
+                    pools.insert(
+                        pool_name.clone(),
+                        ThreadPool::new(pool_config.thread_count.clone()),
+                    );
                 }
                 let current = pools.get(&pool_name).unwrap();
                 for i in current.active_count()..current.max_count() {
@@ -101,15 +109,13 @@ impl ActorSystem {
                     let system = self.clone();
                     let pool_name = pool_name.clone();
                     let pool_config = pool_config.clone();
-                    pools.get(&pool_name).unwrap().execute(move || {
-                        loop {
-                            let actor_ref = receiver.recv().unwrap();
-                            let actor_config= actor_ref.get_config();
-                            for j in 0..actor_config.message_throughput {
-                                actor_ref.handle();
-                            }
-                            sender.send(actor_ref);
+                    pools.get(&pool_name).unwrap().execute(move || loop {
+                        let actor_ref = receiver.recv().unwrap();
+                        let actor_config = actor_ref.get_config();
+                        for j in 0..actor_config.message_throughput {
+                            actor_ref.handle();
                         }
+                        sender.send(actor_ref);
                     });
                 }
             }

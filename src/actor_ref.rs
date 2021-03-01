@@ -1,11 +1,11 @@
 use crate::actor::{ActorTrait, Handler};
+use crate::actor_config::ActorConfig;
 use crate::message::{MessageEnvelope, MessageEnvelopeTrait, MessageTrait};
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use std::any::Any;
 use std::borrow::BorrowMut;
 use std::ops::DerefMut;
 use std::sync::{Arc, RwLock};
-use crate::actor_config::ActorConfig;
 
 pub trait ActorRefTrait: Send + Sync {
     fn handle(&self);
@@ -63,5 +63,4 @@ where
     {
         self.mailbox_in.send(MessageEnvelope::new(msg));
     }
-
 }

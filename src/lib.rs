@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 mod actor;
+mod actor_config;
 mod actor_ref;
 mod builder;
 mod config;
@@ -8,7 +9,6 @@ mod context;
 mod handler;
 mod message;
 mod system;
-mod actor_config;
 
 pub mod prelude {
     pub use crate::actor::*;
