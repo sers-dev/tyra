@@ -1,5 +1,5 @@
 # general actor settings
-[actor]
+[global]
 # name of the actor system
 # magic default: system hostname
 name = "$HOSTNAME"

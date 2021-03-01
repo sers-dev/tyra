@@ -40,7 +40,7 @@ impl ActorSystem {
         let actor_mailboxes = Arc::new(DashMap::new());
         let thread_pool_config = config.thread_pool.clone();
         let system = ActorSystem {
-            name: config.actor.name.clone(),
+            name: config.global.name.clone(),
             is_running: Arc::new(AtomicBool::new(true)),
             config,
             thread_pools,

@@ -1,4 +1,4 @@
-use crate::config::actor_config::ActorConfig;
+use crate::config::global_config::GlobalConfig;
 use crate::config::pool_config::PoolConfig;
 
 use config::{Config, ConfigError, Environment, File, FileFormat};
@@ -9,7 +9,7 @@ pub const SYSTEM_POOL: &str = "system";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TyractorsaurConfig {
-    pub actor: ActorConfig,
+    pub global: GlobalConfig,
     pub thread_pool: PoolConfig,
 }
 
@@ -28,8 +28,8 @@ impl TyractorsaurConfig {
             .expect("Could not parse ENV variables");
 
         let mut parsed: TyractorsaurConfig = config.try_into().expect("Could not parse Config");
-        if parsed.actor.name == "$HOSTNAME" {
-            parsed.actor.name = String::from(hostname::get().unwrap().to_str().unwrap());
+        if parsed.global.name == "$HOSTNAME" {
+            parsed.global.name = String::from(hostname::get().unwrap().to_str().unwrap());
         }
 
 
