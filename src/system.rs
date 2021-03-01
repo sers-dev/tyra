@@ -15,6 +15,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use threadpool::ThreadPool;
 use crate::config::prelude::*;
+use crate::actor_config::ActorConfig;
 
 #[derive(Clone)]
 pub struct ActorSystem {
@@ -65,7 +66,11 @@ impl ActorSystem {
 
     pub fn add_pool_with_config(&self, name: &str, thread_pool_config: ThreadPoolConfig) {
         if !self.thread_pools.contains_key(name) {
-            let (sender, receiver) = unbounded();
+            let (sender, receiver) = if thread_pool_config.actor_limit == 0 {
+                unbounded()
+            } else {
+                bounded(thread_pool_config.actor_limit)
+            };
             self.thread_pools
                 .insert(String::from(name), (thread_pool_config, sender, receiver));
         }
@@ -87,7 +92,7 @@ impl ActorSystem {
                 let pool_name = pool.key().clone();
                 let (pool_config, pool_sender, pool_receiver) = pool.value().clone();
                 if !pools.contains_key(&pool_name) {
-                    pools.insert(pool_name.clone(), ThreadPool::new(pool_config.size.clone()));
+                    pools.insert(pool_name.clone(), ThreadPool::new(pool_config.thread_count.clone()));
                 }
                 let current = pools.get(&pool_name).unwrap();
                 for i in current.active_count()..current.max_count() {
@@ -99,7 +104,8 @@ impl ActorSystem {
                     pools.get(&pool_name).unwrap().execute(move || {
                         loop {
                             let actor_ref = receiver.recv().unwrap();
-                            for j in 0..pool_config.message_throughput {
+                            let actor_config= actor_ref.get_config();
+                            for j in 0..actor_config.message_throughput {
                                 actor_ref.handle();
                             }
                             sender.send(actor_ref);
@@ -117,14 +123,18 @@ impl ActorSystem {
         ActorBuilder::new(self.clone(), name.into())
     }
 
-    pub fn spawn<A>(&self, name: String, actor: A, mailbox_size: usize, pool: &str) -> ActorRef<A>
+    pub fn spawn<A>(&self, actor: A, actor_config: ActorConfig) -> ActorRef<A>
     where
         A: ActorTrait + Clone + 'static,
     {
-        let (sender, receiver) = unbounded();
+        let (sender, receiver) = if actor_config.mailbox_size == 0 {
+            unbounded()
+        } else {
+            bounded(actor_config.mailbox_size)
+        };
 
-        let actor_ref = ActorRef::new(Arc::new(RwLock::new(actor)), sender, receiver);
-        let tuple = self.thread_pools.get(pool).unwrap();
+        let tuple = self.thread_pools.get(&actor_config.pool_name).unwrap();
+        let actor_ref = ActorRef::new(Arc::new(RwLock::new(actor)), actor_config, sender, receiver);
         let (_, sender, _) = tuple.value();
         let abc = actor_ref.clone();
         sender.send(Arc::new(abc));
@@ -138,5 +148,9 @@ impl ActorSystem {
             sleep(Duration::from_secs(1));
         }
         self.stop();
+    }
+
+    pub fn get_config(&self) -> &TyractorsaurConfig {
+        &self.config
     }
 }

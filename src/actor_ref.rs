@@ -5,9 +5,11 @@ use std::any::Any;
 use std::borrow::BorrowMut;
 use std::ops::DerefMut;
 use std::sync::{Arc, RwLock};
+use crate::actor_config::ActorConfig;
 
 pub trait ActorRefTrait: Send + Sync {
     fn handle(&self);
+    fn get_config(&self) -> &ActorConfig;
 }
 
 #[derive(Clone)]
@@ -16,6 +18,7 @@ where
     A: ActorTrait,
 {
     actor: Arc<RwLock<A>>,
+    actor_config: ActorConfig,
     mailbox_in: Sender<MessageEnvelope<A>>,
     mailbox_out: Receiver<MessageEnvelope<A>>,
 }
@@ -30,6 +33,10 @@ where
         let mut ac = a.deref_mut();
         msg.handle(ac);
     }
+
+    fn get_config(&self) -> &ActorConfig {
+        &self.actor_config
+    }
 }
 
 impl<A> ActorRef<A>
@@ -38,11 +45,13 @@ where
 {
     pub fn new(
         actor: Arc<RwLock<A>>,
+        actor_config: ActorConfig,
         sender: Sender<MessageEnvelope<A>>,
         receiver: Receiver<MessageEnvelope<A>>,
     ) -> Self {
         Self {
             actor,
+            actor_config,
             mailbox_in: sender,
             mailbox_out: receiver,
         }
@@ -55,10 +64,4 @@ where
         self.mailbox_in.send(MessageEnvelope::new(msg));
     }
 
-    pub fn handle_generic<F>(actor: Arc<dyn ActorTrait>, msg: Arc<dyn MessageTrait>, func: F)
-    where
-        F: Fn(Arc<dyn ActorTrait>, Arc<dyn MessageTrait>),
-    {
-        func(actor, msg)
-    }
 }

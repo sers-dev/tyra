@@ -35,12 +35,12 @@ impl TyractorsaurConfig {
 
         for (key, value) in parsed.thread_pool.config.iter_mut() {
             if key == DEFAULT_POOL {
-                if value.size == 0 {
-                    value.size = num_cpus::get() + (num_cpus::get() / 2);
+                if value.thread_count == 0 {
+                    value.thread_count = num_cpus::get() + (num_cpus::get() / 2);
                 }
             } else if key == SYSTEM_POOL {
-                if value.size == 0 {
-                    value.size = num_cpus::get() / 2;
+                if value.thread_count == 0 {
+                    value.thread_count = num_cpus::get() / 2;
                 }
             }
         }

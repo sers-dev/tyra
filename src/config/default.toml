@@ -3,19 +3,27 @@
 # name of the actor system
 # magic default: system hostname
 name = "$HOSTNAME"
+# default mailbox size for every actor if no explicit size is set
+# 0 is treated as unlimited
+default_mailbox_size = 0
+default_message_throughput = 15
 
 # default pool settings
 [thread_pool.config.default]
+# amount of actors that this thread_pool can handle
+# 0 is treated as unlimited
+actor_limit = 0
 # amount of threads to run actors on
 # magic default: 1.5 times the number of cores
-size = 0
+thread_count = 0
 # maximum amount of consecutive messages to handle before switching actor
-message_throughput = 15
 
 # same as `thread_pool`, but only applies to internal system_pool
 [thread_pool.config.system]
+# amount of actors that this thread_pool can handle
+# 0 is treated as unlimited
+actor_limit = 0
 # amount of threads to run actors on
 # magic default: 0.5 times number of cores
-size = 0
+thread_count = 0
 # maximum amount of consecutive messages to handle before switching actor
-message_throughput = 15

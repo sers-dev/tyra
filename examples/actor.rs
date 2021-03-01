@@ -4,7 +4,7 @@ use std::any::{Any, TypeId};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig};
+use tyractorsaur::prelude::{ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, ActorRefTrait};
 
 #[derive(Clone)]
 struct MessageA {
@@ -66,7 +66,7 @@ fn main() {
     let mut x = actor_system
         .builder("hello-world")
         .set_mailbox_size(7)
-        .set_pool("aye")
+        .set_pool_name("aye")
         .build(hw);
     x.send(MessageA {
         text: String::from("sers+1"),
