@@ -1,6 +1,6 @@
 # X.X.X
 
-- configurable message throughput per thread_pool
+- configurable message throughput per actor, with global default
 - refactor + cleanup configuration
 - allow dynamic creation of thread_pools through config
   - automatically start all configured thread_pools
