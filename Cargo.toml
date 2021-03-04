@@ -18,11 +18,11 @@ path = "src/lib.rs"
 
 [dependencies]
 config = "0.10.1"
-serde = { version = "1.0", features = ["derive"] }
-num_cpus = "^1.10.1"
-threadpool = "1.0"
-crossbeam-channel = "0.5"
-dashmap = "4.0.2"
 hostname = "0.3.1"
+num_cpus = "^1.13.0"
+threadpool = "1.8.1"
+crossbeam-channel = "0.5"
+dashmap = "4.0"
+serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
