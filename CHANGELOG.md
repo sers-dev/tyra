@@ -4,6 +4,8 @@
 - refactor + cleanup configuration
 - allow dynamic creation of thread_pools through config
   - automatically start all configured thread_pools
+- keep dependencies up2date
+  - hard pin version for dependencies that do not have regular updates
 
 # 0.0.1
 
