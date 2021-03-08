@@ -1,5 +1,5 @@
 use crate::actor::{ActorTrait, Handler};
-use crate::actor_config::ActorConfig;
+use crate::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor_ref::ActorRef;
 use crate::config::prelude::DEFAULT_POOL;
 use crate::message::MessageTrait;
@@ -22,12 +22,18 @@ impl ActorBuilder {
             pool_name: String::from(DEFAULT_POOL),
             mailbox_size: config.global.default_mailbox_size,
             message_throughput: config.global.default_message_throughput,
+            restart_policy: config.global.default_restart_policy
         };
 
         ActorBuilder {
             system,
             actor_config,
         }
+    }
+
+    pub fn set_restart_policy(mut self, restart_policy: RestartPolicy) -> ActorBuilder {
+        self.actor_config.restart_policy = restart_policy;
+        self
     }
 
     pub fn set_pool_name(mut self, pool_name: impl Into<String>) -> ActorBuilder {

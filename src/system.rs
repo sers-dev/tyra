@@ -18,7 +18,7 @@ use std::time::Duration;
 use threadpool::ThreadPool;
 use std::panic;
 use std::panic::UnwindSafe;
-use crate::prelude::HandleResult;
+use crate::prelude::{ActorState};
 
 #[derive(Clone)]
 pub struct ActorSystem {
@@ -30,8 +30,8 @@ pub struct ActorSystem {
             String,
             (
                 ThreadPoolConfig,
-                Sender<Arc<dyn ActorRefTrait>>,
-                Receiver<Arc<dyn ActorRefTrait>>,
+                Sender<Arc<RwLock<dyn ActorRefTrait>>>,
+                Receiver<Arc<RwLock<dyn ActorRefTrait>>>,
             ),
         >,
     >,
@@ -113,39 +113,26 @@ impl ActorSystem {
                     let pool_name = pool_name.clone();
                     let pool_config = pool_config.clone();
                     pools.get(&pool_name).unwrap().execute(move || loop {
-                        //let mut ar = receiver.recv().unwrap();
+                        let mut actor_state = ActorState::Running;
+                        let mut ar = receiver.recv().unwrap();
                         {
-                            //let mut a = ar.write().unwrap();
-                            //let mut actor_ref = a.deref_mut();
-                            let actor_ref = receiver.recv().unwrap();
+                            let mut a = ar.write().unwrap();
+                            let mut actor_ref = a.deref_mut();
                             let actor_config = actor_ref.get_config();
                             for j in 0..actor_config.message_throughput {
-                                let handler_result = actor_ref.handle();
-                                match handler_result {
-                                    HandleResult::Success => {
-                                        //println!("Message handled");
-                                    },
-                                    HandleResult::MailboxEmpty => {
-                                        //println!("it's empty");
-                                    },
-                                    HandleResult::ActorPanic => {
-                                        println!("Actor Panic");
-                                        //actor_ref.reset();
-                                    }
-                                    _ => {
-                                        println!("should never happen");
-                                    }
-                                }
-                                if handler_result != HandleResult::Success {
+                                actor_ref.handle();
+                                actor_state = actor_ref.get_current_state();
+                                if actor_state != ActorState::Running {
                                     break;
                                 }
                             }
-                            sender.send(actor_ref);
 
                         }
 
-
-                        //sender.send(ar);
+                        //wip: sleep management is currently missing, but at least actors can be stopped
+                        if actor_state != ActorState::Stopped {
+                            sender.send(ar);
+                        }
                     });
                 }
             }
@@ -173,7 +160,7 @@ impl ActorSystem {
         let actor_ref = ActorRef::new(actor, actor_config, sender, receiver);
         let (_, sender, _) = tuple.value();
         let abc = actor_ref.clone();
-        sender.send(Arc::new(abc));
+        sender.send(Arc::new(RwLock::new(abc)));
         actor_ref
     }
 

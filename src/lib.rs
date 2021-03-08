@@ -6,7 +6,6 @@ mod actor_ref;
 mod builder;
 mod config;
 mod context;
-mod handler;
 mod message;
 mod system;
 

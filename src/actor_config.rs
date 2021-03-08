@@ -6,4 +6,11 @@ pub struct ActorConfig {
     pub pool_name: String,
     pub mailbox_size: usize,
     pub message_throughput: usize,
+    pub restart_policy: RestartPolicy
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
+pub enum RestartPolicy {
+    Never,
+    Always
 }

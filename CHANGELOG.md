@@ -1,5 +1,7 @@
 # X.X.X
 
+- added configurable actor restart mechanism
+- performance increase by moving RwLock from Actor to ActorRef
 - configurable message throughput per actor, with global default
 - refactor + cleanup configuration
 - allow dynamic creation of thread_pools through config
