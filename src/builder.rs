@@ -5,6 +5,7 @@ use crate::config::prelude::DEFAULT_POOL;
 use crate::message::MessageTrait;
 use crate::system::ActorSystem;
 use std::sync::{Arc, RwLock};
+use std::panic::UnwindSafe;
 
 #[derive(Clone)]
 pub struct ActorBuilder {
@@ -50,7 +51,7 @@ impl ActorBuilder {
 
     pub fn build<A>(&self, actor: A) -> ActorRef<A>
     where
-        A: ActorTrait + Clone + 'static,
+        A: ActorTrait + Clone + UnwindSafe + 'static,
     {
         self.system.spawn(actor, self.actor_config.clone())
     }

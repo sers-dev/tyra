@@ -16,6 +16,9 @@ use std::sync::{Arc, RwLock};
 use std::thread::sleep;
 use std::time::Duration;
 use threadpool::ThreadPool;
+use std::panic;
+use std::panic::UnwindSafe;
+use crate::prelude::HandleResult;
 
 #[derive(Clone)]
 pub struct ActorSystem {
@@ -82,7 +85,7 @@ impl ActorSystem {
     }
 
     fn start(&self) {
-        let background_pool = ThreadPool::new(1);
+        let background_pool = ThreadPool::with_name(String::from("background"), 1);
         let s = self.clone();
         background_pool.execute(move || s.manage_threads());
         self.start_system_actors();
@@ -99,7 +102,7 @@ impl ActorSystem {
                 if !pools.contains_key(&pool_name) {
                     pools.insert(
                         pool_name.clone(),
-                        ThreadPool::new(pool_config.thread_count.clone()),
+                        ThreadPool::with_name(pool_name.clone(), pool_config.thread_count.clone()),
                     );
                 }
                 let current = pools.get(&pool_name).unwrap();
@@ -110,12 +113,39 @@ impl ActorSystem {
                     let pool_name = pool_name.clone();
                     let pool_config = pool_config.clone();
                     pools.get(&pool_name).unwrap().execute(move || loop {
-                        let actor_ref = receiver.recv().unwrap();
-                        let actor_config = actor_ref.get_config();
-                        for j in 0..actor_config.message_throughput {
-                            actor_ref.handle();
+                        //let mut ar = receiver.recv().unwrap();
+                        {
+                            //let mut a = ar.write().unwrap();
+                            //let mut actor_ref = a.deref_mut();
+                            let actor_ref = receiver.recv().unwrap();
+                            let actor_config = actor_ref.get_config();
+                            for j in 0..actor_config.message_throughput {
+                                let handler_result = actor_ref.handle();
+                                match handler_result {
+                                    HandleResult::Success => {
+                                        //println!("Message handled");
+                                    },
+                                    HandleResult::MailboxEmpty => {
+                                        //println!("it's empty");
+                                    },
+                                    HandleResult::ActorPanic => {
+                                        println!("Actor Panic");
+                                        //actor_ref.reset();
+                                    }
+                                    _ => {
+                                        println!("should never happen");
+                                    }
+                                }
+                                if handler_result != HandleResult::Success {
+                                    break;
+                                }
+                            }
+                            sender.send(actor_ref);
+
                         }
-                        sender.send(actor_ref);
+
+
+                        //sender.send(ar);
                     });
                 }
             }
@@ -131,7 +161,7 @@ impl ActorSystem {
 
     pub fn spawn<A>(&self, actor: A, actor_config: ActorConfig) -> ActorRef<A>
     where
-        A: ActorTrait + Clone + 'static,
+        A: ActorTrait + Clone + UnwindSafe + 'static,
     {
         let (sender, receiver) = if actor_config.mailbox_size == 0 {
             unbounded()
@@ -140,7 +170,7 @@ impl ActorSystem {
         };
 
         let tuple = self.thread_pools.get(&actor_config.pool_name).unwrap();
-        let actor_ref = ActorRef::new(Arc::new(RwLock::new(actor)), actor_config, sender, receiver);
+        let actor_ref = ActorRef::new(actor, actor_config, sender, receiver);
         let (_, sender, _) = tuple.value();
         let abc = actor_ref.clone();
         sender.send(Arc::new(abc));
