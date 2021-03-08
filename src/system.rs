@@ -8,7 +8,7 @@ use crate::message::MessageTrait;
 use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
-use std::borrow::Borrow;
+use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -19,6 +19,8 @@ use threadpool::ThreadPool;
 use std::panic;
 use std::panic::UnwindSafe;
 use crate::prelude::{ActorState};
+use crossbeam_utils::atomic::AtomicCell;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct ActorSystem {
@@ -30,8 +32,8 @@ pub struct ActorSystem {
             String,
             (
                 ThreadPoolConfig,
-                Sender<Arc<RwLock<dyn ActorRefTrait>>>,
-                Receiver<Arc<RwLock<dyn ActorRefTrait>>>,
+                Sender<AtomicCell<Box<dyn ActorRefTrait>>>,
+                Receiver<AtomicCell<Box<dyn ActorRefTrait>>>,
             ),
         >,
     >,
@@ -115,9 +117,7 @@ impl ActorSystem {
                     pools.get(&pool_name).unwrap().execute(move || loop {
                         let mut actor_state = ActorState::Running;
                         let mut ar = receiver.recv().unwrap();
-                        {
-                            let mut a = ar.write().unwrap();
-                            let mut actor_ref = a.deref_mut();
+                            let mut actor_ref = ar.into_inner();
                             let actor_config = actor_ref.get_config();
                             for j in 0..actor_config.message_throughput {
                                 actor_ref.handle();
@@ -127,11 +127,10 @@ impl ActorSystem {
                                 }
                             }
 
-                        }
 
                         //wip: sleep management is currently missing, but at least actors can be stopped
                         if actor_state != ActorState::Stopped {
-                            sender.send(ar);
+                            sender.send(AtomicCell::new(actor_ref));
                         }
                     });
                 }
@@ -160,7 +159,7 @@ impl ActorSystem {
         let actor_ref = ActorRef::new(actor, actor_config, sender, receiver);
         let (_, sender, _) = tuple.value();
         let abc = actor_ref.clone();
-        sender.send(Arc::new(RwLock::new(abc)));
+        sender.send(AtomicCell::new(Box::new(abc)));
         actor_ref
     }
 
