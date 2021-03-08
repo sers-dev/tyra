@@ -1,6 +1,6 @@
 # WIP 0.0.3
 
-- fix ActorRef mutability 
+- fix ActorRef send mutability 
 
 # 0.0.2
 
