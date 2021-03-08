@@ -64,7 +64,7 @@ fn main() {
         text: String::from("sers"),
         count: 0,
     };
-    let mut x = actor_system
+    let x = actor_system
         .builder("hello-world")
         .set_mailbox_size(7)
         .set_pool_name("aye")

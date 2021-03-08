@@ -89,7 +89,7 @@ where
             mailbox_out: receiver,
         }
     }
-    pub fn send<M>(&mut self, msg: M)
+    pub fn send<M>(& self, msg: M)
     where
         A: Handler<M>,
         M: MessageTrait + Clone + 'static,

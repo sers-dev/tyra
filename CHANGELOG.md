@@ -1,5 +1,7 @@
 # WIP 0.0.3
 
+- fix ActorRef mutability 
+
 # 0.0.2
 
 - added configurable actor restart mechanism
