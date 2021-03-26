@@ -1,5 +1,5 @@
 use crate::actor::{ActorTrait, Handler};
-use crate::actor_ref::ActorRef;
+use crate::actor_ref::ActorHandler;
 use serde::Serialize;
 
 pub trait MessageTrait: Send + Sync {}

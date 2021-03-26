@@ -21,7 +21,7 @@ where
     fn handle(&mut self, msg: M);
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct ActorAddress {
     pub remote: String,
     pub system: String,

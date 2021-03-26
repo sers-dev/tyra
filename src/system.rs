@@ -1,6 +1,6 @@
 use crate::actor::{ActorAddress, ActorTrait, Handler};
 use crate::actor_config::ActorConfig;
-use crate::actor_ref::{ActorRef, ActorRefTrait};
+use crate::actor_ref::{ActorHandler, ActorRefTrait};
 use crate::builder::ActorBuilder;
 use crate::config::prelude::*;
 use crate::context::Context;
@@ -18,9 +18,14 @@ use std::time::Duration;
 use threadpool::ThreadPool;
 use std::panic;
 use std::panic::UnwindSafe;
-use crate::prelude::{ActorState};
+use crate::prelude::{ActorState, ActorRef};
 use crossbeam_utils::atomic::AtomicCell;
 use std::rc::Rc;
+
+pub struct WakeupMessage {
+    iteration: usize,
+    actor_address: ActorAddress,
+}
 
 #[derive(Clone)]
 pub struct ActorSystem {
@@ -32,25 +37,30 @@ pub struct ActorSystem {
             String,
             (
                 ThreadPoolConfig,
-                Sender<AtomicCell<Box<dyn ActorRefTrait>>>,
-                Receiver<AtomicCell<Box<dyn ActorRefTrait>>>,
+                Sender<Arc<RwLock<dyn ActorRefTrait>>>,
+                Receiver<Arc<RwLock<dyn ActorRefTrait>>>,
             ),
         >,
     >,
-    actor_mailboxes: Arc<DashMap<ActorAddress, (Sender<String>, Receiver<String>)>>,
+    sleeping_actors: Arc<DashMap<ActorAddress, Arc<RwLock<dyn ActorRefTrait>>>>,
+    wakeup_queue_in: Sender<WakeupMessage>,
+    wakeup_queue_out: Receiver<WakeupMessage>,
 }
 
 impl ActorSystem {
     pub fn new(config: TyractorsaurConfig) -> Self {
         let thread_pools = Arc::new(DashMap::new());
-        let actor_mailboxes = Arc::new(DashMap::new());
+        let (wakeup_queue_in, wakeup_queue_out) = unbounded();
+        let sleeping_actors = Arc::new(DashMap::new());
         let thread_pool_config = config.thread_pool.clone();
         let system = ActorSystem {
             name: config.global.name.clone(),
             is_running: Arc::new(AtomicBool::new(true)),
             config,
             thread_pools,
-            actor_mailboxes,
+            wakeup_queue_in,
+            wakeup_queue_out,
+            sleeping_actors
         };
 
         for (key, value) in thread_pool_config.config.iter() {
@@ -90,8 +100,33 @@ impl ActorSystem {
         let background_pool = ThreadPool::with_name(String::from("background"), 1);
         let s = self.clone();
         background_pool.execute(move || s.manage_threads());
+        let waker_pool = ThreadPool::with_name(String::from("waker"), 1);
+        let s = self.clone();
+        waker_pool.execute(move || s.wake());
         self.start_system_actors();
         println!("???");
+    }
+
+    fn wake(&self) {
+        loop {
+            let wakeup_message= self.wakeup_queue_out.recv().unwrap();
+            if !self.sleeping_actors.contains_key(&wakeup_message.actor_address) {
+                if wakeup_message.iteration < 10 {
+                    sleep(Duration::from_millis(5));
+                    self.wakeup_queue_in.send(WakeupMessage {
+                        iteration: (wakeup_message.iteration + 1),
+                        actor_address: wakeup_message.actor_address,
+                    }).unwrap();
+                }
+                continue;
+
+            }
+
+            let actor_ref = self.sleeping_actors.remove(&wakeup_message.actor_address).unwrap().1;
+            let pool = self.thread_pools.get(&wakeup_message.actor_address.pool).unwrap();
+            let (_, sender, _) = pool.value();
+            sender.send(actor_ref).unwrap();
+        }
     }
 
     fn manage_threads(&self) {
@@ -117,20 +152,37 @@ impl ActorSystem {
                     pools.get(&pool_name).unwrap().execute(move || loop {
                         let mut actor_state = ActorState::Running;
                         let mut ar = receiver.recv().unwrap();
-                            let mut actor_ref = ar.into_inner();
+                        {
+                            let mut actor_ref = ar.write().unwrap();
                             let actor_config = actor_ref.get_config();
                             for j in 0..actor_config.message_throughput {
-                                actor_ref.handle();
-                                actor_state = actor_ref.get_current_state();
+                                actor_state = actor_ref.handle();
                                 if actor_state != ActorState::Running {
                                     break;
                                 }
                             }
+                        };
 
 
                         //wip: sleep management is currently missing, but at least actors can be stopped
-                        if actor_state != ActorState::Stopped {
-                            sender.send(AtomicCell::new(actor_ref));
+                        //println!("AYE: {:?}", actor_state);
+                        if actor_state == ActorState::Running {
+                            sender.send(ar).unwrap();
+                        }
+                        else if actor_state == ActorState::Sleeping {
+                            let mut address = None;
+                            {
+                                let mut actor_ref = ar.write().unwrap();
+                                address = Some(actor_ref.get_address());
+                                let xyz = actor_ref.get_mailbix_size();
+
+                            }
+                            system.sleeping_actors.insert(address.unwrap(), ar);
+                            let count = sender.len();
+                            //println!("SLEEP NOW: {}", count);
+                        }
+                        else {
+                            println!("WOOOOOOOOOOOOOOOOOOOOT?");
                         }
                     });
                 }
@@ -156,11 +208,12 @@ impl ActorSystem {
         };
 
         let tuple = self.thread_pools.get(&actor_config.pool_name).unwrap();
-        let actor_ref = ActorRef::new(actor, actor_config, sender, receiver);
+        let actor_ref = ActorHandler::new(actor, actor_config, sender, receiver);
         let (_, sender, _) = tuple.value();
-        let abc = actor_ref.clone();
-        sender.send(AtomicCell::new(Box::new(abc)));
-        actor_ref
+        sender.send(Arc::new(RwLock::new(actor_ref.clone()))).unwrap();
+
+        ActorRef::new(actor_ref, self.clone())
+
     }
 
     pub fn stop(&self) {}
@@ -174,5 +227,13 @@ impl ActorSystem {
 
     pub fn get_config(&self) -> &TyractorsaurConfig {
         &self.config
+    }
+
+    pub fn wakeup(&self, actor_address: ActorAddress)
+    {
+        self.wakeup_queue_in.send(WakeupMessage {
+            iteration: 0,
+            actor_address,
+        }).unwrap();
     }
 }

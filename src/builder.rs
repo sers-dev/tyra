@@ -1,11 +1,12 @@
 use crate::actor::{ActorTrait, Handler};
 use crate::actor_config::{ActorConfig, RestartPolicy};
-use crate::actor_ref::ActorRef;
+use crate::actor_ref::ActorHandler;
 use crate::config::prelude::DEFAULT_POOL;
 use crate::message::MessageTrait;
 use crate::system::ActorSystem;
 use std::sync::{Arc, RwLock};
 use std::panic::UnwindSafe;
+use crate::prelude::ActorRef;
 
 #[derive(Clone)]
 pub struct ActorBuilder {
