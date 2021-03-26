@@ -1,4 +1,8 @@
-# WIP 0.0.3
+# WIP 0.0.4
+
+- wip
+
+# 0.0.3
 
 - fix ActorRef send mutability
 - fix a Bug where message handlers could be executed manually on an ActorRef
