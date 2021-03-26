@@ -1,6 +1,11 @@
 # WIP 0.0.3
 
-- fix ActorRef send mutability 
+- fix ActorRef send mutability
+- fix a Bug where message handlers could be executed manually on an ActorRef
+- Actors now have a sleeping state
+  - New Actors automatically start in this state until a message is received
+  - Sleeping Actors do not use any CPU
+  - After Wakeup, there's a hardcoded minimum interval of 1 second before an Actor is put to Sleep again
 
 # 0.0.2
 
