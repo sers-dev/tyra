@@ -4,7 +4,7 @@ use crate::message::{MessageEnvelope, MessageEnvelopeTrait, MessageTrait};
 use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
 use std::any::Any;
 use std::borrow::BorrowMut;
-use std::ops::{DerefMut, Deref};
+use std::ops::{DerefMut, Deref, AddAssign};
 use std::sync::{Arc, RwLock};
 use std::panic::{UnwindSafe, AssertUnwindSafe, catch_unwind};
 use crossbeam_utils::atomic::AtomicCell;
@@ -19,6 +19,7 @@ pub trait ActorRefTrait: Send + Sync {
     fn is_sleeping(&self) -> bool;
     fn is_stopped(&self) -> bool;
     fn get_mailbix_size(&self) -> usize;
+    fn wakeup(&mut self);
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -40,7 +41,8 @@ where
     mailbox_out: Receiver<MessageEnvelope<A>>,
     actor_address: ActorAddress,
     is_stopped: Arc<AtomicBool>,
-    last_active: Instant,
+    is_sleeping: Arc<AtomicBool>,
+    last_wakeup: Instant,
 }
 
 unsafe impl<A> Send for ActorHandler<A>
@@ -61,14 +63,13 @@ where
         let mut m = self.mailbox_out.try_recv();
 
         if m.is_err() {
-            //let duration = self.last_active.elapsed();
-            //if duration >= Duration::from_secs(1) {
-                //println!("SLEEPI BOY3");
+            let duration = self.last_wakeup.elapsed();
+            if duration >= Duration::from_secs(1) {
+                self.is_sleeping.store(true, Ordering::Relaxed);
                 return ActorState::Sleeping;
-            //}
+            }
             return ActorState::Running;
         }
-        //self.last_active = Instant::now();
 
         let mut msg = m.unwrap();
         let result = catch_unwind(AssertUnwindSafe(|| msg.handle(&mut self.actor)));
@@ -93,8 +94,7 @@ where
     }
 
     fn is_sleeping(&self) -> bool {
-        self.mailbox_out.len() == 0
-        //self.last_active.load().elapsed() >= Duration::from_secs(1)
+        self.is_sleeping.load(Ordering::Relaxed)
     }
 
     fn is_stopped(&self) -> bool {
@@ -103,6 +103,11 @@ where
 
     fn get_mailbix_size(&self) -> usize {
         self.mailbox_out.len()
+    }
+
+    fn wakeup(&mut self) {
+        self.is_sleeping.store(false, Ordering::Relaxed);
+        self.last_wakeup = Instant::now();
     }
 }
 
@@ -132,7 +137,8 @@ where
             mailbox_out: receiver,
             actor_address,
             is_stopped: Arc::new(AtomicBool::new(false)),
-            last_active: Instant::now(),
+            is_sleeping: Arc::new(AtomicBool::new(true)),
+            last_wakeup: Instant::now(),
         }
     }
     pub fn send<M>(& self, msg: M)
@@ -184,14 +190,11 @@ impl<A> ActorRef<A>
             return;
         }
 
-        let is_sleeping = self.actor_ref.is_sleeping();
-
         self.actor_ref.send(msg);
 
-        //if is_sleeping {
-        //   self.system.wakeup(self.actor_ref.get_address());
-        //}
-
+        if self.actor_ref.is_sleeping() {
+            self.system.wakeup(self.actor_ref.get_address());
+        }
     }
     pub fn get_config(&self) -> ActorConfig {
         self.actor_ref.get_config().clone()

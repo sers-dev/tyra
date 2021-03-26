@@ -111,8 +111,10 @@ impl ActorSystem {
         loop {
             let wakeup_message= self.wakeup_queue_out.recv().unwrap();
             if !self.sleeping_actors.contains_key(&wakeup_message.actor_address) {
-                if wakeup_message.iteration < 10 {
-                    sleep(Duration::from_millis(5));
+                // test results so far showed, that this failsafe is redundant
+                // nonetheless we will keep it for now, as we want to be absolutely certain to never miss a wakeup call
+                if wakeup_message.iteration < 50 {
+                    sleep(Duration::from_millis(1));
                     self.wakeup_queue_in.send(WakeupMessage {
                         iteration: (wakeup_message.iteration + 1),
                         actor_address: wakeup_message.actor_address,
@@ -123,6 +125,10 @@ impl ActorSystem {
             }
 
             let actor_ref = self.sleeping_actors.remove(&wakeup_message.actor_address).unwrap().1;
+            {
+                let mut actor_ref = actor_ref.write().unwrap();
+                actor_ref.wakeup();
+            }
             let pool = self.thread_pools.get(&wakeup_message.actor_address.pool).unwrap();
             let (_, sender, _) = pool.value();
             sender.send(actor_ref).unwrap();
@@ -178,8 +184,6 @@ impl ActorSystem {
 
                             }
                             system.sleeping_actors.insert(address.unwrap(), ar);
-                            let count = sender.len();
-                            //println!("SLEEP NOW: {}", count);
                         }
                         else {
                             println!("WOOOOOOOOOOOOOOOOOOOOT?");
@@ -209,9 +213,7 @@ impl ActorSystem {
 
         let tuple = self.thread_pools.get(&actor_config.pool_name).unwrap();
         let actor_ref = ActorHandler::new(actor, actor_config, sender, receiver);
-        let (_, sender, _) = tuple.value();
-        sender.send(Arc::new(RwLock::new(actor_ref.clone()))).unwrap();
-
+        self.sleeping_actors.insert(actor_ref.get_address(), Arc::new(RwLock::new(actor_ref.clone())));
         ActorRef::new(actor_ref, self.clone())
 
     }
