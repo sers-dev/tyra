@@ -14,7 +14,7 @@ use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use threadpool::ThreadPool;
 use std::panic;
 use std::panic::UnwindSafe;
@@ -108,20 +108,30 @@ impl ActorSystem {
     }
 
     fn wake(&self) {
+        let mut wake_deduplication: HashMap<ActorAddress, Instant> = HashMap::new();
+
         loop {
             let wakeup_message= self.wakeup_queue_out.recv().unwrap();
-            if !self.sleeping_actors.contains_key(&wakeup_message.actor_address) {
-                // test results so far showed, that this failsafe is redundant
-                // nonetheless we will keep it for now, as we want to be absolutely certain to never miss a wakeup call
-                if wakeup_message.iteration < 50 {
-                    sleep(Duration::from_millis(1));
-                    self.wakeup_queue_in.send(WakeupMessage {
-                        iteration: (wakeup_message.iteration + 1),
-                        actor_address: wakeup_message.actor_address,
-                    }).unwrap();
+            if wake_deduplication.contains_key(&wakeup_message.actor_address) && wakeup_message.iteration == 0 {
+                // actors have a minimum uptime of 1 second
+                // this ensures a guaranteed de-duplication of all wakeup calls to a single actor
+                let last_wakeup = wake_deduplication.get(&wakeup_message.actor_address).unwrap();
+                let duration = last_wakeup.elapsed();
+                if duration >= Duration::from_millis(750) {
+                    wake_deduplication.remove(&wakeup_message.actor_address);
                 }
-                continue;
+                else {
+                    continue;
+                }
+            }
 
+            wake_deduplication.insert(wakeup_message.actor_address.clone(), Instant::now());
+            if !self.sleeping_actors.contains_key(&wakeup_message.actor_address) {
+                self.wakeup_queue_in.send(WakeupMessage {
+                    iteration: (wakeup_message.iteration + 1),
+                    actor_address: wakeup_message.actor_address,
+                }).unwrap();
+                continue;
             }
 
             let actor_ref = self.sleeping_actors.remove(&wakeup_message.actor_address).unwrap().1;
@@ -170,8 +180,6 @@ impl ActorSystem {
                         };
 
 
-                        //wip: sleep management is currently missing, but at least actors can be stopped
-                        //println!("AYE: {:?}", actor_state);
                         if actor_state == ActorState::Running {
                             sender.send(ar).unwrap();
                         }
@@ -186,7 +194,7 @@ impl ActorSystem {
                             system.sleeping_actors.insert(address.unwrap(), ar);
                         }
                         else {
-                            println!("WOOOOOOOOOOOOOOOOOOOOT?");
+                            println!("Actor has been stopped");
                         }
                     });
                 }

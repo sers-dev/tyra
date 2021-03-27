@@ -1,6 +1,7 @@
 # WIP 0.0.4
 
-- wip
+- Actor Wakeup: properly handle wakeup de-duplication
+  
 
 # 0.0.3
 
