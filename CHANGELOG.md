@@ -1,7 +1,11 @@
-# WIP 0.0.4
+# WIP 0.0.5
+
+- WIP
+
+# 0.0.4
 
 - Actor Wakeup: properly handle wakeup de-duplication
-  
+- added pre_start and post_stop to Actors
 
 # 0.0.3
 

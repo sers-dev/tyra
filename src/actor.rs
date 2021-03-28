@@ -5,12 +5,8 @@ use std::any::Any;
 use std::sync::{Arc, RwLock};
 
 pub trait ActorTrait: Send + Sync {
-    fn as_any(&self) -> &dyn Any
-    where
-        Self: Sized + 'static,
-    {
-        self
-    }
+    fn pre_start(&mut self) {}
+    fn post_stop(&mut self) {}
 }
 
 pub trait Handler<M: ?Sized>

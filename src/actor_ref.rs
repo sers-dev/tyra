@@ -42,6 +42,7 @@ where
     actor_address: ActorAddress,
     is_stopped: Arc<AtomicBool>,
     is_sleeping: Arc<AtomicBool>,
+    is_startup: bool,
     last_wakeup: Instant,
 }
 
@@ -60,6 +61,10 @@ where
 {
     fn handle(&mut self) -> ActorState {
 
+        if self.is_startup {
+            self.is_startup = false;
+            self.actor.pre_start();
+        }
         let mut m = self.mailbox_out.try_recv();
 
         if m.is_err() {
@@ -79,7 +84,9 @@ where
                 self.is_stopped.store(true, Ordering::Relaxed);
                 return ActorState::Stopped
             }
+            self.actor.post_stop();
             self.actor = self.actor_backup.clone();
+            self.is_startup = true;
         }
 
         ActorState::Running
@@ -138,6 +145,7 @@ where
             actor_address,
             is_stopped: Arc::new(AtomicBool::new(false)),
             is_sleeping: Arc::new(AtomicBool::new(true)),
+            is_startup: true,
             last_wakeup: Instant::now(),
         }
     }
