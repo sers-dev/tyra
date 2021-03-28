@@ -1,6 +1,8 @@
 # WIP 0.0.5
 
-- WIP
+- Actors can now be stopped by calling stop on an ActorRef
+  - this sends a "StopMessage" to the Actor
+  - all messages queued until the stop message is handled in the actor will still be executed
 
 # 0.0.4
 

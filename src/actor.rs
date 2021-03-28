@@ -1,5 +1,5 @@
 use crate::context::Context;
-use crate::message::MessageTrait;
+use crate::message::{MessageTrait, StopMessage};
 use serde::{Deserialize, Serialize};
 use std::any::Any;
 use std::sync::{Arc, RwLock};
@@ -24,3 +24,11 @@ pub struct ActorAddress {
     pub pool: String,
     pub actor: String,
 }
+
+impl<A> Handler<StopMessage> for A
+where
+    A: ActorTrait
+{
+    fn handle(&mut self, msg: StopMessage) {}
+}
+

@@ -1,6 +1,6 @@
 use crate::actor::{ActorTrait, Handler, ActorAddress};
 use crate::actor_config::{ActorConfig, RestartPolicy};
-use crate::message::{MessageEnvelope, MessageEnvelopeTrait, MessageTrait};
+use crate::message::{MessageEnvelope, MessageEnvelopeTrait, MessageTrait, StopMessage, MessageType};
 use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
 use std::any::Any;
 use std::borrow::BorrowMut;
@@ -68,6 +68,10 @@ where
         let mut m = self.mailbox_out.try_recv();
 
         if m.is_err() {
+            if self.is_stopped() {
+                self.actor.post_stop();
+                return ActorState::Stopped
+            }
             let duration = self.last_wakeup.elapsed();
             if duration >= Duration::from_secs(1) {
                 self.is_sleeping.store(true, Ordering::Relaxed);
@@ -80,13 +84,20 @@ where
         let result = catch_unwind(AssertUnwindSafe(|| msg.handle(&mut self.actor)));
         if result.is_err() {
             println!("ACTOR PANIC");
-            if self.actor_config.restart_policy == RestartPolicy::Never {
+            self.actor.post_stop();
+
+            if self.actor_config.restart_policy == RestartPolicy::Never || self.is_stopped() {
                 self.is_stopped.store(true, Ordering::Relaxed);
                 return ActorState::Stopped
             }
-            self.actor.post_stop();
             self.actor = self.actor_backup.clone();
             self.is_startup = true;
+            return ActorState::Running
+        }
+        let message_type = result.unwrap();
+        if message_type == MessageType::StopMessage {
+            self.is_stopped.store(true, Ordering::Relaxed);
+            return ActorState::Running
         }
 
         ActorState::Running
@@ -206,5 +217,17 @@ impl<A> ActorRef<A>
     }
     pub fn get_config(&self) -> ActorConfig {
         self.actor_ref.get_config().clone()
+    }
+
+    pub fn stop(&self) {
+        if self.actor_ref.is_stopped() {
+            return;
+        }
+
+        self.actor_ref.send(StopMessage{});
+
+        if self.actor_ref.is_sleeping() {
+            self.system.wakeup(self.actor_ref.get_address());
+        }
     }
 }
