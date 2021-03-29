@@ -138,11 +138,12 @@ where
         actor_config: ActorConfig,
         sender: Sender<MessageEnvelope<A>>,
         receiver: Receiver<MessageEnvelope<A>>,
+        system_name: String
     ) -> Self {
         let actor_backup = actor.clone();
         let actor_address = ActorAddress{
             actor: actor_config.actor_name.clone(),
-            system: String::from("default"),
+            system: system_name,
             pool: actor_config.pool_name.clone(),
             remote: String::from("local"),
         };

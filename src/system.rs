@@ -31,7 +31,7 @@ pub struct WakeupMessage {
 pub struct ActorSystem {
     name: String,
     is_running: Arc<AtomicBool>,
-    config: TyractorsaurConfig,
+    config: Arc<TyractorsaurConfig>,
     thread_pools: Arc<
         DashMap<
             String,
@@ -56,7 +56,7 @@ impl ActorSystem {
         let system = ActorSystem {
             name: config.global.name.clone(),
             is_running: Arc::new(AtomicBool::new(true)),
-            config,
+            config: Arc::new(config),
             thread_pools,
             wakeup_queue_in,
             wakeup_queue_out,
@@ -220,7 +220,7 @@ impl ActorSystem {
         };
 
         let tuple = self.thread_pools.get(&actor_config.pool_name).unwrap();
-        let actor_ref = ActorHandler::new(actor, actor_config, sender, receiver);
+        let actor_ref = ActorHandler::new(actor, actor_config, sender, receiver, self.name.clone());
         self.sleeping_actors.insert(actor_ref.get_address(), Arc::new(RwLock::new(actor_ref.clone())));
         ActorRef::new(actor_ref, self.clone())
 
