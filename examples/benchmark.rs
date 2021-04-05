@@ -5,9 +5,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyractorsaur::prelude::{
-    ActorHandler, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig,
-};
+use tyractorsaur::prelude::{ActorHandler, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, Context};
 
 #[derive(Clone)]
 struct MessageA {
@@ -27,7 +25,7 @@ struct Benchmark {
 impl ActorTrait for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
-    fn handle(&mut self, msg: MessageA) {
+    fn handle(&mut self, msg: MessageA, context: &Context<Self>) {
         if self.count == 0 {
             println!("Sleep 3 now");
             sleep(Duration::from_secs((3) as u64));

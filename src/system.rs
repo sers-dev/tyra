@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 use threadpool::ThreadPool;
 use std::panic;
 use std::panic::UnwindSafe;
-use crate::prelude::{ActorState, ActorRef};
+use crate::prelude::{ActorState, ActorRef, Mailbox};
 use crossbeam_utils::atomic::AtomicCell;
 use std::rc::Rc;
 
@@ -188,8 +188,6 @@ impl ActorSystem {
                             {
                                 let mut actor_ref = ar.write().unwrap();
                                 address = Some(actor_ref.get_address());
-                                let xyz = actor_ref.get_mailbix_size();
-
                             }
                             system.sleeping_actors.insert(address.unwrap(), ar);
                         }
@@ -220,9 +218,23 @@ impl ActorSystem {
         };
 
         let tuple = self.thread_pools.get(&actor_config.pool_name).unwrap();
-        let actor_ref = ActorHandler::new(actor, actor_config, sender, receiver, self.name.clone());
-        self.sleeping_actors.insert(actor_ref.get_address(), Arc::new(RwLock::new(actor_ref.clone())));
-        ActorRef::new(actor_ref, self.clone())
+        let mailbox = Mailbox {
+            is_stopped: Arc::new(AtomicBool::new(false)),
+            is_sleeping: Arc::new(AtomicBool::new(true)),
+            msg_in: sender,
+        };
+        let actor_address = ActorAddress{
+            actor: actor_config.actor_name.clone(),
+            system: self.name.clone(),
+            pool: actor_config.pool_name.clone(),
+            remote: String::from("local"),
+        };
+        let actor_ref = ActorRef::new(mailbox.clone(), actor_address, self.clone());
+        let actor_handler = ActorHandler::new(actor, actor_config, mailbox, receiver, self.clone(),self.name.clone(), actor_ref.clone());
+
+        self.sleeping_actors.insert(actor_handler.get_address(), Arc::new(RwLock::new(actor_handler)));
+
+        actor_ref
 
     }
 

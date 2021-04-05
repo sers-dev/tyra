@@ -11,6 +11,8 @@ use crossbeam_utils::atomic::AtomicCell;
 use std::sync::atomic::{AtomicBool, Ordering};
 use crate::system::ActorSystem;
 use std::time::{Duration, Instant};
+use crate::context::Context;
+use crate::prelude::TyractorsaurConfig;
 
 pub trait ActorRefTrait: Send + Sync {
     fn handle(&mut self) -> ActorState;
@@ -18,7 +20,6 @@ pub trait ActorRefTrait: Send + Sync {
     fn get_address(&self) -> ActorAddress;
     fn is_sleeping(&self) -> bool;
     fn is_stopped(&self) -> bool;
-    fn get_mailbix_size(&self) -> usize;
     fn wakeup(&mut self);
 }
 
@@ -30,20 +31,56 @@ pub enum ActorState {
 }
 
 #[derive(Clone)]
+pub struct Mailbox<A> {
+    pub is_stopped: Arc<AtomicBool>,
+    pub is_sleeping: Arc<AtomicBool>,
+    pub msg_in: Sender<MessageEnvelope<A>>,
+}
+
+impl<A> Mailbox<A>
+    where
+        A: ActorTrait + Clone,
+{
+    pub fn send<M>(& self, msg: M)
+        where
+            A: Handler<M>,
+            M: MessageTrait + Clone + 'static,
+    {
+        self.msg_in.send(MessageEnvelope::new(msg)).unwrap();
+    }
+
+    fn is_sleeping(&self) -> bool {
+        self.is_sleeping.load(Ordering::Relaxed)
+    }
+
+    fn is_stopped(&self) -> bool {
+        self.is_stopped.load(Ordering::Relaxed)
+    }
+
+    fn wakeup(&mut self) {
+        self.is_sleeping.store(false, Ordering::Relaxed);
+    }
+
+}
+
+/////////////
+
+
+
 pub struct ActorHandler<A>
 where
-    A: ActorTrait,
+    A: ActorTrait + 'static,
 {
     actor: A,
     actor_backup: A,
     actor_config: ActorConfig,
-    mailbox_in: Sender<MessageEnvelope<A>>,
-    mailbox_out: Receiver<MessageEnvelope<A>>,
+    mailbox: Mailbox<A>,
+    queue: Receiver<MessageEnvelope<A>>,
     actor_address: ActorAddress,
-    is_stopped: Arc<AtomicBool>,
-    is_sleeping: Arc<AtomicBool>,
     is_startup: bool,
     last_wakeup: Instant,
+    system: ActorSystem,
+    context: Context<A>,
 }
 
 unsafe impl<A> Send for ActorHandler<A>
@@ -65,7 +102,7 @@ where
             self.is_startup = false;
             self.actor.pre_start();
         }
-        let mut m = self.mailbox_out.try_recv();
+        let mut m = self.queue.try_recv();
 
         if m.is_err() {
             if self.is_stopped() {
@@ -74,20 +111,20 @@ where
             }
             let duration = self.last_wakeup.elapsed();
             if duration >= Duration::from_secs(1) {
-                self.is_sleeping.store(true, Ordering::Relaxed);
+                self.mailbox.is_sleeping.store(true, Ordering::Relaxed);
                 return ActorState::Sleeping;
             }
             return ActorState::Running;
         }
 
         let mut msg = m.unwrap();
-        let result = catch_unwind(AssertUnwindSafe(|| msg.handle(&mut self.actor)));
+        let result = catch_unwind(AssertUnwindSafe(|| msg.handle(&mut self.actor, &self.context)));
         if result.is_err() {
             println!("ACTOR PANIC");
             self.actor.post_stop();
 
             if self.actor_config.restart_policy == RestartPolicy::Never || self.is_stopped() {
-                self.is_stopped.store(true, Ordering::Relaxed);
+                self.mailbox.is_stopped.store(true, Ordering::Relaxed);
                 return ActorState::Stopped
             }
             self.actor = self.actor_backup.clone();
@@ -96,7 +133,7 @@ where
         }
         let message_type = result.unwrap();
         if message_type == MessageType::StopMessage {
-            self.is_stopped.store(true, Ordering::Relaxed);
+            self.mailbox.is_stopped.store(true, Ordering::Relaxed);
             return ActorState::Running
         }
 
@@ -112,19 +149,15 @@ where
     }
 
     fn is_sleeping(&self) -> bool {
-        self.is_sleeping.load(Ordering::Relaxed)
+        self.mailbox.is_sleeping.load(Ordering::Relaxed)
     }
 
     fn is_stopped(&self) -> bool {
-        self.is_stopped.load(Ordering::Relaxed)
-    }
-
-    fn get_mailbix_size(&self) -> usize {
-        self.mailbox_out.len()
+        self.mailbox.is_stopped.load(Ordering::Relaxed)
     }
 
     fn wakeup(&mut self) {
-        self.is_sleeping.store(false, Ordering::Relaxed);
+        self.mailbox.is_sleeping.store(false, Ordering::Relaxed);
         self.last_wakeup = Instant::now();
     }
 }
@@ -136,9 +169,11 @@ where
     pub fn new(
         actor: A,
         actor_config: ActorConfig,
-        sender: Sender<MessageEnvelope<A>>,
+        mailbox: Mailbox<A>,
         receiver: Receiver<MessageEnvelope<A>>,
-        system_name: String
+        system: ActorSystem,
+        system_name: String,
+        actor_ref: ActorRef<A>,
     ) -> Self {
         let actor_backup = actor.clone();
         let actor_address = ActorAddress{
@@ -148,17 +183,22 @@ where
             remote: String::from("local"),
         };
 
+        let context = Context {
+            actor_ref,
+            system: system.clone(),
+        };
+
         Self {
             actor,
             actor_backup,
             actor_config,
-            mailbox_in: sender,
-            mailbox_out: receiver,
+            mailbox,
+            queue: receiver,
             actor_address,
-            is_stopped: Arc::new(AtomicBool::new(false)),
-            is_sleeping: Arc::new(AtomicBool::new(true)),
             is_startup: true,
             last_wakeup: Instant::now(),
+            system,
+            context
         }
     }
     pub fn send<M>(& self, msg: M)
@@ -166,7 +206,7 @@ where
         A: Handler<M>,
         M: MessageTrait + Clone + 'static,
     {
-            self.mailbox_in.send(MessageEnvelope::new(msg)).unwrap();
+            self.mailbox.msg_in.send(MessageEnvelope::new(msg)).unwrap();
     }
 
 }
@@ -181,7 +221,8 @@ pub struct ActorRef<A>
     where
         A: ActorTrait + 'static,
 {
-    actor_ref: ActorHandler<A>,
+    mailbox: Mailbox<A>,
+    address: ActorAddress,
     system: ActorSystem,
 }
 
@@ -191,12 +232,14 @@ impl<A> ActorRef<A>
         A: ActorTrait + Clone + UnwindSafe + ,
 {
     pub fn new(
-        actor_ref: ActorHandler<A>,
-        system: ActorSystem
+        mailbox: Mailbox<A>,
+        address: ActorAddress,
+        system: ActorSystem,
     ) -> Self {
         Self {
-            actor_ref,
-            system
+            mailbox,
+            address,
+            system,
         }
     }
 
@@ -206,29 +249,18 @@ impl<A> ActorRef<A>
         M: MessageTrait + Clone + 'static,
     {
 
-        if self.actor_ref.is_stopped() {
+        if self.mailbox.is_stopped() {
             return;
         }
 
-        self.actor_ref.send(msg);
+        self.mailbox.send(msg);
 
-        if self.actor_ref.is_sleeping() {
-            self.system.wakeup(self.actor_ref.get_address());
+        if self.mailbox.is_sleeping() {
+            self.system.wakeup(self.address.clone());
         }
-    }
-    pub fn get_config(&self) -> ActorConfig {
-        self.actor_ref.get_config().clone()
     }
 
     pub fn stop(&self) {
-        if self.actor_ref.is_stopped() {
-            return;
-        }
-
-        self.actor_ref.send(StopMessage{});
-
-        if self.actor_ref.is_sleeping() {
-            self.system.wakeup(self.actor_ref.get_address());
-        }
+        self.send(StopMessage {});
     }
 }

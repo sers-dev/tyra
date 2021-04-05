@@ -11,10 +11,10 @@ pub trait ActorTrait: Send + Sync {
 
 pub trait Handler<M: ?Sized>
 where
-    Self: ActorTrait,
+    Self: ActorTrait + Sized,
     M: MessageTrait,
 {
-    fn handle(&mut self, msg: M);
+    fn handle(&mut self, msg: M, context: &Context<Self>);
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
@@ -27,8 +27,8 @@ pub struct ActorAddress {
 
 impl<A> Handler<StopMessage> for A
 where
-    A: ActorTrait
+    A: ActorTrait + Sized
 {
-    fn handle(&mut self, msg: StopMessage) {}
+    fn handle(&mut self, msg: StopMessage, context: &Context<A>) {}
 }
 

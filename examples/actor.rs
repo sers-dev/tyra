@@ -4,9 +4,7 @@ use std::any::{Any, TypeId};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{
-    ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig,
-};
+use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, Context};
 
 #[derive(Clone)]
 struct MessageA {
@@ -38,7 +36,7 @@ struct HelloWorld {
 impl ActorTrait for HelloWorld {}
 
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&mut self, msg: MessageA) {
+    fn handle(&mut self, msg: MessageA, context: &Context<Self>) {
         let text: String = [self.text.clone(), String::from(msg.text)].join(" -> ");
         self.count += 1;
         println!("AAAA: {} Count: {}", "text", self.count)
@@ -46,7 +44,7 @@ impl Handler<MessageA> for HelloWorld {
 }
 
 impl Handler<MessageB> for HelloWorld {
-    fn handle(&mut self, msg: MessageB) {
+    fn handle(&mut self, msg: MessageB, context: &Context<Self>) {
         let text: String = [self.text.clone(), String::from(msg.text)].join(" -> ");
         self.count -= 1;
         println!("BBBB: {} Count: {}", "text", self.count)

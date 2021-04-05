@@ -4,9 +4,7 @@ use std::any::{Any, TypeId};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{
-    ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig,
-};
+use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, Context};
 
 #[derive(Clone)]
 struct SleepMsg {
@@ -24,7 +22,7 @@ struct SleepActor {
 impl ActorTrait for SleepActor {}
 
 impl Handler<SleepMsg> for SleepActor {
-    fn handle(&mut self, msg: SleepMsg) {
+    fn handle(&mut self, msg: SleepMsg, context: &Context<Self>) {
         let text: String = [self.text.clone(), String::from(msg.text.clone())].join(" -> ");
         self.counter += 1;
         //if self.counter == 1 {

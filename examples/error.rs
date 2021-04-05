@@ -4,9 +4,7 @@ use std::any::{Any, TypeId};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{
-    ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig,
-};
+use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, Context};
 
 #[derive(Clone)]
 struct ErrMsg {
@@ -24,7 +22,7 @@ struct ErrActor {
 impl ActorTrait for ErrActor {}
 
 impl Handler<ErrMsg> for ErrActor {
-    fn handle(&mut self, msg: ErrMsg) {
+    fn handle(&mut self, msg: ErrMsg, context: &Context<Self>) {
         let text: String = [self.text.clone(), String::from(msg.text.clone())].join(" -> ");
         self.counter += 1;
         if msg.text == "sers+1" {

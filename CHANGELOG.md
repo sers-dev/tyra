@@ -1,9 +1,14 @@
-# WIP 0.0.5
+# WIP 0.0.6
+
+# 0.0.5
 
 - Actors can now be stopped by calling stop on an ActorRef
   - this sends a "StopMessage" to the Actor
   - all messages queued until the stop message is handled in the actor will still be executed
 - fix ActorAddress generation used for Wakeup Calls  
+- inject context into message handling
+  - this allows the actor to interact with itself
+  - this allows the actor to interact with the actor system
 
 # 0.0.4
 
