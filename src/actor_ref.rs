@@ -1,18 +1,20 @@
-use crate::actor::{ActorTrait, Handler, ActorAddress};
+use crate::actor::{ActorAddress, ActorTrait, Handler};
 use crate::actor_config::{ActorConfig, RestartPolicy};
-use crate::message::{MessageEnvelope, MessageEnvelopeTrait, MessageTrait, StopMessage, MessageType};
+use crate::context::Context;
+use crate::message::{
+    MessageEnvelope, MessageEnvelopeTrait, MessageTrait, MessageType, StopMessage,
+};
+use crate::prelude::TyractorsaurConfig;
+use crate::system::ActorSystem;
 use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
+use crossbeam_utils::atomic::AtomicCell;
 use std::any::Any;
 use std::borrow::BorrowMut;
-use std::ops::{DerefMut, Deref, AddAssign};
-use std::sync::{Arc, RwLock};
-use std::panic::{UnwindSafe, AssertUnwindSafe, catch_unwind};
-use crossbeam_utils::atomic::AtomicCell;
+use std::ops::{AddAssign, Deref, DerefMut};
+use std::panic::{catch_unwind, AssertUnwindSafe, UnwindSafe};
 use std::sync::atomic::{AtomicBool, Ordering};
-use crate::system::ActorSystem;
+use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
-use crate::context::Context;
-use crate::prelude::TyractorsaurConfig;
 
 pub trait ActorRefTrait: Send + Sync {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState;
@@ -38,13 +40,13 @@ pub struct Mailbox<A> {
 }
 
 impl<A> Mailbox<A>
-    where
-        A: ActorTrait + Clone,
+where
+    A: ActorTrait + Clone,
 {
-    pub fn send<M>(& self, msg: M)
-        where
-            A: Handler<M>,
-            M: MessageTrait + Clone + 'static,
+    pub fn send<M>(&self, msg: M)
+    where
+        A: Handler<M>,
+        M: MessageTrait + Clone + 'static,
     {
         self.msg_in.send(MessageEnvelope::new(msg)).unwrap();
     }
@@ -56,12 +58,9 @@ impl<A> Mailbox<A>
     fn is_stopped(&self) -> bool {
         self.is_stopped.load(Ordering::Relaxed)
     }
-
 }
 
 /////////////
-
-
 
 pub struct ActorHandler<A>
 where
@@ -80,24 +79,17 @@ where
     context: Context<A>,
 }
 
-unsafe impl<A> Send for ActorHandler<A>
-where
-    A: ActorTrait + Clone + UnwindSafe + 'static
-{}
-unsafe impl<A> Sync for ActorHandler<A>
-where
-    A: ActorTrait + Clone + UnwindSafe + 'static
-{}
+unsafe impl<A> Send for ActorHandler<A> where A: ActorTrait + Clone + UnwindSafe + 'static {}
+unsafe impl<A> Sync for ActorHandler<A> where A: ActorTrait + Clone + UnwindSafe + 'static {}
 
 impl<A> ActorRefTrait for ActorHandler<A>
 where
     A: ActorTrait + Clone + UnwindSafe + 'static,
 {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {
-
         if system_is_stopping && !self.system_triggered_stop {
             self.system_triggered_stop = true;
-            self.send(StopMessage{});
+            self.send(StopMessage {});
         }
         if self.is_startup {
             self.is_startup = false;
@@ -108,7 +100,7 @@ where
         if m.is_err() {
             if self.is_stopped() {
                 self.actor.post_stop(&self.context);
-                return ActorState::Stopped
+                return ActorState::Stopped;
             }
             let duration = self.last_wakeup.elapsed();
             if duration >= Duration::from_secs(1) {
@@ -119,23 +111,25 @@ where
         }
 
         let mut msg = m.unwrap();
-        let result = catch_unwind(AssertUnwindSafe(|| msg.handle(&mut self.actor, &self.context)));
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            msg.handle(&mut self.actor, &self.context)
+        }));
         if result.is_err() {
             println!("ACTOR PANIC");
             self.actor.post_stop(&self.context);
 
             if self.actor_config.restart_policy == RestartPolicy::Never || self.is_stopped() {
                 self.mailbox.is_stopped.store(true, Ordering::Relaxed);
-                return ActorState::Stopped
+                return ActorState::Stopped;
             }
             self.actor = self.actor_backup.clone();
             self.is_startup = true;
-            return ActorState::Running
+            return ActorState::Running;
         }
         let message_type = result.unwrap();
         if message_type == MessageType::StopMessage {
             self.mailbox.is_stopped.store(true, Ordering::Relaxed);
-            return ActorState::Running
+            return ActorState::Running;
         }
 
         ActorState::Running
@@ -177,7 +171,7 @@ where
         actor_ref: ActorRef<A>,
     ) -> Self {
         let actor_backup = actor.clone();
-        let actor_address = ActorAddress{
+        let actor_address = ActorAddress {
             actor: actor_config.actor_name.clone(),
             system: system_name,
             pool: actor_config.pool_name.clone(),
@@ -200,19 +194,17 @@ where
             system_triggered_stop: false,
             last_wakeup: Instant::now(),
             system,
-            context
+            context,
         }
     }
-    pub fn send<M>(& self, msg: M)
+    pub fn send<M>(&self, msg: M)
     where
         A: Handler<M>,
         M: MessageTrait + Clone + 'static,
     {
-            self.mailbox.msg_in.send(MessageEnvelope::new(msg)).unwrap();
+        self.mailbox.msg_in.send(MessageEnvelope::new(msg)).unwrap();
     }
-
 }
-
 
 pub trait ActorRefOuterTrait: Send + Sync {
     fn get_config(&self) -> ActorConfig;
@@ -220,24 +212,19 @@ pub trait ActorRefOuterTrait: Send + Sync {
 
 #[derive(Clone)]
 pub struct ActorRef<A>
-    where
-        A: ActorTrait + 'static,
+where
+    A: ActorTrait + 'static,
 {
     mailbox: Mailbox<A>,
     address: ActorAddress,
     system: ActorSystem,
 }
 
-
 impl<A> ActorRef<A>
-    where
-        A: ActorTrait + Clone + UnwindSafe + ,
+where
+    A: ActorTrait + Clone + UnwindSafe,
 {
-    pub fn new(
-        mailbox: Mailbox<A>,
-        address: ActorAddress,
-        system: ActorSystem,
-    ) -> Self {
+    pub fn new(mailbox: Mailbox<A>, address: ActorAddress, system: ActorSystem) -> Self {
         Self {
             mailbox,
             address,
@@ -245,12 +232,11 @@ impl<A> ActorRef<A>
         }
     }
 
-    pub fn send<M>(& self, msg: M)
+    pub fn send<M>(&self, msg: M)
     where
         A: Handler<M>,
         M: MessageTrait + Clone + 'static,
     {
-
         if self.mailbox.is_stopped() {
             return;
         }

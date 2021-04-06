@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::actor_config::RestartPolicy;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GlobalConfig {

@@ -1,11 +1,13 @@
 #![allow(unused)]
 
 use std::any::{Any, TypeId};
+use std::process::exit;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, Context};
-use std::process::exit;
+use tyractorsaur::prelude::{
+    ActorRefTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig,
+};
 
 #[derive(Clone)]
 struct MessageA {

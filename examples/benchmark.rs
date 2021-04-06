@@ -2,11 +2,13 @@
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
+use std::process::exit;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyractorsaur::prelude::{ActorHandler, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, Context};
-use std::process::exit;
+use tyractorsaur::prelude::{
+    ActorHandler, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig,
+};
 
 #[derive(Clone)]
 struct MessageA {
@@ -76,5 +78,4 @@ fn main() {
     println!("It took {:?} to send {} messages", duration, message_count);
 
     exit(actor_system.await_shutdown());
-
 }

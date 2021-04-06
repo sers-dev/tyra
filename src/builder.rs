@@ -3,10 +3,10 @@ use crate::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor_ref::ActorHandler;
 use crate::config::prelude::DEFAULT_POOL;
 use crate::message::MessageTrait;
-use crate::system::ActorSystem;
-use std::sync::{Arc, RwLock};
-use std::panic::UnwindSafe;
 use crate::prelude::ActorRef;
+use crate::system::ActorSystem;
+use std::panic::UnwindSafe;
+use std::sync::{Arc, RwLock};
 
 #[derive(Clone)]
 pub struct ActorBuilder {
@@ -23,7 +23,7 @@ impl ActorBuilder {
             pool_name: String::from(DEFAULT_POOL),
             mailbox_size: config.global.default_mailbox_size,
             message_throughput: config.global.default_message_throughput,
-            restart_policy: config.global.default_restart_policy
+            restart_policy: config.global.default_restart_policy,
         };
 
         ActorBuilder {

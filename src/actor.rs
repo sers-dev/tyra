@@ -27,8 +27,7 @@ pub struct ActorAddress {
 
 impl<A> Handler<StopMessage> for A
 where
-    A: ActorTrait + Sized
+    A: ActorTrait + Sized,
 {
     fn handle(&mut self, msg: StopMessage, context: &Context<A>) {}
 }
-

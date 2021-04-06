@@ -1,11 +1,13 @@
 #![allow(unused)]
 
 use std::any::{Any, TypeId};
+use std::process::exit;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, Context};
-use std::process::exit;
+use tyractorsaur::prelude::{
+    ActorRefTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig,
+};
 
 #[derive(Clone)]
 struct SleepMsg {
@@ -27,10 +29,10 @@ impl Handler<SleepMsg> for SleepActor {
         let text: String = [self.text.clone(), String::from(msg.text.clone())].join(" -> ");
         self.counter += 1;
         //if self.counter == 1 {
-            sleep(Duration::from_secs(3));
+        sleep(Duration::from_secs(3));
         //}
         //if self.counter % 1000000 == 0 {
-            println!("Received SERS: {}", self.counter);
+        println!("Received SERS: {}", self.counter);
         //}
     }
 }

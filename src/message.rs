@@ -1,14 +1,14 @@
 use crate::actor::{ActorTrait, Handler};
 use crate::actor_ref::ActorHandler;
-use serde::Serialize;
-use std::any::{TypeId, Any};
 use crate::context::Context;
+use serde::Serialize;
+use std::any::{Any, TypeId};
 
 pub trait MessageTrait: Send + Sync {}
 
 pub trait MessageEnvelopeTrait<A>: Send + Sync
 where
-    A: ActorTrait
+    A: ActorTrait,
 {
     fn handle(&mut self, actor: &mut A, context: &Context<A>) -> MessageType;
 }
@@ -27,7 +27,7 @@ impl<A> MessageEnvelope<A> {
 
 impl<A> MessageEnvelopeTrait<A> for MessageEnvelope<A>
 where
-    A: ActorTrait
+    A: ActorTrait,
 {
     fn handle(&mut self, act: &mut A, context: &Context<A>) -> MessageType {
         self.0.handle(act, context)
@@ -51,7 +51,7 @@ where
             let msg_type_id = msg.type_id();
             act.handle(msg, context);
             if msg_type_id == TypeId::of::<StopMessage>() {
-                return MessageType::StopMessage
+                return MessageType::StopMessage;
             }
         }
         MessageType::Unknown
@@ -66,5 +66,5 @@ impl MessageTrait for StopMessage {}
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum MessageType {
     Unknown,
-    StopMessage
+    StopMessage,
 }
