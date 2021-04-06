@@ -15,7 +15,7 @@ use crate::context::Context;
 use crate::prelude::TyractorsaurConfig;
 
 pub trait ActorRefTrait: Send + Sync {
-    fn handle(&mut self) -> ActorState;
+    fn handle(&mut self, system_is_stopping: bool) -> ActorState;
     fn get_config(&self) -> &ActorConfig;
     fn get_address(&self) -> ActorAddress;
     fn is_sleeping(&self) -> bool;
@@ -57,10 +57,6 @@ impl<A> Mailbox<A>
         self.is_stopped.load(Ordering::Relaxed)
     }
 
-    fn wakeup(&mut self) {
-        self.is_sleeping.store(false, Ordering::Relaxed);
-    }
-
 }
 
 /////////////
@@ -78,6 +74,7 @@ where
     queue: Receiver<MessageEnvelope<A>>,
     actor_address: ActorAddress,
     is_startup: bool,
+    system_triggered_stop: bool,
     last_wakeup: Instant,
     system: ActorSystem,
     context: Context<A>,
@@ -96,17 +93,21 @@ impl<A> ActorRefTrait for ActorHandler<A>
 where
     A: ActorTrait + Clone + UnwindSafe + 'static,
 {
-    fn handle(&mut self) -> ActorState {
+    fn handle(&mut self, system_is_stopping: bool) -> ActorState {
 
+        if system_is_stopping && !self.system_triggered_stop {
+            self.system_triggered_stop = true;
+            self.send(StopMessage{});
+        }
         if self.is_startup {
             self.is_startup = false;
-            self.actor.pre_start();
+            self.actor.pre_start(&self.context);
         }
         let mut m = self.queue.try_recv();
 
         if m.is_err() {
             if self.is_stopped() {
-                self.actor.post_stop();
+                self.actor.post_stop(&self.context);
                 return ActorState::Stopped
             }
             let duration = self.last_wakeup.elapsed();
@@ -121,7 +122,7 @@ where
         let result = catch_unwind(AssertUnwindSafe(|| msg.handle(&mut self.actor, &self.context)));
         if result.is_err() {
             println!("ACTOR PANIC");
-            self.actor.post_stop();
+            self.actor.post_stop(&self.context);
 
             if self.actor_config.restart_policy == RestartPolicy::Never || self.is_stopped() {
                 self.mailbox.is_stopped.store(true, Ordering::Relaxed);
@@ -196,6 +197,7 @@ where
             queue: receiver,
             actor_address,
             is_startup: true,
+            system_triggered_stop: false,
             last_wakeup: Instant::now(),
             system,
             context

@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tyractorsaur::prelude::{ActorHandler, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, Context};
+use std::process::exit;
 
 #[derive(Clone)]
 struct MessageA {
@@ -44,6 +45,9 @@ impl Handler<MessageA> for Benchmark {
                 self.name, duration, self.total_msgs
             );
         }
+        if self.count == self.total_msgs {
+            context.system.stop(Duration::from_secs(60));
+        }
     }
 }
 
@@ -71,5 +75,6 @@ fn main() {
     let duration = start.elapsed();
     println!("It took {:?} to send {} messages", duration, message_count);
 
-    actor_system.await_shutdown()
+    exit(actor_system.await_shutdown());
+
 }

@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering, AtomicUsize};
 use std::sync::{Arc, RwLock};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -29,8 +29,11 @@ pub struct WakeupMessage {
 
 #[derive(Clone)]
 pub struct ActorSystem {
+    total_actor_count: Arc<AtomicUsize>,
     name: String,
-    is_running: Arc<AtomicBool>,
+    is_forced_stop: Arc<AtomicBool>,
+    is_stopping: Arc<AtomicBool>,
+    is_stopped: Arc<AtomicBool>,
     config: Arc<TyractorsaurConfig>,
     thread_pools: Arc<
         DashMap<
@@ -54,8 +57,11 @@ impl ActorSystem {
         let sleeping_actors = Arc::new(DashMap::new());
         let thread_pool_config = config.thread_pool.clone();
         let system = ActorSystem {
+            total_actor_count: Arc::new(AtomicUsize::new(0)),
             name: config.global.name.clone(),
-            is_running: Arc::new(AtomicBool::new(true)),
+            is_forced_stop: Arc::new(AtomicBool::new(false)),
+            is_stopping: Arc::new(AtomicBool::new(false)),
+            is_stopped: Arc::new(AtomicBool::new(false)),
             config: Arc::new(config),
             thread_pools,
             wakeup_queue_in,
@@ -97,21 +103,47 @@ impl ActorSystem {
     }
 
     fn start(&self) {
-        let background_pool = ThreadPool::with_name(String::from("background"), 1);
         let s = self.clone();
-        background_pool.execute(move || s.manage_threads());
-        let waker_pool = ThreadPool::with_name(String::from("waker"), 1);
+        std::thread::spawn(move || s.manage_threads());
         let s = self.clone();
-        waker_pool.execute(move || s.wake());
+        std::thread::spawn(move || s.wake());
         self.start_system_actors();
         println!("???");
     }
 
     fn wake(&self) {
-        let mut wake_deduplication: HashMap<ActorAddress, Instant> = HashMap::new();
 
+        let mut wake_deduplication: HashMap<ActorAddress, Instant> = HashMap::new();
+        let recv_timeout = Duration::from_secs(1);
         loop {
-            let wakeup_message= self.wakeup_queue_out.recv().unwrap();
+            if self.is_stopped.load(Ordering::Relaxed) {
+                return;
+            }
+            if self.is_stopping.load(Ordering::Relaxed) {
+                let mut keys :Vec<ActorAddress> = Vec::new();
+                for key in self.sleeping_actors.iter() {
+                    keys.push(key.key().clone());
+                }
+                for key in keys {
+                    let sleeping_actor = self.sleeping_actors.remove(&key).unwrap();
+                    let pool_name = sleeping_actor.0.pool;
+                    let actor_ref = sleeping_actor.1;
+                    {
+                        let mut actor_ref = actor_ref.write().unwrap();
+                        actor_ref.wakeup();
+                    }
+                    let pool = self.thread_pools.get(&pool_name).unwrap();
+                    let (_, sender, _) = pool.value();
+                    sender.send(actor_ref).unwrap();
+                }
+                continue
+            }
+            let msg = self.wakeup_queue_out.recv_timeout(recv_timeout);
+            if msg.is_err() {
+                continue;
+            }
+            let wakeup_message= msg.unwrap();
+
             if wake_deduplication.contains_key(&wakeup_message.actor_address) && wakeup_message.iteration == 0 {
                 // actors have a minimum uptime of 1 second
                 // this ensures a guaranteed de-duplication of all wakeup calls to a single actor
@@ -149,7 +181,15 @@ impl ActorSystem {
         let mut pools: HashMap<String, ThreadPool> = HashMap::new();
 
         loop {
+            let is_stopped = self.is_stopped.load(Ordering::Relaxed);
+            if is_stopped {
+                for pool in pools.iter() {
+                    pool.1.join()
+                }
+                return
+            }
             for pool in self.thread_pools.iter() {
+
                 let pool_name = pool.key().clone();
                 let (pool_config, pool_sender, pool_receiver) = pool.value().clone();
                 if !pools.contains_key(&pool_name) {
@@ -165,14 +205,23 @@ impl ActorSystem {
                     let system = self.clone();
                     let pool_name = pool_name.clone();
                     let pool_config = pool_config.clone();
+                    let recv_timeout = Duration::from_secs(1);
                     pools.get(&pool_name).unwrap().execute(move || loop {
+                        let system_is_stopping = system.is_stopping.load(Ordering::Relaxed);
                         let mut actor_state = ActorState::Running;
-                        let mut ar = receiver.recv().unwrap();
+                        let msg = receiver.recv_timeout(recv_timeout);
+                        if msg.is_err() {
+                            if system.is_stopped.load(Ordering::Relaxed) {
+                                return;
+                            }
+                            continue;
+                        }
+                        let mut ar = msg.unwrap();
                         {
                             let mut actor_ref = ar.write().unwrap();
                             let actor_config = actor_ref.get_config();
                             for j in 0..actor_config.message_throughput {
-                                actor_state = actor_ref.handle();
+                                actor_state = actor_ref.handle(system_is_stopping);
                                 if actor_state != ActorState::Running {
                                     break;
                                 }
@@ -193,7 +242,9 @@ impl ActorSystem {
                         }
                         else {
                             println!("Actor has been stopped");
+                            system.total_actor_count.fetch_sub(1, Ordering::Relaxed);
                         }
+
                     });
                 }
             }
@@ -234,17 +285,37 @@ impl ActorSystem {
 
         self.sleeping_actors.insert(actor_handler.get_address(), Arc::new(RwLock::new(actor_handler)));
 
+        self.total_actor_count.fetch_add(1, Ordering::Relaxed);
         actor_ref
 
     }
 
-    pub fn stop(&self) {}
+    pub fn stop(&self, graceful_termination_timeout: Duration) {
+        if self.is_stopping.load(Ordering::Relaxed) {
+            return;
+        }
+        self.is_stopping.store(true, Ordering::Relaxed);
+        let s = self.clone();
+        std::thread::spawn(move || s.shutdown(graceful_termination_timeout));
+    }
 
-    pub fn await_shutdown(&self) {
-        while self.is_running.load(Ordering::Relaxed) {
+    fn shutdown(&self, timeout: Duration) {
+        let now = Instant::now();
+        while self.total_actor_count.load(Ordering::Relaxed) != 0 {
+            if now.elapsed() >= timeout {
+                self.is_forced_stop.store(true, Ordering::Relaxed);
+                break;
+            }
             sleep(Duration::from_secs(1));
         }
-        self.stop();
+        self.is_stopped.store(true, Ordering::Relaxed)
+    }
+
+    pub fn await_shutdown(&self) -> i32 {
+        while !self.is_stopped.load(Ordering::Relaxed) {
+            sleep(Duration::from_secs(1));
+        }
+        self.is_forced_stop.load(Ordering::Relaxed) as i32
     }
 
     pub fn get_config(&self) -> &TyractorsaurConfig {

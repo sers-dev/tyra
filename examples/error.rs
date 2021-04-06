@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, Context};
+use std::process::exit;
 
 #[derive(Clone)]
 struct ErrMsg {
@@ -69,5 +70,6 @@ fn main() {
         text: String::from("sers+2"),
     });
 
-    actor_system.await_shutdown()
+    actor_system.stop(Duration::from_secs(5));
+    exit(actor_system.await_shutdown())
 }

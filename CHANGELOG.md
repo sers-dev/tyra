@@ -1,5 +1,10 @@
 # WIP 0.0.6
 
+- add ability to stop actor system
+  - clean stop, sends StopMessage to ALL actors
+  - if actors did not exit until timeout is reached, will force stop everything
+  - this comes with a slight performance decrease, as we have to read the necessary AtomicBool in the core iteration, to know when to stop
+
 # 0.0.5
 
 - Actors can now be stopped by calling stop on an ActorRef

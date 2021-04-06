@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, Context};
+use std::process::exit;
 
 #[derive(Clone)]
 struct MessageA {
@@ -88,5 +89,6 @@ fn main() {
 
     //x.send(MessageUnsupported{text: String::from("sers")});
 
-    actor_system.await_shutdown()
+    actor_system.stop(Duration::from_secs(1));
+    exit(actor_system.await_shutdown());
 }

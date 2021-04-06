@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 use std::any::Any;
 use std::sync::{Arc, RwLock};
 
-pub trait ActorTrait: Send + Sync {
-    fn pre_start(&mut self) {}
-    fn post_stop(&mut self) {}
+pub trait ActorTrait: Send + Sync + Sized {
+    fn pre_start(&mut self, context: &Context<Self>) {}
+    fn post_stop(&mut self, context: &Context<Self>) {}
 }
 
 pub trait Handler<M: ?Sized>

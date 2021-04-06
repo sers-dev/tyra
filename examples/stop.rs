@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Handler, MessageTrait, TyractorsaurConfig, StopMessage, Context};
+use std::process::exit;
 
 #[derive(Clone)]
 struct TestMsg {}
@@ -16,10 +17,11 @@ struct StopActor {
 }
 
 impl ActorTrait for StopActor {
-    fn pre_start(&mut self) {
+    fn pre_start(&mut self, context: &Context<Self>) {
         println!("PRE START")
     }
-    fn  post_stop(&mut self) {
+    fn  post_stop(&mut self, context: &Context<Self>) {
+        context.system.stop(Duration::from_secs(1));
         println!("POST STOP");
     }
 }
@@ -29,7 +31,6 @@ impl Handler<TestMsg> for StopActor {
         context.actor_ref.send(TestMsg{});
         println!("Message received!");
         sleep(Duration::from_millis(100));
-        context.actor_ref.stop();
     }
 }
 
@@ -44,12 +45,17 @@ fn main() {
         .build(hw);
     // this is obviously handled, because it's the actor is still running
     x.send(TestMsg{});
-    //x.stop();
+    sleep(Duration::from_millis(700));
+
+    x.stop();
     // this is still handled, because the actor has not handled the stop Message yet
     x.send(TestMsg{});
     sleep(Duration::from_millis(200));
     // this is no longer handled, because the actor has stopped by now
     x.send(TestMsg{});
 
-    actor_system.await_shutdown()
+    let result = actor_system.await_shutdown();
+
+    exit(result);
+
 }
