@@ -5,7 +5,9 @@
 ## Current State
 
 It is `NOT` production ready.
-`Tyractorsaur` is in very early development steps. The core functionality of creating actors, sending, receiving messages as well as waiting for the System to stop are already implemented.
+`Tyractorsaur` is in very early development steps. 
+The current development status can be tracked in the [CHANGELOG.md](CHANGELOG.md)
+
 
 
 ## Configuration
