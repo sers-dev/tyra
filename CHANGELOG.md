@@ -1,9 +1,13 @@
 # WIP 0.0.6
 
 - add ability to stop actor system
-  - clean stop, sends StopMessage to ALL actors
+  - clean stop, sends SystemStopMessage to ALL actors
+    - handling of SystemStopMessage can be defined per Actor
+    - default handling sends an ActorStopMessage to simply stop the Actor as soon as possible
   - if actors did not exit until timeout is reached, will force stop everything
   - this comes with a slight performance decrease, as we have to read the necessary AtomicBool in the core iteration, to know when to stop
+- system internal messages will now call functions defined in ActorTrait
+  - we can't implement a handler for these messages that can be overridden, but we can call trait functions for the ActorTrait to give the enduser the ability to configure the behavior
 
 # 0.0.5
 

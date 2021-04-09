@@ -50,8 +50,10 @@ where
         if let Some(msg) = self.msg.take() {
             let msg_type_id = msg.type_id();
             act.handle(msg, context);
-            if msg_type_id == TypeId::of::<StopMessage>() {
-                return MessageType::StopMessage;
+            if msg_type_id == TypeId::of::<ActorStopMessage>() {
+                return MessageType::ActorStopMessage;
+            } else if msg_type_id == TypeId::of::<SystemStopMessage>() {
+                return MessageType::SystemStopMessage;
             }
         }
         MessageType::Unknown
@@ -59,12 +61,18 @@ where
 }
 
 #[derive(Clone)]
-pub struct StopMessage {}
+pub struct ActorStopMessage {}
 
-impl MessageTrait for StopMessage {}
+impl MessageTrait for ActorStopMessage {}
+
+#[derive(Clone)]
+pub struct SystemStopMessage {}
+
+impl MessageTrait for SystemStopMessage {}
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum MessageType {
     Unknown,
-    StopMessage,
+    ActorStopMessage,
+    SystemStopMessage
 }

@@ -1,9 +1,7 @@
 use crate::actor::{ActorAddress, ActorTrait, Handler};
 use crate::actor_config::{ActorConfig, RestartPolicy};
 use crate::context::Context;
-use crate::message::{
-    MessageEnvelope, MessageEnvelopeTrait, MessageTrait, MessageType, StopMessage,
-};
+use crate::message::{MessageEnvelope, MessageEnvelopeTrait, MessageTrait, MessageType, ActorStopMessage, SystemStopMessage};
 use crate::prelude::TyractorsaurConfig;
 use crate::system::ActorSystem;
 use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
@@ -89,7 +87,7 @@ where
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {
         if system_is_stopping && !self.system_triggered_stop {
             self.system_triggered_stop = true;
-            self.send(StopMessage {});
+            self.send(SystemStopMessage {});
         }
         if self.is_startup {
             self.is_startup = false;
@@ -127,7 +125,7 @@ where
             return ActorState::Running;
         }
         let message_type = result.unwrap();
-        if message_type == MessageType::StopMessage {
+        if message_type == MessageType::ActorStopMessage {
             self.mailbox.is_stopped.store(true, Ordering::Relaxed);
             return ActorState::Running;
         }
@@ -249,6 +247,6 @@ where
     }
 
     pub fn stop(&self) {
-        self.send(StopMessage {});
+        self.send(ActorStopMessage {});
     }
 }

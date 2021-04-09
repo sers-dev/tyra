@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 use tyractorsaur::prelude::{
-    ActorRefTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, StopMessage,
+    ActorRefTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait,
     TyractorsaurConfig,
 };
 
