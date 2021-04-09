@@ -8,6 +8,7 @@
   - this comes with a slight performance decrease, as we have to read the necessary AtomicBool in the core iteration, to know when to stop
 - system internal messages will now call functions defined in ActorTrait
   - we can't implement a handler for these messages that can be overridden, but we can call trait functions for the ActorTrait to give the enduser the ability to configure the behavior
+- finally made actor wakeup failsafe and increase time before running actors go back to sleep   
 
 # 0.0.5
 

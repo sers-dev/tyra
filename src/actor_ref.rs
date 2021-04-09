@@ -100,11 +100,12 @@ where
                 self.actor.post_stop(&self.context);
                 return ActorState::Stopped;
             }
+            self.mailbox.is_sleeping.store(true, Ordering::Relaxed);
             let duration = self.last_wakeup.elapsed();
-            if duration >= Duration::from_secs(1) {
-                self.mailbox.is_sleeping.store(true, Ordering::Relaxed);
+            if duration >= Duration::from_secs(5) {
                 return ActorState::Sleeping;
             }
+            self.mailbox.is_sleeping.store(false, Ordering::Relaxed);
             return ActorState::Running;
         }
 

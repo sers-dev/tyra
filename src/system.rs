@@ -152,7 +152,7 @@ impl ActorSystem {
                     .get(&wakeup_message.actor_address)
                     .unwrap();
                 let duration = last_wakeup.elapsed();
-                if duration >= Duration::from_millis(750) {
+                if duration >= Duration::from_secs(4) {
                     wake_deduplication.remove(&wakeup_message.actor_address);
                 } else {
                     continue;
