@@ -219,6 +219,11 @@ where
     system: ActorSystem,
 }
 
+impl<A> UnwindSafe for ActorRef<A>
+where
+    A: ActorTrait + 'static,
+{}
+
 impl<A> ActorRef<A>
 where
     A: ActorTrait + Clone + UnwindSafe,
