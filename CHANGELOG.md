@@ -1,4 +1,6 @@
-# WIP 0.0.6
+# WIP 0.0.7
+
+# 0.0.6
 
 - add ability to stop actor system
   - clean stop, sends SystemStopMessage to ALL actors
