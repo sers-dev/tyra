@@ -5,16 +5,12 @@ use std::process::exit;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{
-    ActorRefTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig,
-};
+use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
 
-#[derive(Clone)]
 struct MessageA {
     text: String,
 }
 
-#[derive(Clone)]
 struct MessageB {
     text: String,
 }
@@ -23,14 +19,12 @@ impl MessageTrait for MessageA {}
 
 impl MessageTrait for MessageB {}
 
-#[derive(Clone)]
 struct MessageUnsupported {
     text: String,
 }
 
 impl MessageTrait for MessageUnsupported {}
 
-#[derive(Clone)]
 struct HelloWorld {
     text: String,
     count: usize,
@@ -38,6 +32,19 @@ struct HelloWorld {
 
 impl ActorTrait for HelloWorld {}
 
+struct HelloWorldProps {
+    text: String,
+    count: usize,
+}
+
+impl ActorProps<HelloWorld> for HelloWorldProps {
+    fn new_actor(&self) -> HelloWorld {
+        HelloWorld {
+            count: self.count,
+            text: self.text.clone()
+        }
+    }
+}
 impl Handler<MessageA> for HelloWorld {
     fn handle(&mut self, msg: MessageA, context: &Context<Self>) {
         let text: String = [self.text.clone(), String::from(msg.text)].join(" -> ");
@@ -61,7 +68,7 @@ fn main() {
     actor_system.add_pool("aye");
     actor_system.add_pool("aye2");
 
-    let hw = HelloWorld {
+    let hw = HelloWorldProps {
         text: String::from("sers"),
         count: 0,
     };

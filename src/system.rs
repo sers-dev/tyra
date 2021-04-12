@@ -1,7 +1,7 @@
 use crate::actor::{ActorAddress, ActorTrait, Handler};
 use crate::actor_config::ActorConfig;
 use crate::actor_ref::{ActorHandler, ActorRefTrait};
-use crate::builder::ActorBuilder;
+use crate::builder::{ActorBuilder, ActorProps};
 use crate::config::prelude::*;
 use crate::context::Context;
 use crate::message::MessageTrait;
@@ -267,9 +267,10 @@ impl ActorSystem {
         ActorBuilder::new(self.clone(), name.into())
     }
 
-    pub fn spawn<A>(&self, actor: A, actor_config: ActorConfig) -> ActorRef<A>
+    pub fn spawn<A, P>(&self, actor_props: P, actor_config: ActorConfig) -> ActorRef<A>
     where
-        A: ActorTrait + Clone + UnwindSafe + 'static,
+        A: ActorTrait + UnwindSafe + 'static,
+        P: ActorProps<A> + 'static,
     {
         let (sender, receiver) = if actor_config.mailbox_size == 0 {
             unbounded()
@@ -278,10 +279,12 @@ impl ActorSystem {
         };
 
         let tuple = self.thread_pools.get(&actor_config.pool_name).unwrap();
+        let is_stopped = Arc::new(AtomicBool::new(false));
+        let is_sleeping = Arc::new(AtomicBool::new(true));
         let mailbox = Mailbox {
-            is_stopped: Arc::new(AtomicBool::new(false)),
-            is_sleeping: Arc::new(AtomicBool::new(true)),
-            msg_in: sender,
+            is_stopped: is_stopped.clone(),
+            is_sleeping: is_sleeping.clone(),
+            msg_in: sender.clone(),
         };
         let actor_address = ActorAddress {
             actor: actor_config.actor_name.clone(),
@@ -289,15 +292,20 @@ impl ActorSystem {
             pool: actor_config.pool_name.clone(),
             remote: String::from("local"),
         };
-        let actor_ref = ActorRef::new(mailbox.clone(), actor_address, self.clone());
+        let actor_ref = ActorRef::new(mailbox, actor_address.clone(), self.clone());
+        let mailbox = Mailbox {
+            is_stopped: is_stopped.clone(),
+            is_sleeping: is_sleeping.clone(),
+            msg_in: sender.clone(),
+        };
         let actor_handler = ActorHandler::new(
-            actor,
+            actor_props,
             actor_config,
             mailbox,
             receiver,
             self.clone(),
             self.name.clone(),
-            actor_ref.clone(),
+            actor_ref,
         );
 
         self.sleeping_actors.insert(
@@ -306,7 +314,12 @@ impl ActorSystem {
         );
 
         self.total_actor_count.fetch_add(1, Ordering::Relaxed);
-        actor_ref
+        let mailbox = Mailbox {
+            is_stopped,
+            is_sleeping,
+            msg_in: sender,
+        };
+        ActorRef::new(mailbox, actor_address, self.clone())
     }
 
     pub fn stop(&self, graceful_termination_timeout: Duration) {

@@ -56,10 +56,19 @@ impl ActorBuilder {
         self
     }
 
-    pub fn build<A>(&self, actor: A) -> ActorRef<A>
+    pub fn build<A, P>(&self, props: P) -> ActorRef<A>
     where
-        A: ActorTrait + Clone + UnwindSafe + 'static,
+        A: ActorTrait + UnwindSafe + 'static,
+        P: ActorProps<A> + 'static,
     {
-        self.system.spawn(actor, self.actor_config.clone())
+        props.new_actor();
+        self.system.spawn(props, self.actor_config.clone())
     }
+}
+
+pub trait ActorProps<A>
+where
+    A: ActorTrait + UnwindSafe + 'static,
+{
+    fn new_actor(&self) -> A;
 }

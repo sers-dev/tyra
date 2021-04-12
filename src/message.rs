@@ -60,12 +60,10 @@ where
     }
 }
 
-#[derive(Clone)]
 pub struct ActorStopMessage {}
 
 impl MessageTrait for ActorStopMessage {}
 
-#[derive(Clone)]
 pub struct SystemStopMessage {}
 
 impl MessageTrait for SystemStopMessage {}

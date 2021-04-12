@@ -6,23 +6,53 @@ use std::process::exit;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyractorsaur::prelude::{
-    ActorHandler, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig,
-};
+use tyractorsaur::prelude::{ActorHandler, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps, ActorRef};
 
-#[derive(Clone)]
 struct MessageA {
     id: usize,
 }
 
 impl MessageTrait for MessageA {}
 
-#[derive(Clone)]
+
+struct MessageB {
+    id: usize,
+    rea: ActorRef<Benchmark>
+}
+
+impl MessageTrait for MessageB {}
+
+
 struct Benchmark {
     total_msgs: usize,
     name: String,
     count: usize,
     start: Instant,
+}
+
+struct BenchmarkProps {
+    total_msgs: usize,
+    name: String,
+}
+
+impl ActorProps<Benchmark> for BenchmarkProps {
+    fn new_actor(&self) -> Benchmark {
+        Benchmark::new(self.total_msgs, self.name.clone())
+    }
+}
+
+impl Benchmark {
+    pub fn new(total_msgs: usize, name: String) -> Self {
+        Self {
+            total_msgs,
+            name,
+            count: 0,
+            start: Instant::now(),
+        }
+    }
+    pub fn fake_new() -> Self {
+        Self::new(10000000, String::from("benchmark"))
+    }
 }
 
 impl ActorTrait for Benchmark {}
@@ -65,7 +95,10 @@ fn main() {
         count: 0,
         start: Instant::now(),
     };
-    let mut actor = actor_system.builder("benchmark-single-actor").build(a);
+    let mut actor = actor_system.builder("benchmark-single-actor").build(BenchmarkProps {
+        name: String::from("benchmark"),
+        total_msgs: message_count as usize,
+    });
     println!("Actors have been created");
     let start = Instant::now();
 

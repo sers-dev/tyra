@@ -16,6 +16,7 @@ pub mod prelude {
     pub use crate::context::*;
     pub use crate::message::*;
     pub use crate::system::ActorSystem;
+    pub use crate::builder::ActorProps;
 }
 
 #[cfg(test)]

@@ -5,7 +5,7 @@ use std::any::Any;
 use std::sync::{Arc, RwLock};
 use std::panic::UnwindSafe;
 
-pub trait ActorTrait: Send + Sync + Sized + Clone + UnwindSafe {
+pub trait ActorTrait: Send + Sync + Sized + UnwindSafe {
     fn pre_start(&mut self, context: &Context<Self>) {}
     fn post_stop(&mut self, context: &Context<Self>) {}
     fn on_actor_stop(&mut self, context: &Context<Self>) {}

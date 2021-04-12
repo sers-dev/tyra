@@ -1,4 +1,9 @@
-# WIP 0.0.7
+# 0.0.7
+
+- Actors are now created through ActorProps
+  - this was necessary to remove the `actor_backup` from the `ActorHandler` and to rework the System to no longer make use of `.clone()` calls on the Actor
+- Remove `Clone` Trait from Actors and Messages
+  - this is only possible because of the introduction of the ActorProps
 
 # 0.0.6
 

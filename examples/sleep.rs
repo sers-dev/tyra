@@ -5,9 +5,7 @@ use std::process::exit;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{
-    ActorRefTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig,
-};
+use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
 
 #[derive(Clone)]
 struct SleepMsg {
@@ -37,11 +35,25 @@ impl Handler<SleepMsg> for SleepActor {
     }
 }
 
+struct SleepActorProps {
+    text: String,
+    counter: usize,
+}
+
+impl ActorProps<SleepActor> for SleepActorProps {
+    fn new_actor(&self) -> SleepActor {
+        SleepActor{
+            counter: self.counter,
+            text: self.text.clone(),
+        }
+    }
+}
+
 fn main() {
     let actor_config = TyractorsaurConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    let hw = SleepActor {
+    let hw = SleepActorProps {
         text: String::from("sers"),
         counter: 0,
     };

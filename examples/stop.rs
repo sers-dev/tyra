@@ -5,10 +5,7 @@ use std::process::exit;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{
-    ActorRefTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait,
-    TyractorsaurConfig,
-};
+use tyractorsaur::prelude::{ActorRefTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
 
 #[derive(Clone)]
 struct TestMsg {}
@@ -36,11 +33,19 @@ impl Handler<TestMsg> for StopActor {
     }
 }
 
+struct StopActorProps {}
+
+impl ActorProps<StopActor> for StopActorProps {
+    fn new_actor(&self) -> StopActor {
+        StopActor{}
+    }
+}
+
 fn main() {
     let actor_config = TyractorsaurConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    let hw = StopActor {};
+    let hw = StopActorProps {};
     let mut x = actor_system
         .builder("hello-world")
         .set_mailbox_size(7)
