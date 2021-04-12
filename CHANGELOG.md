@@ -1,3 +1,7 @@
+# WIP 0.0.8
+
+- implement `clone()` for `ActorRef`
+
 # 0.0.7
 
 - Actors are now created through ActorProps

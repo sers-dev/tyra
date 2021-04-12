@@ -212,7 +212,6 @@ pub trait ActorRefOuterTrait: Send + Sync {
     fn get_config(&self) -> ActorConfig;
 }
 
-#[derive(Clone)]
 pub struct ActorRef<A>
 where
     A: ActorTrait + 'static,
@@ -257,5 +256,22 @@ where
 
     pub fn stop(&self) {
         self.send(ActorStopMessage {});
+    }
+}
+
+impl<A> Clone for ActorRef<A>
+where
+    A: ActorTrait + UnwindSafe,
+{
+    fn clone(&self) -> Self {
+        Self {
+            system: self.system.clone(),
+            mailbox: Mailbox {
+                is_sleeping: self.mailbox.is_sleeping.clone(),
+                is_stopped: self.mailbox.is_stopped.clone(),
+                msg_in: self.mailbox.msg_in.clone(),
+            },
+            address: self.address.clone()
+        }
     }
 }
