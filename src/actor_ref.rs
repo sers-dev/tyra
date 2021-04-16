@@ -15,7 +15,7 @@ use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 use crate::builder::ActorProps;
 
-pub trait ActorRefTrait: Send + Sync {
+pub trait ActorHandlerTrait: Send + Sync {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState;
     fn get_config(&self) -> &ActorConfig;
     fn get_address(&self) -> ActorAddress;
@@ -82,7 +82,7 @@ where
 unsafe impl<A, P> Send for ActorHandler<A, P> where A: ActorTrait + UnwindSafe + 'static, P: ActorProps<A> {}
 unsafe impl<A, P> Sync for ActorHandler<A, P> where A: ActorTrait + UnwindSafe + 'static, P: ActorProps<A> {}
 
-impl<A, P> ActorRefTrait for ActorHandler<A, P>
+impl<A, P> ActorHandlerTrait for ActorHandler<A, P>
 where
     A: ActorTrait + UnwindSafe + 'static,
     P: ActorProps<A>

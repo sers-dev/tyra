@@ -1,6 +1,6 @@
 use crate::actor::{ActorAddress, ActorTrait, Handler};
 use crate::actor_config::ActorConfig;
-use crate::actor_ref::{ActorHandler, ActorRefTrait};
+use crate::actor_ref::{ActorHandler, ActorHandlerTrait};
 use crate::builder::{ActorBuilder, ActorProps};
 use crate::config::prelude::*;
 use crate::context::Context;
@@ -40,12 +40,12 @@ pub struct ActorSystem {
             String,
             (
                 ThreadPoolConfig,
-                Sender<Arc<RwLock<dyn ActorRefTrait>>>,
-                Receiver<Arc<RwLock<dyn ActorRefTrait>>>,
+                Sender<Arc<RwLock<dyn ActorHandlerTrait>>>,
+                Receiver<Arc<RwLock<dyn ActorHandlerTrait>>>,
             ),
         >,
     >,
-    sleeping_actors: Arc<DashMap<ActorAddress, Arc<RwLock<dyn ActorRefTrait>>>>,
+    sleeping_actors: Arc<DashMap<ActorAddress, Arc<RwLock<dyn ActorHandlerTrait>>>>,
     wakeup_queue_in: Sender<WakeupMessage>,
     wakeup_queue_out: Receiver<WakeupMessage>,
 }
