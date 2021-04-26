@@ -14,17 +14,22 @@ default_restart_policy = "Always"
 # amount of actors that this thread_pool can handle
 # 0 is treated as unlimited
 actor_limit = 0
-# amount of threads to run actors on
-# magic default: 1.5 times the number of cores
-thread_count = 0
-# maximum amount of consecutive messages to handle before switching actor
+# minimum amount of threads to spawn for this pool
+threads_min = 2
+# maximum amount of threads to spawn for this pool
+threads_max = 10
+# num_cpu * factor = amount of threads to spawn for this pool
+threads_factor = 1.5
 
-# same as `thread_pool`, but only applies to internal system_pool
 [thread_pool.config.system]
 # amount of actors that this thread_pool can handle
 # 0 is treated as unlimited
 actor_limit = 0
-# amount of threads to run actors on
-# magic default: 0.5 times number of cores
-thread_count = 0
-# maximum amount of consecutive messages to handle before switching actor
+# minimum amount of threads to spawn for this pool
+threads_min = 2
+# maximum amount of threads to spawn for this pool
+threads_max = 2
+# num_cpu * factor = amount of threads to spawn for this pool
+threads_factor = 1
+
+

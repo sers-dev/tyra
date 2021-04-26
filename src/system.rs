@@ -208,10 +208,20 @@ impl ActorSystem {
                 let pool_name = pool.key().clone();
                 let (pool_config, pool_sender, pool_receiver) = pool.value().clone();
                 if !pools.contains_key(&pool_name) {
+                    let thread_count = pool_config.threads_factor * num_cpus::get() as f32;
+                    let mut thread_count = thread_count.floor() as usize;
+                    if thread_count < pool_config.threads_min {
+                        thread_count = pool_config.threads_min;
+                    }
+                    else if thread_count > pool_config.threads_max {
+                        thread_count = pool_config.threads_max;
+                    }
+
                     pools.insert(
                         pool_name.clone(),
-                        ThreadPool::with_name(pool_name.clone(), pool_config.thread_count.clone()),
+                        ThreadPool::with_name(pool_name.clone(), thread_count),
                     );
+
                 }
                 let current = pools.get(&pool_name).unwrap();
                 for i in current.active_count()..current.max_count() {

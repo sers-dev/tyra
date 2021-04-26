@@ -32,18 +32,6 @@ impl TyractorsaurConfig {
             parsed.global.name = String::from(hostname::get().unwrap().to_str().unwrap());
         }
 
-        for (key, value) in parsed.thread_pool.config.iter_mut() {
-            if key == DEFAULT_POOL {
-                if value.thread_count == 0 {
-                    value.thread_count = num_cpus::get() + (num_cpus::get() / 2);
-                }
-            } else if key == SYSTEM_POOL {
-                if value.thread_count == 0 {
-                    value.thread_count = num_cpus::get() / 2;
-                }
-            }
-        }
-
         Ok(parsed)
     }
 }

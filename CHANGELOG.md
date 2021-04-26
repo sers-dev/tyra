@@ -9,6 +9,9 @@
   - This was done, because we lost the reference to `Context<A>` in the Trait function
 - ActorStopMessage and SystemStopMessage are no longer directly accessible by the User
   - to stop an actor use `.stop();`, this ensures that the actor is also removed from the list of running actors
+- replace magic in thread pool config
+  - thread_pools are now configured with `min`, `max`, and `factor`
+
 - Remoting:
   - Added `SerializedMessage`
   - Added `fn handle_serialized_message(&self, msg: SerializedMessage)` to Actor Trait

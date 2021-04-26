@@ -4,7 +4,10 @@ use std::collections::HashMap;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ThreadPoolConfig {
     pub actor_limit: usize,
-    pub thread_count: usize,
+    pub threads_min: usize,
+    pub threads_max: usize,
+    pub threads_factor: f32,
+
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
