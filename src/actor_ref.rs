@@ -266,6 +266,10 @@ where
         self.system.remove_actor(&self.address);
         self.send(ActorStopMessage {});
     }
+
+    pub fn get_address(&self) -> ActorAddress {
+        self.address.clone()
+    }
 }
 
 impl<A> Clone for ActorRef<A>

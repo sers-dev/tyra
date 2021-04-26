@@ -64,7 +64,7 @@ impl ActorSystem {
             is_forced_stop: Arc::new(AtomicBool::new(false)),
             is_stopping: Arc::new(AtomicBool::new(false)),
             is_stopped: Arc::new(AtomicBool::new(false)),
-            config: Arc::new(config),
+            config: Arc::new(config.clone()),
             thread_pools,
             wakeup_queue_in,
             wakeup_queue_out,
@@ -72,6 +72,9 @@ impl ActorSystem {
         };
 
         for (key, value) in thread_pool_config.config.iter() {
+            if key == "remoting" && !config.remoting.enabled {
+                continue;
+            }
             system.add_pool_with_config(key, value.clone());
         }
         system.add_pool(SYSTEM_POOL);

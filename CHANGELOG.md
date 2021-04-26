@@ -11,8 +11,10 @@
   - to stop an actor use `.stop();`, this ensures that the actor is also removed from the list of running actors
 - replace magic in thread pool config
   - thread_pools are now configured with `min`, `max`, and `factor`
+- Added round robin router with usage example 
 
 - Remoting:
+  - Added Remoting Configuration
   - Added `SerializedMessage`
   - Added `fn handle_serialized_message(&self, msg: SerializedMessage)` to Actor Trait
   - System now Stores `dyn ActorTrait` per `ActorAddress`

@@ -8,6 +8,8 @@ mod config;
 mod context;
 mod message;
 mod system;
+mod remoting;
+mod router;
 
 pub mod prelude {
     pub use crate::actor::*;
@@ -20,6 +22,7 @@ pub mod prelude {
     pub use crate::message::MessageType;
     pub use crate::system::ActorSystem;
     pub use crate::builder::ActorProps;
+    pub use crate::router::prelude::*;
 }
 
 #[cfg(test)]
