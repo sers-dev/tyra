@@ -1,6 +1,18 @@
 # WIP 0.0.8
 
 - implement `clone()` for `ActorRef`
+- ActorProps now receive the `Context<A>` as parameter when creating a new Actor
+  - this way the User can store the `Context<Self>` inside his Actor Struct
+- removed `Context<A>` from ActorTrait functions
+  - if you need to Access the Context within any of these functions, consider Storing it as part of your Actor Struct
+- remove default behavior for `SystemStopMessage`
+  - This was done, because we lost the reference to `Context<A>` in the Trait function
+  
+- Remoting:
+  - Added `SerializedMessage`
+  - Added `fn handle_serialized_message(&self, msg: SerializedMessage)` to Actor Trait
+  - System now Stores `dyn ActorTrait` per `ActorAddress`
+  
 
 # 0.0.7
 

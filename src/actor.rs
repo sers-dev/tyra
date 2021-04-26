@@ -1,17 +1,16 @@
 use crate::context::Context;
-use crate::message::{MessageTrait, ActorStopMessage, SystemStopMessage};
+use crate::message::{MessageTrait, ActorStopMessage, SystemStopMessage, SerializedMessage};
 use serde::{Deserialize, Serialize};
 use std::any::Any;
 use std::sync::{Arc, RwLock};
 use std::panic::UnwindSafe;
 
-pub trait ActorTrait: Send + Sync + Sized + UnwindSafe {
-    fn pre_start(&mut self, context: &Context<Self>) {}
-    fn post_stop(&mut self, context: &Context<Self>) {}
-    fn on_actor_stop(&mut self, context: &Context<Self>) {}
-    fn on_system_stop(&mut self, context: &Context<Self>) {
-        context.actor_ref.stop();
-    }
+pub trait ActorTrait: Send + Sync + UnwindSafe {
+    fn pre_start(&mut self) {}
+    fn post_stop(&mut self) {}
+    fn on_actor_stop(&mut self) {}
+    fn on_system_stop(&mut self) {}
+    fn handle_serialized_message(&self, msg: SerializedMessage) {}
 }
 
 pub trait Handler<M: ?Sized>
@@ -35,7 +34,7 @@ where
     A: ActorTrait + Sized,
 {
     fn handle(&mut self, msg: ActorStopMessage, context: &Context<A>) {
-        self.on_actor_stop(context);
+        self.on_actor_stop();
     }
 }
 
@@ -44,6 +43,6 @@ impl<A> Handler<SystemStopMessage> for A
         A: ActorTrait + Sized,
 {
     fn handle(&mut self, msg: SystemStopMessage, context: &Context<A>) {
-        self.on_system_stop(context);
+        self.on_system_stop();
     }
 }

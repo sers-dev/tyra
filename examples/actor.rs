@@ -38,7 +38,7 @@ struct HelloWorldProps {
 }
 
 impl ActorProps<HelloWorld> for HelloWorldProps {
-    fn new_actor(&self) -> HelloWorld {
+    fn new_actor(&self, context: Context<HelloWorld>) -> HelloWorld {
         HelloWorld {
             count: self.count,
             text: self.text.clone()

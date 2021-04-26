@@ -68,9 +68,17 @@ pub struct SystemStopMessage {}
 
 impl MessageTrait for SystemStopMessage {}
 
+pub struct SerializedMessage {
+    pub content: Vec<u8>,
+}
+
+impl MessageTrait for SerializedMessage {}
+
+
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum MessageType {
     Unknown,
     ActorStopMessage,
-    SystemStopMessage
+    SystemStopMessage,
+    RemoteMessage,
 }

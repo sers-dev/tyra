@@ -13,14 +13,16 @@ struct TestMsg {}
 impl MessageTrait for TestMsg {}
 
 #[derive(Clone)]
-struct StopActor {}
+struct StopActor {
+    ctx: Context<Self>
+}
 
 impl ActorTrait for StopActor {
-    fn pre_start(&mut self, context: &Context<Self>) {
+    fn pre_start(&mut self) {
         println!("PRE START")
     }
-    fn post_stop(&mut self, context: &Context<Self>) {
-        context.system.stop(Duration::from_secs(1));
+    fn post_stop(&mut self) {
+        self.ctx.system.stop(Duration::from_secs(1));
         println!("POST STOP");
     }
 }
@@ -36,8 +38,10 @@ impl Handler<TestMsg> for StopActor {
 struct StopActorProps {}
 
 impl ActorProps<StopActor> for StopActorProps {
-    fn new_actor(&self) -> StopActor {
-        StopActor{}
+    fn new_actor(&self, context: Context<StopActor>) -> StopActor {
+        StopActor{
+            ctx: context
+        }
     }
 }
 

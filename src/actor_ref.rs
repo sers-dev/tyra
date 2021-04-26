@@ -31,12 +31,25 @@ pub enum ActorState {
     Stopped,
 }
 
-#[derive(Clone)]
 pub struct Mailbox<A> {
     pub is_stopped: Arc<AtomicBool>,
     pub is_sleeping: Arc<AtomicBool>,
     pub msg_in: Sender<MessageEnvelope<A>>,
 }
+
+impl<A> Clone for Mailbox<A>
+    where
+        A: ActorTrait + UnwindSafe,
+{
+    fn clone(&self) -> Self {
+        Self {
+            msg_in: self.msg_in.clone(),
+            is_stopped: self.is_stopped.clone(),
+            is_sleeping: self.is_sleeping.clone(),
+        }
+    }
+}
+
 
 impl<A> Mailbox<A>
 //where
@@ -94,13 +107,13 @@ where
         }
         if self.is_startup {
             self.is_startup = false;
-            self.actor.pre_start(&self.context);
+            self.actor.pre_start();
         }
         let mut m = self.queue.try_recv();
 
         if m.is_err() {
             if self.is_stopped() {
-                self.actor.post_stop(&self.context);
+                self.actor.post_stop();
                 return ActorState::Stopped;
             }
             self.mailbox.is_sleeping.store(true, Ordering::Relaxed);
@@ -118,13 +131,13 @@ where
         }));
         if result.is_err() {
             println!("ACTOR PANIC");
-            self.actor.post_stop(&self.context);
+            self.actor.post_stop();
 
             if self.actor_config.restart_policy == RestartPolicy::Never || self.is_stopped() {
                 self.mailbox.is_stopped.store(true, Ordering::Relaxed);
                 return ActorState::Stopped;
             }
-            self.actor = self.actor_props.new_actor();
+            self.actor = self.actor_props.new_actor(self.context.clone());
             self.is_startup = true;
             return ActorState::Running;
         }
@@ -186,7 +199,7 @@ where
         };
 
         Self {
-            actor: actor_props.new_actor(),
+            actor: actor_props.new_actor(context.clone()),
             actor_props,
             actor_config,
             mailbox,
@@ -206,10 +219,6 @@ where
     {
         self.mailbox.msg_in.send(MessageEnvelope::new(msg)).unwrap();
     }
-}
-
-pub trait ActorRefOuterTrait: Send + Sync {
-    fn get_config(&self) -> ActorConfig;
 }
 
 pub struct ActorRef<A>

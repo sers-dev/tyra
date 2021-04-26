@@ -41,7 +41,7 @@ struct SleepActorProps {
 }
 
 impl ActorProps<SleepActor> for SleepActorProps {
-    fn new_actor(&self) -> SleepActor {
+    fn new_actor(&self, context: Context<SleepActor>) -> SleepActor {
         SleepActor{
             counter: self.counter,
             text: self.text.clone(),

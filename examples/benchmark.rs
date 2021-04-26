@@ -6,7 +6,7 @@ use std::process::exit;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyractorsaur::prelude::{ActorHandler, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps, ActorRef};
+use tyractorsaur::prelude::{ActorHandler, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps, ActorRef, ActorStopMessage, SerializedMessage};
 
 struct MessageA {
     id: usize,
@@ -24,6 +24,7 @@ impl MessageTrait for MessageB {}
 
 
 struct Benchmark {
+    ctx: Context<Self>,
     total_msgs: usize,
     name: String,
     count: usize,
@@ -36,26 +37,38 @@ struct BenchmarkProps {
 }
 
 impl ActorProps<Benchmark> for BenchmarkProps {
-    fn new_actor(&self) -> Benchmark {
-        Benchmark::new(self.total_msgs, self.name.clone())
+    fn new_actor(&self, context: Context<Benchmark>) -> Benchmark {
+        Benchmark::new(self.total_msgs, self.name.clone(), context)
     }
 }
 
 impl Benchmark {
-    pub fn new(total_msgs: usize, name: String) -> Self {
+    pub fn new(total_msgs: usize, name: String, context: Context<Self>) -> Self {
         Self {
+            ctx: context,
             total_msgs,
             name,
             count: 0,
             start: Instant::now(),
         }
     }
-    pub fn fake_new() -> Self {
-        Self::new(10000000, String::from("benchmark"))
-    }
 }
 
-impl ActorTrait for Benchmark {}
+impl ActorTrait for Benchmark {
+    fn pre_start(&mut self) {}
+
+    fn post_stop(&mut self) {}
+
+    fn on_actor_stop(&mut self) {}
+
+    fn on_system_stop(&mut self) {
+        self.ctx.actor_ref.stop();
+    }
+
+    fn handle_serialized_message(&self, msg: SerializedMessage) {
+
+    }
+}
 
 impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, msg: MessageA, context: &Context<Self>) {
@@ -89,12 +102,6 @@ fn main() {
 
     let message_count = 10000000;
 
-    let a = Benchmark {
-        total_msgs: message_count as usize,
-        name: (String::from("benchmark")),
-        count: 0,
-        start: Instant::now(),
-    };
     let mut actor = actor_system.builder("benchmark-single-actor").build(BenchmarkProps {
         name: String::from("benchmark"),
         total_msgs: message_count as usize,

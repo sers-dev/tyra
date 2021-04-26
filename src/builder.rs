@@ -7,6 +7,7 @@ use crate::prelude::ActorRef;
 use crate::system::ActorSystem;
 use std::panic::UnwindSafe;
 use std::sync::{Arc, RwLock};
+use crate::context::Context;
 
 #[derive(Clone)]
 pub struct ActorBuilder {
@@ -61,7 +62,6 @@ impl ActorBuilder {
         A: ActorTrait + UnwindSafe + 'static,
         P: ActorProps<A> + 'static,
     {
-        props.new_actor();
         self.system.spawn(props, self.actor_config.clone())
     }
 }
@@ -70,5 +70,5 @@ pub trait ActorProps<A>
 where
     A: ActorTrait + UnwindSafe + 'static,
 {
-    fn new_actor(&self) -> A;
+    fn new_actor(&self, context: Context<A>) -> A;
 }

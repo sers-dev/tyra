@@ -4,7 +4,7 @@ use crate::actor_ref::{ActorHandler, ActorHandlerTrait};
 use crate::builder::{ActorBuilder, ActorProps};
 use crate::config::prelude::*;
 use crate::context::Context;
-use crate::message::MessageTrait;
+use crate::message::{MessageTrait, SerializedMessage};
 use crate::prelude::{ActorRef, ActorState, Mailbox};
 use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
 use crossbeam_utils::atomic::AtomicCell;
@@ -29,6 +29,7 @@ pub struct WakeupMessage {
 
 #[derive(Clone)]
 pub struct ActorSystem {
+    actors: DashMap<ActorAddress, Arc<dyn ActorTrait>>,
     total_actor_count: Arc<AtomicUsize>,
     name: String,
     is_forced_stop: Arc<AtomicBool>,
@@ -57,6 +58,7 @@ impl ActorSystem {
         let sleeping_actors = Arc::new(DashMap::new());
         let thread_pool_config = config.thread_pool.clone();
         let system = ActorSystem {
+            actors: DashMap::new(),
             total_actor_count: Arc::new(AtomicUsize::new(0)),
             name: config.global.name.clone(),
             is_forced_stop: Arc::new(AtomicBool::new(false)),
@@ -279,12 +281,10 @@ impl ActorSystem {
         };
 
         let tuple = self.thread_pools.get(&actor_config.pool_name).unwrap();
-        let is_stopped = Arc::new(AtomicBool::new(false));
-        let is_sleeping = Arc::new(AtomicBool::new(true));
         let mailbox = Mailbox {
-            is_stopped: is_stopped.clone(),
-            is_sleeping: is_sleeping.clone(),
-            msg_in: sender.clone(),
+            is_stopped: Arc::new(AtomicBool::new(false)),
+            is_sleeping: Arc::new(AtomicBool::new(true)),
+            msg_in: sender,
         };
         let actor_address = ActorAddress {
             actor: actor_config.actor_name.clone(),
@@ -292,34 +292,31 @@ impl ActorSystem {
             pool: actor_config.pool_name.clone(),
             remote: String::from("local"),
         };
-        let actor_ref = ActorRef::new(mailbox, actor_address.clone(), self.clone());
-        let mailbox = Mailbox {
-            is_stopped: is_stopped.clone(),
-            is_sleeping: is_sleeping.clone(),
-            msg_in: sender.clone(),
+        let actor_ref = ActorRef::new(mailbox.clone(), actor_address.clone(), self.clone());
+
+        let context = Context {
+            system: self.clone(),
+            actor_ref: actor_ref.clone(),
         };
+        let actor = actor_props.new_actor(context);
         let actor_handler = ActorHandler::new(
             actor_props,
             actor_config,
-            mailbox,
+            mailbox.clone(),
             receiver,
             self.clone(),
             self.name.clone(),
-            actor_ref,
+            actor_ref.clone(),
         );
 
+        self.actors.insert(actor_address.clone(), Arc::new(actor));
         self.sleeping_actors.insert(
             actor_handler.get_address(),
             Arc::new(RwLock::new(actor_handler)),
         );
 
         self.total_actor_count.fetch_add(1, Ordering::Relaxed);
-        let mailbox = Mailbox {
-            is_stopped,
-            is_sleeping,
-            msg_in: sender,
-        };
-        ActorRef::new(mailbox, actor_address, self.clone())
+        actor_ref
     }
 
     pub fn stop(&self, graceful_termination_timeout: Duration) {

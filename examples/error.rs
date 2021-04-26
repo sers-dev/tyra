@@ -39,7 +39,7 @@ struct ErrActorProps {
 }
 
 impl ActorProps<ErrActor> for ErrActorProps {
-    fn new_actor(&self) -> ErrActor {
+    fn new_actor(&self, context: Context<ErrActor>) -> ErrActor {
         ErrActor {
             text: self.text.clone(),
             counter: self.counter,
