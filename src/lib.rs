@@ -14,7 +14,10 @@ pub mod prelude {
     pub use crate::actor_ref::*;
     pub use crate::config::prelude::*;
     pub use crate::context::*;
-    pub use crate::message::*;
+    pub use crate::message::SerializedMessage;
+    pub use crate::message::MessageTrait;
+    pub use crate::message::MessageEnvelope;
+    pub use crate::message::MessageType;
     pub use crate::system::ActorSystem;
     pub use crate::builder::ActorProps;
 }

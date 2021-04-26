@@ -7,7 +7,8 @@
   - if you need to Access the Context within any of these functions, consider Storing it as part of your Actor Struct
 - remove default behavior for `SystemStopMessage`
   - This was done, because we lost the reference to `Context<A>` in the Trait function
-  
+- ActorStopMessage and SystemStopMessage are no longer directly accessible by the User
+  - to stop an actor use `.stop();`, this ensures that the actor is also removed from the list of running actors
 - Remoting:
   - Added `SerializedMessage`
   - Added `fn handle_serialized_message(&self, msg: SerializedMessage)` to Actor Trait

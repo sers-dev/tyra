@@ -319,6 +319,10 @@ impl ActorSystem {
         actor_ref
     }
 
+    pub fn remove_actor(&self, address: &ActorAddress) {
+        self.actors.remove(address);
+    }
+
     pub fn stop(&self, graceful_termination_timeout: Duration) {
         if self.is_stopping.load(Ordering::Relaxed) {
             return;
@@ -337,6 +341,7 @@ impl ActorSystem {
             }
             sleep(Duration::from_secs(1));
         }
+        self.actors.clear();
         self.is_stopped.store(true, Ordering::Relaxed)
     }
 

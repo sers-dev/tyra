@@ -6,7 +6,6 @@ use crate::prelude::TyractorsaurConfig;
 use crate::system::ActorSystem;
 use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
 use crossbeam_utils::atomic::AtomicCell;
-use std::any::Any;
 use std::borrow::BorrowMut;
 use std::ops::{AddAssign, Deref, DerefMut};
 use std::panic::{catch_unwind, AssertUnwindSafe, UnwindSafe};
@@ -264,6 +263,7 @@ where
     }
 
     pub fn stop(&self) {
+        self.system.remove_actor(&self.address);
         self.send(ActorStopMessage {});
     }
 }
