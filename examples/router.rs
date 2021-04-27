@@ -47,7 +47,7 @@ fn main() {
         .build(hw);
 
     let router_props = RoundRobinRouterProps::new();
-    let router :ActorRef<RoundRobinRouter<HelloWorld>> = actor_system
+    let router  = actor_system
         .builder("hello-router")
         .build(router_props);
 
