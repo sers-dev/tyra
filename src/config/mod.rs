@@ -1,6 +1,6 @@
-mod global_config;
-mod pool_config;
-mod tyractorsaur_config;
+pub mod global_config;
+pub mod pool_config;
+pub mod tyractorsaur_config;
 
 pub mod prelude {
     pub use crate::config::global_config::*;

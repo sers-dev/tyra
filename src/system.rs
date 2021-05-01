@@ -1,28 +1,23 @@
-use crate::actor::{ActorAddress, ActorTrait, Handler};
-use crate::actor_config::ActorConfig;
-use crate::builder::{ActorBuilder, ActorProps};
-use crate::config::prelude::*;
-use crate::context::Context;
-use crate::prelude::ActorRef;
-use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
-use crossbeam_utils::atomic::AtomicCell;
+use crate::actor::{ActorAddress, ActorTrait};
 use dashmap::DashMap;
-use serde::{Deserialize, Serialize};
-use std::borrow::{Borrow, BorrowMut};
-use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
-use std::panic;
-use std::panic::UnwindSafe;
-use std::rc::Rc;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
-use std::thread::sleep;
-use std::time::{Duration, Instant};
-use threadpool::ThreadPool;
-use crate::message::serialized_message::SerializedMessage;
-use crate::mailbox::Mailbox;
+use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
+use crate::config::tyractorsaur_config::{TyractorsaurConfig, DEFAULT_POOL};
+use crate::config::pool_config::ThreadPoolConfig;
+use crossbeam_channel::{Sender, Receiver, unbounded, bounded};
 use crate::actor_handler::{ActorHandlerTrait, ActorHandler};
+use std::collections::HashMap;
+use std::time::{Instant, Duration};
+use threadpool::ThreadPool;
 use crate::actor_state::ActorState;
+use std::thread::sleep;
+use crate::message::serialized_message::SerializedMessage;
+use crate::builder::{ActorBuilder, ActorProps};
+use crate::actor_config::ActorConfig;
+use crate::actor_ref::ActorRef;
+use std::panic::UnwindSafe;
+use crate::mailbox::Mailbox;
+use crate::context::Context;
 
 pub struct WakeupMessage {
     iteration: usize,

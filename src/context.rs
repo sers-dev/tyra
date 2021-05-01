@@ -1,8 +1,7 @@
-use crate::actor::ActorTrait;
-use crate::prelude::ActorRef;
+use crate::prelude::ActorTrait;
+use crate::actor_ref::ActorRef;
 use crate::system::ActorSystem;
 use std::panic::UnwindSafe;
-
 
 pub struct Context<A>
 where

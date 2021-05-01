@@ -1,9 +1,6 @@
 # WIP 0.1.0
 
-- move Actor Messages into separate directory
-- move Mailbox to separate file
-- move ActorHandler to separate file
-- move ActorState to separate file
+- cleanup
 
 # WIP 0.0.8
 

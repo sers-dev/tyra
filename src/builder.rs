@@ -1,10 +1,9 @@
-use crate::actor::{ActorTrait, Handler};
-use crate::actor_config::{ActorConfig, RestartPolicy};
-use crate::config::prelude::DEFAULT_POOL;
-use crate::prelude::ActorRef;
 use crate::system::ActorSystem;
+use crate::actor_config::{ActorConfig, RestartPolicy};
+use crate::config::tyractorsaur_config::DEFAULT_POOL;
+use crate::actor_ref::ActorRef;
+use crate::actor::ActorTrait;
 use std::panic::UnwindSafe;
-use std::sync::{Arc, RwLock};
 use crate::context::Context;
 
 #[derive(Clone)]
