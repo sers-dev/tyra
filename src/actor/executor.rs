@@ -13,14 +13,14 @@ use std::sync::atomic::Ordering;
 use crate::message::message_type::MessageType;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::message::actor_message::ActorMessage;
-use crate::actor::address::Address;
+use crate::actor::actor_address::ActorAddress;
 use crate::actor::handler::Handler;
 use crate::actor::actor_factory::ActorFactory;
 
 pub trait ExecutorTrait: Send + Sync {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState;
     fn get_config(&self) -> &Config;
-    fn get_address(&self) -> Address;
+    fn get_address(&self) -> ActorAddress;
     fn is_sleeping(&self) -> bool;
     fn is_stopped(&self) -> bool;
     fn wakeup(&mut self);
@@ -36,7 +36,7 @@ pub struct Executor<A, P>
     actor_config: Config,
     mailbox: Mailbox<A>,
     queue: Receiver<MessageEnvelope<A>>,
-    actor_address: Address,
+    actor_address: ActorAddress,
     is_startup: bool,
     system_triggered_stop: bool,
     last_wakeup: Instant,
@@ -105,7 +105,7 @@ impl<A, P> ExecutorTrait for Executor<A, P>
         &self.actor_config
     }
 
-    fn get_address(&self) -> Address {
+    fn get_address(&self) -> ActorAddress {
         self.actor_address.clone()
     }
 
@@ -137,7 +137,7 @@ impl<A, P> Executor<A, P>
         system_name: String,
         actor_ref: ActorWrapper<A>,
     ) -> Self {
-        let actor_address = Address {
+        let actor_address = ActorAddress {
             actor: actor_config.actor_name.clone(),
             system: system_name,
             pool: actor_config.pool_name.clone(),

@@ -3,10 +3,10 @@ pub mod actor;
 pub mod executor;
 pub mod actor_wrapper;
 pub mod actor_state;
-pub mod builder;
+pub mod actor_builder;
 pub mod context;
 pub mod mailbox;
-pub mod address;
+pub mod actor_address;
 pub mod handler;
 pub mod actor_factory;
 

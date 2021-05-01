@@ -4,7 +4,7 @@ use crate::system::actor_system::ActorSystem;
 use std::panic::UnwindSafe;
 use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
-use crate::actor::address::Address;
+use crate::actor::actor_address::ActorAddress;
 use crate::actor::handler::Handler;
 
 pub struct ActorWrapper<A>
@@ -12,7 +12,7 @@ where
     A: Actor + 'static,
 {
     mailbox: Mailbox<A>,
-    address: Address,
+    address: ActorAddress,
     system: ActorSystem,
 }
 
@@ -25,7 +25,7 @@ impl<A> ActorWrapper<A>
 where
     A: Actor + UnwindSafe,
 {
-    pub fn new(mailbox: Mailbox<A>, address: Address, system: ActorSystem) -> Self {
+    pub fn new(mailbox: Mailbox<A>, address: ActorAddress, system: ActorSystem) -> Self {
         Self {
             mailbox,
             address,
@@ -54,7 +54,7 @@ where
         self.send(ActorStopMessage {});
     }
 
-    pub fn get_address(&self) -> Address {
+    pub fn get_address(&self) -> ActorAddress {
         self.address.clone()
     }
 }
