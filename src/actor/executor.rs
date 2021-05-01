@@ -15,7 +15,7 @@ use crate::actor::actor_wrapper::ActorWrapper;
 use crate::message::actor_message::ActorMessage;
 use crate::actor::address::Address;
 use crate::actor::handler::Handler;
-use crate::actor::props::Props;
+use crate::actor::actor_factory::ActorFactory;
 
 pub trait ExecutorTrait: Send + Sync {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState;
@@ -29,7 +29,7 @@ pub trait ExecutorTrait: Send + Sync {
 pub struct Executor<A, P>
     where
         A: Actor + 'static,
-        P: Props<A>
+        P: ActorFactory<A>
 {
     actor: A,
     actor_props: P,
@@ -43,13 +43,13 @@ pub struct Executor<A, P>
     context: Context<A>,
 }
 
-unsafe impl<A, P> Send for Executor<A, P> where A: Actor + UnwindSafe + 'static, P: Props<A> {}
-unsafe impl<A, P> Sync for Executor<A, P> where A: Actor + UnwindSafe + 'static, P: Props<A> {}
+unsafe impl<A, P> Send for Executor<A, P> where A: Actor + UnwindSafe + 'static, P: ActorFactory<A> {}
+unsafe impl<A, P> Sync for Executor<A, P> where A: Actor + UnwindSafe + 'static, P: ActorFactory<A> {}
 
 impl<A, P> ExecutorTrait for Executor<A, P>
     where
         A: Actor + UnwindSafe + 'static,
-        P: Props<A>
+        P: ActorFactory<A>
 {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {
         if system_is_stopping && !self.system_triggered_stop {
@@ -126,7 +126,7 @@ impl<A, P> ExecutorTrait for Executor<A, P>
 impl<A, P> Executor<A, P>
     where
         A: Actor,
-        P: Props<A>
+        P: ActorFactory<A>
 {
     pub fn new(
         actor_props: P,

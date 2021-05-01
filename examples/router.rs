@@ -1,4 +1,4 @@
-use tyractorsaur::prelude::{ActorMessage, Actor, Props, Context, Handler, TyractorsaurConfig, ActorSystem, RoundRobinRouterProps, RouterMessage, AddActorMessage, RemoveActorMessage};
+use tyractorsaur::prelude::{ActorMessage, Actor, ActorFactory, Context, Handler, TyractorsaurConfig, ActorSystem, RoundRobinRouterFactory, RouterMessage, AddActorMessage, RemoveActorMessage};
 use std::time::Duration;
 use std::process::exit;
 use std::thread::sleep;
@@ -12,9 +12,9 @@ struct HelloWorld {
 impl Actor for HelloWorld {}
 
 #[derive(Clone)]
-struct HelloWorldProps {}
+struct HelloWorldFactory {}
 
-impl Props<HelloWorld> for HelloWorldProps {
+impl ActorFactory<HelloWorld> for HelloWorldFactory {
     fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
         HelloWorld {
             counter: 0,
@@ -33,7 +33,7 @@ fn main() {
     let actor_config = TyractorsaurConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    let hw = HelloWorldProps {};
+    let hw = HelloWorldFactory {};
     let x = actor_system
         .builder("hello-world-1")
         .set_mailbox_size(7)
@@ -44,10 +44,10 @@ fn main() {
         .set_mailbox_size(7)
         .build(hw);
 
-    let router_props = RoundRobinRouterProps::new();
+    let router_factory = RoundRobinRouterFactory::new();
     let router  = actor_system
         .builder("hello-router")
-        .build(router_props);
+        .build(router_factory);
 
     router.send(AddActorMessage::new(x));
     router.send(AddActorMessage::new(y.clone()));

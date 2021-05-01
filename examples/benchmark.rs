@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, Props};
+use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, ActorFactory};
 
 struct MessageA {}
 
@@ -16,12 +16,12 @@ struct Benchmark {
     start: Instant,
 }
 
-struct BenchmarkProps {
+struct BenchmarkFactory {
     total_msgs: usize,
     name: String,
 }
 
-impl Props<Benchmark> for BenchmarkProps {
+impl ActorFactory<Benchmark> for BenchmarkFactory {
     fn new_actor(&self, context: Context<Benchmark>) -> Benchmark {
         Benchmark::new(self.total_msgs, self.name.clone(), context)
     }
@@ -77,7 +77,7 @@ fn main() {
 
     let message_count = 10000000;
 
-    let actor = actor_system.builder("benchmark-single-actor").build(BenchmarkProps {
+    let actor = actor_system.builder("benchmark-single-actor").build(BenchmarkFactory {
         name: String::from("benchmark"),
         total_msgs: message_count as usize,
     });

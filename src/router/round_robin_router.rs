@@ -3,7 +3,7 @@ use crate::actor::context::Context;
 use crate::actor::actor::Actor;
 use crate::message::actor_message::ActorMessage;
 use crate::actor::handler::Handler;
-use crate::actor::props::Props;
+use crate::actor::actor_factory::ActorFactory;
 
 pub struct RouterMessage<M>
 where
@@ -83,15 +83,15 @@ pub struct RoundRobinRouter<A>
     can_route: bool,
 }
 
-pub struct RoundRobinRouterProps {}
+pub struct RoundRobinRouterFactory {}
 
-impl RoundRobinRouterProps {
+impl RoundRobinRouterFactory {
     pub fn new() -> Self {
         Self{}
     }
 }
 
-impl<A> Props<RoundRobinRouter<A>> for RoundRobinRouterProps
+impl<A> ActorFactory<RoundRobinRouter<A>> for RoundRobinRouterFactory
     where
         A: Actor + 'static,
 {

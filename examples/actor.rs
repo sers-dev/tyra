@@ -1,6 +1,6 @@
 use std::process::exit;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, Props};
+use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, ActorFactory};
 
 struct MessageA {
     text: String,
@@ -25,12 +25,12 @@ struct HelloWorld {
 
 impl Actor for HelloWorld {}
 
-struct HelloWorldProps {
+struct HelloWorldFactory {
     text: String,
     count: usize,
 }
 
-impl Props<HelloWorld> for HelloWorldProps {
+impl ActorFactory<HelloWorld> for HelloWorldFactory {
     fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
         HelloWorld {
             count: self.count,
@@ -61,7 +61,7 @@ fn main() {
     actor_system.add_pool("aye");
     actor_system.add_pool("aye2");
 
-    let hw = HelloWorldProps {
+    let hw = HelloWorldFactory {
         text: String::from("sers"),
         count: 0,
     };

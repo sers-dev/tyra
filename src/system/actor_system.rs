@@ -19,7 +19,7 @@ use std::panic::UnwindSafe;
 use crate::actor::mailbox::Mailbox;
 use crate::actor::context::Context;
 use crate::actor::address::Address;
-use crate::actor::props::Props;
+use crate::actor::actor_factory::ActorFactory;
 
 pub struct WakeupMessage {
     iteration: usize,
@@ -281,7 +281,7 @@ impl ActorSystem {
     pub fn spawn<A, P>(&self, actor_props: P, actor_config: Config) -> ActorWrapper<A>
     where
         A: Actor + UnwindSafe + 'static,
-        P: Props<A> + 'static,
+        P: ActorFactory<A> + 'static,
     {
         let (sender, receiver) = if actor_config.mailbox_size == 0 {
             unbounded()

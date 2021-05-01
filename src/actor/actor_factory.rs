@@ -2,7 +2,7 @@ use crate::actor::actor::Actor;
 use std::panic::UnwindSafe;
 use crate::actor::context::Context;
 
-pub trait Props<A>
+pub trait ActorFactory<A>
     where
         A: Actor + UnwindSafe + 'static,
 {

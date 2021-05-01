@@ -4,7 +4,7 @@ use crate::config::tyractorsaur_config::DEFAULT_POOL;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::actor::Actor;
 use std::panic::UnwindSafe;
-use crate::actor::props::Props;
+use crate::actor::actor_factory::ActorFactory;
 
 #[derive(Clone)]
 pub struct Builder {
@@ -57,7 +57,7 @@ impl Builder {
     pub fn build<A, P>(&self, props: P) -> ActorWrapper<A>
     where
         A: Actor + UnwindSafe + 'static,
-        P: Props<A> + 'static,
+        P: ActorFactory<A> + 'static,
     {
         self.system.spawn(props, self.actor_config.clone())
     }

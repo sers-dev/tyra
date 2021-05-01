@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, Props};
+use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, ActorFactory};
 
 #[derive(Clone)]
 struct TestMsg {}
@@ -31,9 +31,9 @@ impl Handler<TestMsg> for StopActor {
     }
 }
 
-struct StopActorProps {}
+struct StopActorFactory {}
 
-impl Props<StopActor> for StopActorProps {
+impl ActorFactory<StopActor> for StopActorFactory {
     fn new_actor(&self, context: Context<StopActor>) -> StopActor {
         StopActor{
             ctx: context
@@ -45,7 +45,7 @@ fn main() {
     let actor_config = TyractorsaurConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    let hw = StopActorProps {};
+    let hw = StopActorFactory {};
     let x = actor_system
         .builder("hello-world")
         .set_mailbox_size(7)
