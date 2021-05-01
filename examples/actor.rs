@@ -1,11 +1,6 @@
-#![allow(unused)]
-
-use std::any::{Any, TypeId};
 use std::process::exit;
-use std::sync::Arc;
-use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorHandlerTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
+use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
 
 struct MessageA {
     text: String,
@@ -19,9 +14,7 @@ impl MessageTrait for MessageA {}
 
 impl MessageTrait for MessageB {}
 
-struct MessageUnsupported {
-    text: String,
-}
+struct MessageUnsupported {}
 
 impl MessageTrait for MessageUnsupported {}
 
@@ -38,7 +31,7 @@ struct HelloWorldProps {
 }
 
 impl ActorProps<HelloWorld> for HelloWorldProps {
-    fn new_actor(&self, context: Context<HelloWorld>) -> HelloWorld {
+    fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
         HelloWorld {
             count: self.count,
             text: self.text.clone()
@@ -46,18 +39,18 @@ impl ActorProps<HelloWorld> for HelloWorldProps {
     }
 }
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&mut self, msg: MessageA, context: &Context<Self>) {
+    fn handle(&mut self, msg: MessageA, _context: &Context<Self>) {
         let text: String = [self.text.clone(), String::from(msg.text)].join(" -> ");
         self.count += 1;
-        println!("AAAA: {} Count: {}", "text", self.count)
+        println!("AAAA: {} Count: {}", text, self.count)
     }
 }
 
 impl Handler<MessageB> for HelloWorld {
-    fn handle(&mut self, msg: MessageB, context: &Context<Self>) {
+    fn handle(&mut self, msg: MessageB, _context: &Context<Self>) {
         let text: String = [self.text.clone(), String::from(msg.text)].join(" -> ");
         self.count -= 1;
-        println!("BBBB: {} Count: {}", "text", self.count)
+        println!("BBBB: {} Count: {}", text, self.count)
     }
 }
 

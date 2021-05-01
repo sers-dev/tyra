@@ -1,11 +1,7 @@
-#![allow(unused)]
-
-use std::any::{Any, TypeId};
 use std::process::exit;
-use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorHandlerTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
+use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
 
 #[derive(Clone)]
 struct TestMsg {}
@@ -28,7 +24,7 @@ impl ActorTrait for StopActor {
 }
 
 impl Handler<TestMsg> for StopActor {
-    fn handle(&mut self, msg: TestMsg, context: &Context<Self>) {
+    fn handle(&mut self, _msg: TestMsg, context: &Context<Self>) {
         context.actor_ref.send(TestMsg {});
         println!("Message received!");
         sleep(Duration::from_millis(100));
@@ -50,7 +46,7 @@ fn main() {
     let actor_system = ActorSystem::new(actor_config);
 
     let hw = StopActorProps {};
-    let mut x = actor_system
+    let x = actor_system
         .builder("hello-world")
         .set_mailbox_size(7)
         .build(hw);

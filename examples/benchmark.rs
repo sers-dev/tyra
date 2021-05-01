@@ -1,26 +1,11 @@
-#![allow(unused)]
-
-use std::any::{Any, TypeId};
-use std::collections::HashMap;
 use std::process::exit;
-use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps, ActorRef, SerializedMessage};
+use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
 
-struct MessageA {
-    id: usize,
-}
+struct MessageA {}
 
 impl MessageTrait for MessageA {}
-
-
-struct MessageB {
-    id: usize,
-    rea: ActorRef<Benchmark>
-}
-
-impl MessageTrait for MessageB {}
 
 
 struct Benchmark {
@@ -55,23 +40,13 @@ impl Benchmark {
 }
 
 impl ActorTrait for Benchmark {
-    fn pre_start(&mut self) {}
-
-    fn post_stop(&mut self) {}
-
-    fn on_actor_stop(&mut self) {}
-
     fn on_system_stop(&mut self) {
         self.ctx.actor_ref.stop();
-    }
-
-    fn handle_serialized_message(&self, msg: SerializedMessage) {
-
     }
 }
 
 impl Handler<MessageA> for Benchmark {
-    fn handle(&mut self, msg: MessageA, context: &Context<Self>) {
+    fn handle(&mut self, _msg: MessageA, context: &Context<Self>) {
         if self.count == 0 {
             println!("Sleep 3 now");
             sleep(Duration::from_secs((3) as u64));
@@ -102,16 +77,15 @@ fn main() {
 
     let message_count = 10000000;
 
-    let mut actor = actor_system.builder("benchmark-single-actor").build(BenchmarkProps {
+    let actor = actor_system.builder("benchmark-single-actor").build(BenchmarkProps {
         name: String::from("benchmark"),
         total_msgs: message_count as usize,
     });
     println!("Actors have been created");
     let start = Instant::now();
 
-    let id = 0;
-    for i in 0..message_count {
-        let msg = MessageA { id: i as usize };
+    for _i in 0..message_count {
+        let msg = MessageA {};
         actor.send(msg);
     }
     let duration = start.elapsed();

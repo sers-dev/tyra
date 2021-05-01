@@ -1,11 +1,6 @@
-#![allow(unused)]
-
-use std::any::{Any, TypeId};
 use std::process::exit;
-use std::sync::Arc;
-use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorHandlerTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
+use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
 
 #[derive(Clone)]
 struct ErrMsg {
@@ -23,8 +18,7 @@ struct ErrActor {
 impl ActorTrait for ErrActor {}
 
 impl Handler<ErrMsg> for ErrActor {
-    fn handle(&mut self, msg: ErrMsg, context: &Context<Self>) {
-        let text: String = [self.text.clone(), String::from(msg.text.clone())].join(" -> ");
+    fn handle(&mut self, msg: ErrMsg, _context: &Context<Self>) {
         self.counter += 1;
         if msg.text == "sers+1" {
             panic!("ficl");
@@ -39,7 +33,7 @@ struct ErrActorProps {
 }
 
 impl ActorProps<ErrActor> for ErrActorProps {
-    fn new_actor(&self, context: Context<ErrActor>) -> ErrActor {
+    fn new_actor(&self, _context: Context<ErrActor>) -> ErrActor {
         ErrActor {
             text: self.text.clone(),
             counter: self.counter,
@@ -55,7 +49,7 @@ fn main() {
         text: String::from("sers"),
         counter: 0,
     };
-    let mut x = actor_system
+    let x = actor_system
         .builder("hello-world")
         .set_mailbox_size(7)
         .build(hw);

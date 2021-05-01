@@ -1,11 +1,7 @@
-#![allow(unused)]
-
-use std::any::{Any, TypeId};
 use std::process::exit;
-use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorHandlerTrait, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
+use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
 
 #[derive(Clone)]
 struct SleepMsg {
@@ -23,8 +19,7 @@ struct SleepActor {
 impl ActorTrait for SleepActor {}
 
 impl Handler<SleepMsg> for SleepActor {
-    fn handle(&mut self, msg: SleepMsg, context: &Context<Self>) {
-        let text: String = [self.text.clone(), String::from(msg.text.clone())].join(" -> ");
+    fn handle(&mut self, _msg: SleepMsg, _context: &Context<Self>) {
         self.counter += 1;
         //if self.counter == 1 {
         sleep(Duration::from_secs(3));
@@ -41,7 +36,7 @@ struct SleepActorProps {
 }
 
 impl ActorProps<SleepActor> for SleepActorProps {
-    fn new_actor(&self, context: Context<SleepActor>) -> SleepActor {
+    fn new_actor(&self, _context: Context<SleepActor>) -> SleepActor {
         SleepActor{
             counter: self.counter,
             text: self.text.clone(),
@@ -57,7 +52,7 @@ fn main() {
         text: String::from("sers"),
         counter: 0,
     };
-    let mut x = actor_system
+    let x = actor_system
         .builder("hello-world")
         .set_mailbox_unbounded()
         .build(hw);

@@ -1,6 +1,4 @@
-#![allow(unused)]
-
-use tyractorsaur::prelude::{MessageTrait, ActorTrait, ActorProps, Context, Handler, TyractorsaurConfig, ActorSystem, RoundRobinRouterProps, ActorRef, RoundRobinRouter, RouterMessage, AddActorMessage, RemoveActorMessage};
+use tyractorsaur::prelude::{MessageTrait, ActorTrait, ActorProps, Context, Handler, TyractorsaurConfig, ActorSystem, RoundRobinRouterProps, RouterMessage, AddActorMessage, RemoveActorMessage};
 use std::time::Duration;
 use std::process::exit;
 use std::thread::sleep;
@@ -17,14 +15,14 @@ impl ActorTrait for HelloWorld {}
 struct HelloWorldProps {}
 
 impl ActorProps<HelloWorld> for HelloWorldProps {
-    fn new_actor(&self, context: Context<HelloWorld>) -> HelloWorld {
+    fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
         HelloWorld {
             counter: 0,
         }
     }
 }
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&mut self, msg: MessageA, context: &Context<Self>) {
+    fn handle(&mut self, _msg: MessageA, _context: &Context<Self>) {
         self.counter += 1;
         println!("Received MSG {}", self.counter);
     }
