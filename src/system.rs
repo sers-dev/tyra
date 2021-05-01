@@ -1,6 +1,5 @@
 use crate::actor::{ActorAddress, ActorTrait, Handler};
 use crate::actor_config::ActorConfig;
-use crate::actor_ref::{ActorHandler, ActorHandlerTrait};
 use crate::builder::{ActorBuilder, ActorProps};
 use crate::config::prelude::*;
 use crate::context::Context;
@@ -22,6 +21,7 @@ use std::time::{Duration, Instant};
 use threadpool::ThreadPool;
 use crate::message::serialized_message::SerializedMessage;
 use crate::mailbox::Mailbox;
+use crate::actor_handler::{ActorHandlerTrait, ActorHandler};
 
 pub struct WakeupMessage {
     iteration: usize,

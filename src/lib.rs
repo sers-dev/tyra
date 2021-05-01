@@ -10,6 +10,7 @@ mod system;
 mod router;
 mod message;
 mod mailbox;
+mod actor_handler;
 
 pub mod prelude {
     pub use crate::actor::*;
