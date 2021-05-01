@@ -1,5 +1,5 @@
-use crate::actor::{ActorTrait, Handler};
-use crate::context::Context;
+use crate::actor::actor::{ActorTrait, Handler};
+use crate::actor::context::Context;
 use crate::message::types::MessageType;
 use crate::message::message::MessageTrait;
 use std::any::{Any, TypeId};

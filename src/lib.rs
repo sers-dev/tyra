@@ -1,27 +1,20 @@
 #![allow(unused)]
 
-mod actor;
-mod actor_config;
-mod actor_ref;
-mod builder;
 mod config;
-mod context;
 mod system;
 mod router;
 mod message;
-mod mailbox;
-mod actor_handler;
-mod actor_state;
+mod actor;
 
 pub mod prelude {
-    pub use crate::actor::*;
-    pub use crate::actor_ref::*;
+    pub use crate::actor::actor::*;
+    pub use crate::actor::actor_ref::*;
+    pub use crate::actor::builder::ActorProps;
+    pub use crate::actor::context::*;
     pub use crate::config::prelude::*;
-    pub use crate::context::*;
-    pub use crate::system::ActorSystem;
-    pub use crate::builder::ActorProps;
-    pub use crate::router::prelude::*;
     pub use crate::message::prelude::*;
+    pub use crate::router::prelude::*;
+    pub use crate::system::ActorSystem;
 }
 
 #[cfg(test)]

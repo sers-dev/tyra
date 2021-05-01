@@ -1,7 +1,7 @@
 use std::panic::UnwindSafe;
 use crate::message::serialized_message::SerializedMessage;
 use crate::message::message::MessageTrait;
-use crate::context::Context;
+use crate::actor::context::Context;
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::message::system_stop_message::SystemStopMessage;
 

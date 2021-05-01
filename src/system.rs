@@ -1,23 +1,23 @@
-use crate::actor::{ActorAddress, ActorTrait};
+use crate::actor::actor::{ActorAddress, ActorTrait};
 use dashmap::DashMap;
 use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
 use crate::config::tyractorsaur_config::{TyractorsaurConfig, DEFAULT_POOL};
 use crate::config::pool_config::ThreadPoolConfig;
 use crossbeam_channel::{Sender, Receiver, unbounded, bounded};
-use crate::actor_handler::{ActorHandlerTrait, ActorHandler};
+use crate::actor::actor_handler::{ActorHandlerTrait, ActorHandler};
 use std::collections::HashMap;
 use std::time::{Instant, Duration};
 use threadpool::ThreadPool;
-use crate::actor_state::ActorState;
+use crate::actor::actor_state::ActorState;
 use std::thread::sleep;
 use crate::message::serialized_message::SerializedMessage;
-use crate::builder::{ActorBuilder, ActorProps};
-use crate::actor_config::ActorConfig;
-use crate::actor_ref::ActorRef;
+use crate::actor::builder::{ActorBuilder, ActorProps};
+use crate::actor::actor_config::ActorConfig;
+use crate::actor::actor_ref::ActorRef;
 use std::panic::UnwindSafe;
-use crate::mailbox::Mailbox;
-use crate::context::Context;
+use crate::actor::mailbox::Mailbox;
+use crate::actor::context::Context;
 
 pub struct WakeupMessage {
     iteration: usize,

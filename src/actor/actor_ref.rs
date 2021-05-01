@@ -1,5 +1,5 @@
-use crate::actor::{ActorTrait, ActorAddress, Handler};
-use crate::mailbox::Mailbox;
+use crate::actor::actor::{ActorTrait, ActorAddress, Handler};
+use crate::actor::mailbox::Mailbox;
 use crate::system::ActorSystem;
 use std::panic::UnwindSafe;
 use crate::message::message::MessageTrait;

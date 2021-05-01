@@ -1,7 +1,7 @@
-use crate::actor_ref::ActorRef;
-use crate::builder::ActorProps;
-use crate::context::Context;
-use crate::actor::{ActorTrait, Handler};
+use crate::actor::actor_ref::ActorRef;
+use crate::actor::builder::ActorProps;
+use crate::actor::context::Context;
+use crate::actor::actor::{ActorTrait, Handler};
 use std::thread::sleep;
 use std::time::Duration;
 use crate::message::message::MessageTrait;

@@ -1,18 +1,18 @@
-use crate::actor_state::ActorState;
-use crate::actor_config::{ActorConfig, RestartPolicy};
-use crate::actor::{ActorAddress, ActorTrait, Handler};
-use crate::builder::ActorProps;
-use crate::mailbox::Mailbox;
+use crate::actor::actor_state::ActorState;
+use crate::actor::actor_config::{ActorConfig, RestartPolicy};
+use crate::actor::actor::{ActorAddress, ActorTrait, Handler};
+use crate::actor::builder::ActorProps;
+use crate::actor::mailbox::Mailbox;
 use crossbeam_channel::Receiver;
 use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
 use std::time::{Instant, Duration};
 use crate::system::ActorSystem;
-use crate::context::Context;
+use crate::actor::context::Context;
 use std::panic::{UnwindSafe, catch_unwind, AssertUnwindSafe};
 use crate::message::system_stop_message::SystemStopMessage;
 use std::sync::atomic::Ordering;
 use crate::message::types::MessageType;
-use crate::actor_ref::ActorRef;
+use crate::actor::actor_ref::ActorRef;
 use crate::message::message::MessageTrait;
 
 pub trait ActorHandlerTrait: Send + Sync {

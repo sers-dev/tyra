@@ -6,7 +6,7 @@ use std::process::exit;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyractorsaur::prelude::{ActorHandler, ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps, ActorRef, SerializedMessage};
+use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps, ActorRef, SerializedMessage};
 
 struct MessageA {
     id: usize,

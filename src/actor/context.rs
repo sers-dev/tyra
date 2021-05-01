@@ -1,5 +1,5 @@
 use crate::prelude::ActorTrait;
-use crate::actor_ref::ActorRef;
+use crate::actor::actor_ref::ActorRef;
 use crate::system::ActorSystem;
 use std::panic::UnwindSafe;
 
