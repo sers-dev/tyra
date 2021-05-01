@@ -9,10 +9,6 @@ default_mailbox_size = 0
 default_message_throughput = 15
 default_restart_policy = "Always"
 
-[remoting]
-enabled = true
-bind = "127.0.0.1:1122"
-
 # default pool settings
 [thread_pool.config.default]
 # amount of actors that this thread_pool can handle
@@ -24,27 +20,4 @@ threads_min = 2
 threads_max = 10
 # num_cpu * factor = amount of threads to spawn for this pool
 threads_factor = 1.5
-
-[thread_pool.config.system]
-# amount of actors that this thread_pool can handle
-# 0 is treated as unlimited
-actor_limit = 0
-# minimum amount of threads to spawn for this pool
-threads_min = 2
-# maximum amount of threads to spawn for this pool
-threads_max = 2
-# num_cpu * factor = amount of threads to spawn for this pool
-threads_factor = 1
-
-[thread_pool.config.remoting]
-# amount of actors that this thread_pool can handle
-# 0 is treated as unlimited
-actor_limit = 0
-# minimum amount of threads to spawn for this pool
-threads_min = 2
-# maximum amount of threads to spawn for this pool
-threads_max = 2
-# num_cpu * factor = amount of threads to spawn for this pool
-threads_factor = 1
-
 

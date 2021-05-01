@@ -1,18 +1,15 @@
 use crate::config::global_config::GlobalConfig;
 use crate::config::pool_config::PoolConfig;
-use crate::config::remoting::RemotingConfig;
 
 use config::{Config, ConfigError, Environment, File, FileFormat};
 use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_POOL: &str = "default";
-pub const SYSTEM_POOL: &str = "system";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TyractorsaurConfig {
     pub global: GlobalConfig,
     pub thread_pool: PoolConfig,
-    pub remoting: RemotingConfig
 }
 
 impl TyractorsaurConfig {

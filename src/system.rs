@@ -72,14 +72,8 @@ impl ActorSystem {
         };
 
         for (key, value) in thread_pool_config.config.iter() {
-            if key == "remoting" && !config.remoting.enabled {
-                continue;
-            }
             system.add_pool_with_config(key, value.clone());
         }
-        system.add_pool(SYSTEM_POOL);
-        let system_pool_config = thread_pool_config.config.get(SYSTEM_POOL).unwrap();
-        system.add_pool_with_config(SYSTEM_POOL, system_pool_config.clone());
         system.start();
         system
     }
@@ -112,8 +106,6 @@ impl ActorSystem {
         std::thread::spawn(move || s.manage_threads());
         let s = self.clone();
         std::thread::spawn(move || s.wake());
-        self.start_system_actors();
-        println!("???");
     }
 
     fn wake(&self) {
@@ -275,8 +267,6 @@ impl ActorSystem {
             sleep(Duration::from_secs((1) as u64));
         }
     }
-
-    fn start_system_actors(&self) {}
 
     pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
         let target = self.actors.get(address);

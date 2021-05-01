@@ -1,3 +1,5 @@
+# WIP 0.1.0
+
 # WIP 0.0.8
 
 - implement `clone()` for `ActorRef`
@@ -14,10 +16,11 @@
 - Added round robin router with usage example 
 
 - Remoting:
-  - Added Remoting Configuration
+  - All necessary Remoting preparations are included in this Release. With these changes Remoting is in itself a possibility, although at this point in time no Remoting Library is provided
   - Added `SerializedMessage`
   - Added `fn handle_serialized_message(&self, msg: SerializedMessage)` to Actor Trait
   - System now Stores `dyn ActorTrait` per `ActorAddress`
+  - System now provides `send_to_addrress()` which takes an `ActorAddress` and a `SerializedMessage` to call `handle_serialized_message`
   
 
 # 0.0.7
