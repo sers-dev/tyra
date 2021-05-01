@@ -2,7 +2,6 @@ use crate::actor::{ActorTrait, Handler};
 use crate::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor_ref::ActorHandler;
 use crate::config::prelude::DEFAULT_POOL;
-use crate::message::MessageTrait;
 use crate::prelude::ActorRef;
 use crate::system::ActorSystem;
 use std::panic::UnwindSafe;

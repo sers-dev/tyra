@@ -1,7 +1,6 @@
 use crate::actor::{ActorAddress, ActorTrait, Handler};
 use crate::actor_config::{ActorConfig, RestartPolicy};
 use crate::context::Context;
-use crate::message::{MessageEnvelope, MessageEnvelopeTrait, MessageTrait, MessageType, ActorStopMessage, SystemStopMessage};
 use crate::prelude::TyractorsaurConfig;
 use crate::system::ActorSystem;
 use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
@@ -13,6 +12,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 use crate::builder::ActorProps;
+use crate::message::envelope::MessageEnvelopeTrait;
+use crate::message::envelope::MessageEnvelope;
+use crate::message::message::MessageTrait;
+use crate::message::system_stop_message::SystemStopMessage;
+use crate::message::types::MessageType;
+use crate::message::actor_stop_message::ActorStopMessage;
 
 pub trait ActorHandlerTrait: Send + Sync {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState;

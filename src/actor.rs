@@ -1,9 +1,12 @@
 use crate::context::Context;
-use crate::message::{MessageTrait, ActorStopMessage, SystemStopMessage, SerializedMessage};
 use serde::{Deserialize, Serialize};
 use std::any::Any;
 use std::sync::{Arc, RwLock};
 use std::panic::UnwindSafe;
+use crate::message::serialized_message::SerializedMessage;
+use crate::message::message::MessageTrait;
+use crate::message::actor_stop_message::ActorStopMessage;
+use crate::message::system_stop_message::SystemStopMessage;
 
 pub trait ActorTrait: Send + Sync + UnwindSafe {
     fn pre_start(&mut self) {}

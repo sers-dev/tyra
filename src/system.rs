@@ -4,7 +4,6 @@ use crate::actor_ref::{ActorHandler, ActorHandlerTrait};
 use crate::builder::{ActorBuilder, ActorProps};
 use crate::config::prelude::*;
 use crate::context::Context;
-use crate::message::{MessageTrait, SerializedMessage};
 use crate::prelude::{ActorRef, ActorState, Mailbox};
 use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
 use crossbeam_utils::atomic::AtomicCell;
@@ -21,6 +20,7 @@ use std::sync::{Arc, RwLock};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use threadpool::ThreadPool;
+use crate::message::serialized_message::SerializedMessage;
 
 pub struct WakeupMessage {
     iteration: usize,

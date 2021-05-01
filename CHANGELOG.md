@@ -1,5 +1,8 @@
 # WIP 0.1.0
 
+- moved Actor Messages into separate directory
+
+
 # WIP 0.0.8
 
 - implement `clone()` for `ActorRef`

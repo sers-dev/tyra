@@ -1,10 +1,10 @@
 use crate::actor_ref::ActorRef;
-use crate::message::{MessageTrait, SerializedMessage};
 use crate::builder::ActorProps;
 use crate::context::Context;
 use crate::actor::{ActorTrait, Handler};
 use std::thread::sleep;
 use std::time::Duration;
+use crate::message::message::MessageTrait;
 
 pub struct RouterMessage<M>
 where

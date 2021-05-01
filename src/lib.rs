@@ -6,22 +6,19 @@ mod actor_ref;
 mod builder;
 mod config;
 mod context;
-mod message;
 mod system;
 mod router;
+mod message;
 
 pub mod prelude {
     pub use crate::actor::*;
     pub use crate::actor_ref::*;
     pub use crate::config::prelude::*;
     pub use crate::context::*;
-    pub use crate::message::SerializedMessage;
-    pub use crate::message::MessageTrait;
-    pub use crate::message::MessageEnvelope;
-    pub use crate::message::MessageType;
     pub use crate::system::ActorSystem;
     pub use crate::builder::ActorProps;
     pub use crate::router::prelude::*;
+    pub use crate::message::prelude::*;
 }
 
 #[cfg(test)]
