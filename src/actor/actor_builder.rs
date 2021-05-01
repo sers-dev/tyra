@@ -1,5 +1,5 @@
 use crate::system::actor_system::ActorSystem;
-use crate::actor::config::{Config, RestartPolicy};
+use crate::actor::actor_config::{ActorConfig, RestartPolicy};
 use crate::config::tyractorsaur_config::DEFAULT_POOL;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::actor::Actor;
@@ -9,14 +9,14 @@ use crate::actor::actor_factory::ActorFactory;
 #[derive(Clone)]
 pub struct ActorBuilder {
     system: ActorSystem,
-    actor_config: Config,
+    actor_config: ActorConfig,
 }
 
 impl ActorBuilder {
     pub fn new(system: ActorSystem, actor_name: String) -> ActorBuilder {
         let config = system.get_config();
 
-        let actor_config = Config {
+        let actor_config = ActorConfig {
             actor_name,
             pool_name: String::from(DEFAULT_POOL),
             mailbox_size: config.global.default_mailbox_size,

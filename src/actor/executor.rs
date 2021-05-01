@@ -1,5 +1,5 @@
 use crate::actor::actor_state::ActorState;
-use crate::actor::config::{Config, RestartPolicy};
+use crate::actor::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor::actor::Actor;
 use crate::actor::mailbox::Mailbox;
 use crossbeam_channel::Receiver;
@@ -19,7 +19,7 @@ use crate::actor::actor_factory::ActorFactory;
 
 pub trait ExecutorTrait: Send + Sync {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState;
-    fn get_config(&self) -> &Config;
+    fn get_config(&self) -> &ActorConfig;
     fn get_address(&self) -> ActorAddress;
     fn is_sleeping(&self) -> bool;
     fn is_stopped(&self) -> bool;
@@ -33,7 +33,7 @@ pub struct Executor<A, P>
 {
     actor: A,
     actor_props: P,
-    actor_config: Config,
+    actor_config: ActorConfig,
     mailbox: Mailbox<A>,
     queue: Receiver<MessageEnvelope<A>>,
     actor_address: ActorAddress,
@@ -101,7 +101,7 @@ impl<A, P> ExecutorTrait for Executor<A, P>
         ActorState::Running
     }
 
-    fn get_config(&self) -> &Config {
+    fn get_config(&self) -> &ActorConfig {
         &self.actor_config
     }
 
@@ -130,7 +130,7 @@ impl<A, P> Executor<A, P>
 {
     pub fn new(
         actor_props: P,
-        actor_config: Config,
+        actor_config: ActorConfig,
         mailbox: Mailbox<A>,
         receiver: Receiver<MessageEnvelope<A>>,
         system: ActorSystem,

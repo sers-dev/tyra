@@ -1,4 +1,4 @@
-pub mod config;
+pub mod actor_config;
 pub mod actor;
 pub mod executor;
 pub mod actor_wrapper;

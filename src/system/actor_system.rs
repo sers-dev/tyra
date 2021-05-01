@@ -13,7 +13,7 @@ use crate::actor::actor_state::ActorState;
 use std::thread::sleep;
 use crate::message::serialized_message::SerializedMessage;
 use crate::actor::actor_builder::ActorBuilder;
-use crate::actor::config::Config;
+use crate::actor::actor_config::ActorConfig;
 use crate::actor::actor_wrapper::ActorWrapper;
 use std::panic::UnwindSafe;
 use crate::actor::mailbox::Mailbox;
@@ -278,7 +278,7 @@ impl ActorSystem {
         ActorBuilder::new(self.clone(), name.into())
     }
 
-    pub fn spawn<A, P>(&self, actor_props: P, actor_config: Config) -> ActorWrapper<A>
+    pub fn spawn<A, P>(&self, actor_props: P, actor_config: ActorConfig) -> ActorWrapper<A>
     where
         A: Actor + UnwindSafe + 'static,
         P: ActorFactory<A> + 'static,

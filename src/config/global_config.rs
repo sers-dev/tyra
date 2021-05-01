@@ -1,4 +1,4 @@
-use crate::actor::config::RestartPolicy;
+use crate::actor::actor_config::RestartPolicy;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -1,6 +1,13 @@
 # WIP 0.1.0
 
 - cleanup
+- refactoring
+- the following User facing resources have been renamed:
+  - `ActorTrait` -> `Actor`
+  - `MessageTrait` -> `ActorMessage`
+  - `ActorRef` -> `ActorWrapper`
+  - `ActorProps` -> `ActorFactory`
+  - `ActorHandler` -> `Executor`
 
 # WIP 0.0.8
 
