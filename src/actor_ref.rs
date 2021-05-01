@@ -21,13 +21,6 @@ use crate::message::actor_stop_message::ActorStopMessage;
 use crate::mailbox::Mailbox;
 
 
-#[derive(PartialEq, Clone, Copy, Debug)]
-pub enum ActorState {
-    Running,
-    Sleeping,
-    Stopped,
-}
-
 pub struct ActorRef<A>
 where
     A: ActorTrait + 'static,

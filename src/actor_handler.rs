@@ -1,4 +1,4 @@
-use crate::actor_ref::{ActorState, ActorRef};
+use crate::actor_ref::ActorRef;
 use crate::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor::{ActorAddress, ActorTrait, Handler};
 use crate::builder::ActorProps;
@@ -13,6 +13,7 @@ use crate::message::system_stop_message::SystemStopMessage;
 use std::sync::atomic::Ordering;
 use crate::message::types::MessageType;
 use crate::message::message::MessageTrait;
+use crate::actor_state::ActorState;
 
 pub trait ActorHandlerTrait: Send + Sync {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState;

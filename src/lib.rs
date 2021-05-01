@@ -11,6 +11,7 @@ mod router;
 mod message;
 mod mailbox;
 mod actor_handler;
+mod actor_state;
 
 pub mod prelude {
     pub use crate::actor::*;

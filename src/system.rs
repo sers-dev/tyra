@@ -3,7 +3,7 @@ use crate::actor_config::ActorConfig;
 use crate::builder::{ActorBuilder, ActorProps};
 use crate::config::prelude::*;
 use crate::context::Context;
-use crate::prelude::{ActorRef, ActorState};
+use crate::prelude::ActorRef;
 use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
 use crossbeam_utils::atomic::AtomicCell;
 use dashmap::DashMap;
@@ -22,6 +22,7 @@ use threadpool::ThreadPool;
 use crate::message::serialized_message::SerializedMessage;
 use crate::mailbox::Mailbox;
 use crate::actor_handler::{ActorHandlerTrait, ActorHandler};
+use crate::actor_state::ActorState;
 
 pub struct WakeupMessage {
     iteration: usize,
