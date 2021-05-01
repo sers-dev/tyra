@@ -1,7 +1,7 @@
 # WIP 0.1.0
 
-- moved Actor Messages into separate directory
-
+- move Actor Messages into separate directory
+- move Mailbox to separate file
 
 # WIP 0.0.8
 

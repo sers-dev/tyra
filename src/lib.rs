@@ -9,6 +9,7 @@ mod context;
 mod system;
 mod router;
 mod message;
+mod mailbox;
 
 pub mod prelude {
     pub use crate::actor::*;

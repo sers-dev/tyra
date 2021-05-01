@@ -18,6 +18,7 @@ use crate::message::message::MessageTrait;
 use crate::message::system_stop_message::SystemStopMessage;
 use crate::message::types::MessageType;
 use crate::message::actor_stop_message::ActorStopMessage;
+use crate::mailbox::Mailbox;
 
 pub trait ActorHandlerTrait: Send + Sync {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState;
@@ -33,47 +34,6 @@ pub enum ActorState {
     Running,
     Sleeping,
     Stopped,
-}
-
-pub struct Mailbox<A> {
-    pub is_stopped: Arc<AtomicBool>,
-    pub is_sleeping: Arc<AtomicBool>,
-    pub msg_in: Sender<MessageEnvelope<A>>,
-}
-
-impl<A> Clone for Mailbox<A>
-    where
-        A: ActorTrait + UnwindSafe,
-{
-    fn clone(&self) -> Self {
-        Self {
-            msg_in: self.msg_in.clone(),
-            is_stopped: self.is_stopped.clone(),
-            is_sleeping: self.is_sleeping.clone(),
-        }
-    }
-}
-
-
-impl<A> Mailbox<A>
-//where
-//    A: ActorTrait,
-{
-    pub fn send<M>(&self, msg: M)
-    where
-        A: Handler<M>,
-        M: MessageTrait + 'static,
-    {
-        self.msg_in.send(MessageEnvelope::new(msg)).unwrap();
-    }
-
-    fn is_sleeping(&self) -> bool {
-        self.is_sleeping.load(Ordering::Relaxed)
-    }
-
-    fn is_stopped(&self) -> bool {
-        self.is_stopped.load(Ordering::Relaxed)
-    }
 }
 
 /////////////
