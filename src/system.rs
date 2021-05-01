@@ -278,6 +278,14 @@ impl ActorSystem {
 
     fn start_system_actors(&self) {}
 
+    pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
+        let target = self.actors.get(address);
+        if target.is_some() {
+            let target = target.unwrap();
+            target.handle_serialized_message(msg);
+        }
+    }
+
     pub fn builder(&self, name: impl Into<String>) -> ActorBuilder {
         ActorBuilder::new(self.clone(), name.into())
     }
