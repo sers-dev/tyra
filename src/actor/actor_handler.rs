@@ -1,7 +1,6 @@
 use crate::actor::actor_state::ActorState;
 use crate::actor::actor_config::{ActorConfig, RestartPolicy};
-use crate::actor::actor::{ActorAddress, ActorTrait, Handler};
-use crate::actor::builder::ActorProps;
+use crate::actor::actor::ActorTrait;
 use crate::actor::mailbox::Mailbox;
 use crossbeam_channel::Receiver;
 use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
@@ -14,6 +13,9 @@ use std::sync::atomic::Ordering;
 use crate::message::types::MessageType;
 use crate::actor::actor_ref::ActorRef;
 use crate::message::message::MessageTrait;
+use crate::actor::address::ActorAddress;
+use crate::actor::handler::Handler;
+use crate::actor::props::ActorProps;
 
 pub trait ActorHandlerTrait: Send + Sync {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState;

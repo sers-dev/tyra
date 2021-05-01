@@ -2,9 +2,10 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use crossbeam_channel::Sender;
 use crate::message::envelope::MessageEnvelope;
-use crate::actor::actor::{ActorTrait, Handler};
+use crate::actor::actor::{ActorTrait};
 use std::panic::UnwindSafe;
 use crate::message::message::MessageTrait;
+use crate::actor::handler::Handler;
 
 pub struct Mailbox<A> {
     pub is_stopped: Arc<AtomicBool>,

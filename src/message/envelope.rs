@@ -1,10 +1,11 @@
-use crate::actor::actor::{ActorTrait, Handler};
+use crate::actor::actor::ActorTrait;
 use crate::actor::context::Context;
 use crate::message::types::MessageType;
 use crate::message::message::MessageTrait;
 use std::any::{Any, TypeId};
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::message::system_stop_message::SystemStopMessage;
+use crate::actor::handler::Handler;
 
 pub trait MessageEnvelopeTrait<A>: Send + Sync
     where

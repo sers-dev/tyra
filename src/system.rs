@@ -1,4 +1,4 @@
-use crate::actor::actor::{ActorAddress, ActorTrait};
+use crate::actor::actor::ActorTrait;
 use dashmap::DashMap;
 use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
@@ -12,12 +12,14 @@ use threadpool::ThreadPool;
 use crate::actor::actor_state::ActorState;
 use std::thread::sleep;
 use crate::message::serialized_message::SerializedMessage;
-use crate::actor::builder::{ActorBuilder, ActorProps};
+use crate::actor::builder::ActorBuilder;
 use crate::actor::actor_config::ActorConfig;
 use crate::actor::actor_ref::ActorRef;
 use std::panic::UnwindSafe;
 use crate::actor::mailbox::Mailbox;
 use crate::actor::context::Context;
+use crate::actor::address::ActorAddress;
+use crate::actor::props::ActorProps;
 
 pub struct WakeupMessage {
     iteration: usize,

@@ -1,8 +1,9 @@
 use crate::actor::actor_ref::ActorRef;
-use crate::actor::builder::ActorProps;
 use crate::actor::context::Context;
-use crate::actor::actor::{ActorTrait, Handler};
+use crate::actor::actor::ActorTrait;
 use crate::message::message::MessageTrait;
+use crate::actor::handler::Handler;
+use crate::actor::props::ActorProps;
 
 pub struct RouterMessage<M>
 where

@@ -1,9 +1,11 @@
-use crate::actor::actor::{ActorTrait, ActorAddress, Handler};
+use crate::actor::actor::ActorTrait;
 use crate::actor::mailbox::Mailbox;
 use crate::system::ActorSystem;
 use std::panic::UnwindSafe;
 use crate::message::message::MessageTrait;
 use crate::message::actor_stop_message::ActorStopMessage;
+use crate::actor::address::ActorAddress;
+use crate::actor::handler::Handler;
 
 pub struct ActorRef<A>
 where
