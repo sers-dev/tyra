@@ -1,4 +1,3 @@
-#![allow(unused)]
 
 mod config;
 mod system;

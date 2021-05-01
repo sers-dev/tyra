@@ -45,7 +45,7 @@ impl ActorBuilder {
         self
     }
 
-    pub fn set_mailbox_unbounded(mut self) -> ActorBuilder {
+    pub fn set_mailbox_unbounded(self) -> ActorBuilder {
         self.set_mailbox_size(0)
     }
 

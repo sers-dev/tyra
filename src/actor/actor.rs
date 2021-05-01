@@ -10,7 +10,7 @@ pub trait ActorTrait: Send + Sync + UnwindSafe {
     fn post_stop(&mut self) {}
     fn on_actor_stop(&mut self) {}
     fn on_system_stop(&mut self) {}
-    fn handle_serialized_message(&self, msg: SerializedMessage) {}
+    fn handle_serialized_message(&self, _msg: SerializedMessage) {}
 }
 
 pub trait Handler<M: ?Sized>
@@ -33,7 +33,7 @@ impl<A> Handler<ActorStopMessage> for A
 where
     A: ActorTrait + Sized,
 {
-    fn handle(&mut self, msg: ActorStopMessage, context: &Context<A>) {
+    fn handle(&mut self, _msg: ActorStopMessage, _context: &Context<A>) {
         self.on_actor_stop();
     }
 }
@@ -42,7 +42,7 @@ impl<A> Handler<SystemStopMessage> for A
     where
         A: ActorTrait + Sized,
 {
-    fn handle(&mut self, msg: SystemStopMessage, context: &Context<A>) {
+    fn handle(&mut self, _msg: SystemStopMessage, _context: &Context<A>) {
         self.on_system_stop();
     }
 }

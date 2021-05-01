@@ -216,12 +216,11 @@ impl ActorSystem {
 
                 }
                 let current = pools.get(&pool_name).unwrap();
-                for i in current.active_count()..current.max_count() {
+                for _i in current.active_count()..current.max_count() {
                     let sender = pool_sender.clone();
                     let receiver = pool_receiver.clone();
                     let system = self.clone();
                     let pool_name = pool_name.clone();
-                    let pool_config = pool_config.clone();
                     let recv_timeout = Duration::from_secs(1);
                     pools.get(&pool_name).unwrap().execute(move || loop {
                         let system_is_stopping = system.is_stopping.load(Ordering::Relaxed);
@@ -233,11 +232,11 @@ impl ActorSystem {
                             }
                             continue;
                         }
-                        let mut ar = msg.unwrap();
+                        let ar = msg.unwrap();
                         {
                             let mut actor_ref = ar.write().unwrap();
                             let actor_config = actor_ref.get_config();
-                            for j in 0..actor_config.message_throughput {
+                            for _j in 0..actor_config.message_throughput {
                                 actor_state = actor_ref.handle(system_is_stopping);
                                 if actor_state != ActorState::Running {
                                     break;
@@ -248,12 +247,12 @@ impl ActorSystem {
                         if actor_state == ActorState::Running {
                             sender.send(ar).unwrap();
                         } else if actor_state == ActorState::Sleeping {
-                            let mut address = None;
+                            let address;
                             {
-                                let mut actor_ref = ar.write().unwrap();
-                                address = Some(actor_ref.get_address());
+                                let actor_ref = ar.write().unwrap();
+                                address = actor_ref.get_address();
                             }
-                            system.sleeping_actors.insert(address.unwrap(), ar);
+                            system.sleeping_actors.insert(address, ar);
                         } else {
                             println!("Actor has been stopped");
                             system.total_actor_count.fetch_sub(1, Ordering::Relaxed);
@@ -288,7 +287,6 @@ impl ActorSystem {
             bounded(actor_config.mailbox_size)
         };
 
-        let tuple = self.thread_pools.get(&actor_config.pool_name).unwrap();
         let mailbox = Mailbox {
             is_stopped: Arc::new(AtomicBool::new(false)),
             is_sleeping: Arc::new(AtomicBool::new(true)),

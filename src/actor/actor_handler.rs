@@ -38,7 +38,6 @@ pub struct ActorHandler<A, P>
     is_startup: bool,
     system_triggered_stop: bool,
     last_wakeup: Instant,
-    system: ActorSystem,
     context: Context<A>,
 }
 
@@ -59,7 +58,7 @@ impl<A, P> ActorHandlerTrait for ActorHandler<A, P>
             self.is_startup = false;
             self.actor.pre_start();
         }
-        let mut m = self.queue.try_recv();
+        let m = self.queue.try_recv();
 
         if m.is_err() {
             if self.is_stopped() {
@@ -158,7 +157,6 @@ impl<A, P> ActorHandler<A, P>
             is_startup: true,
             system_triggered_stop: false,
             last_wakeup: Instant::now(),
-            system,
             context,
         }
     }

@@ -2,8 +2,6 @@ use crate::actor::actor_ref::ActorRef;
 use crate::actor::builder::ActorProps;
 use crate::actor::context::Context;
 use crate::actor::actor::{ActorTrait, Handler};
-use std::thread::sleep;
-use std::time::Duration;
 use crate::message::message::MessageTrait;
 
 pub struct RouterMessage<M>
@@ -129,7 +127,7 @@ impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
     where
         A: ActorTrait + 'static,
 {
-    fn handle(&mut self, msg: AddActorMessage<A>, context: &Context<Self>) {
+    fn handle(&mut self, msg: AddActorMessage<A>, _context: &Context<Self>) {
         self.route_to.push(msg.actor);
         self.can_route = true;
     }
@@ -139,7 +137,7 @@ impl<A> Handler<RemoveActorMessage<A>> for RoundRobinRouter<A>
     where
         A: ActorTrait + 'static,
 {
-    fn handle(&mut self, msg: RemoveActorMessage<A>, context: &Context<Self>) {
+    fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &Context<Self>) {
         if let Some(pos) = self.route_to.iter().position(|x| x.get_address() == msg.actor.get_address()) {
             self.route_to.remove(pos);
         }
@@ -151,7 +149,7 @@ impl<A, M> Handler<RouterMessage<M>> for RoundRobinRouter<A>
         A: ActorTrait + Handler<M> + 'static,
         M: MessageTrait + 'static
 {
-    fn handle(&mut self, msg: RouterMessage<M>, context: &Context<Self>) {
+    fn handle(&mut self, msg: RouterMessage<M>, _context: &Context<Self>) {
         if !self.can_route {
             return;
         }
