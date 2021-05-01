@@ -8,7 +8,6 @@ mod config;
 mod context;
 mod message;
 mod system;
-mod remoting;
 mod router;
 
 pub mod prelude {
