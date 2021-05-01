@@ -1,24 +1,24 @@
-use crate::actor::actor_ref::ActorRef;
+use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::Context;
-use crate::actor::actor::ActorTrait;
-use crate::message::message::MessageTrait;
+use crate::actor::actor::Actor;
+use crate::message::actor_message::ActorMessage;
 use crate::actor::handler::Handler;
-use crate::actor::props::ActorProps;
+use crate::actor::props::Props;
 
 pub struct RouterMessage<M>
 where
-    M: MessageTrait + 'static,
+    M: ActorMessage + 'static,
 {
     pub msg: M
 }
-impl<M> MessageTrait for RouterMessage<M>
+impl<M> ActorMessage for RouterMessage<M>
     where
-        M: MessageTrait + 'static,
+        M: ActorMessage + 'static,
 {}
 
 impl<M> RouterMessage<M>
     where
-        M: MessageTrait + 'static,
+        M: ActorMessage + 'static,
 {
     pub fn new(msg: M) -> Self {
         Self {
@@ -29,57 +29,57 @@ impl<M> RouterMessage<M>
 
 pub struct AddActorMessage<A>
 where
-    A: ActorTrait + 'static,
+    A: Actor + 'static,
 {
-    actor: ActorRef<A>
+    actor: ActorWrapper<A>
 }
 
 impl<A> AddActorMessage<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {
-    pub fn new(actor: ActorRef<A>) -> Self {
+    pub fn new(actor: ActorWrapper<A>) -> Self {
         Self {
             actor,
         }
     }
 }
 
-impl<A> MessageTrait for AddActorMessage<A>
+impl<A> ActorMessage for AddActorMessage<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {}
 
 pub struct RemoveActorMessage<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {
-    actor: ActorRef<A>
+    actor: ActorWrapper<A>
 }
 
 impl<A> RemoveActorMessage<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {
-    pub fn new(actor: ActorRef<A>) -> Self {
+    pub fn new(actor: ActorWrapper<A>) -> Self {
         Self {
             actor,
         }
     }
 }
-impl<A> MessageTrait for RemoveActorMessage<A>
+impl<A> ActorMessage for RemoveActorMessage<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {}
 
 
 pub struct RoundRobinRouter<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {
     context: Context<Self>,
     route_index: usize,
-    route_to: Vec<ActorRef<A>>,
+    route_to: Vec<ActorWrapper<A>>,
     can_route: bool,
 }
 
@@ -91,9 +91,9 @@ impl RoundRobinRouterProps {
     }
 }
 
-impl<A> ActorProps<RoundRobinRouter<A>> for RoundRobinRouterProps
+impl<A> Props<RoundRobinRouter<A>> for RoundRobinRouterProps
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {
     fn new_actor(&self, context: Context<RoundRobinRouter<A>>) -> RoundRobinRouter<A> {
         RoundRobinRouter::new(context)
@@ -103,7 +103,7 @@ impl<A> ActorProps<RoundRobinRouter<A>> for RoundRobinRouterProps
 
 impl<A> RoundRobinRouter<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {
     pub fn new(context: Context<Self>) -> Self {
         Self {
@@ -115,9 +115,9 @@ impl<A> RoundRobinRouter<A>
     }
 }
 
-impl<A> ActorTrait for RoundRobinRouter<A>
+impl<A> Actor for RoundRobinRouter<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {
     fn on_system_stop(&mut self) {
         self.context.actor_ref.stop();
@@ -126,7 +126,7 @@ impl<A> ActorTrait for RoundRobinRouter<A>
 
 impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {
     fn handle(&mut self, msg: AddActorMessage<A>, _context: &Context<Self>) {
         self.route_to.push(msg.actor);
@@ -136,7 +136,7 @@ impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
 
 impl<A> Handler<RemoveActorMessage<A>> for RoundRobinRouter<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {
     fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &Context<Self>) {
         if let Some(pos) = self.route_to.iter().position(|x| x.get_address() == msg.actor.get_address()) {
@@ -147,8 +147,8 @@ impl<A> Handler<RemoveActorMessage<A>> for RoundRobinRouter<A>
 
 impl<A, M> Handler<RouterMessage<M>> for RoundRobinRouter<A>
     where
-        A: ActorTrait + Handler<M> + 'static,
-        M: MessageTrait + 'static
+        A: Actor + Handler<M> + 'static,
+        M: ActorMessage + 'static
 {
     fn handle(&mut self, msg: RouterMessage<M>, _context: &Context<Self>) {
         if !self.can_route {

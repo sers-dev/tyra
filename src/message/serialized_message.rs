@@ -1,7 +1,7 @@
-use crate::message::message::MessageTrait;
+use crate::message::actor_message::ActorMessage;
 
 pub struct SerializedMessage {
     pub content: Vec<u8>,
 }
 
-impl MessageTrait for SerializedMessage {}
+impl ActorMessage for SerializedMessage {}

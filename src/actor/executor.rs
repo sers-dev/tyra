@@ -1,55 +1,55 @@
 use crate::actor::actor_state::ActorState;
-use crate::actor::actor_config::{ActorConfig, RestartPolicy};
-use crate::actor::actor::ActorTrait;
+use crate::actor::config::{Config, RestartPolicy};
+use crate::actor::actor::Actor;
 use crate::actor::mailbox::Mailbox;
 use crossbeam_channel::Receiver;
 use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
 use std::time::{Instant, Duration};
-use crate::system::ActorSystem;
+use crate::system::actor_system::ActorSystem;
 use crate::actor::context::Context;
 use std::panic::{UnwindSafe, catch_unwind, AssertUnwindSafe};
 use crate::message::system_stop_message::SystemStopMessage;
 use std::sync::atomic::Ordering;
-use crate::message::types::MessageType;
-use crate::actor::actor_ref::ActorRef;
-use crate::message::message::MessageTrait;
-use crate::actor::address::ActorAddress;
+use crate::message::message_type::MessageType;
+use crate::actor::actor_wrapper::ActorWrapper;
+use crate::message::actor_message::ActorMessage;
+use crate::actor::address::Address;
 use crate::actor::handler::Handler;
-use crate::actor::props::ActorProps;
+use crate::actor::props::Props;
 
-pub trait ActorHandlerTrait: Send + Sync {
+pub trait ExecutorTrait: Send + Sync {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState;
-    fn get_config(&self) -> &ActorConfig;
-    fn get_address(&self) -> ActorAddress;
+    fn get_config(&self) -> &Config;
+    fn get_address(&self) -> Address;
     fn is_sleeping(&self) -> bool;
     fn is_stopped(&self) -> bool;
     fn wakeup(&mut self);
 }
 
-pub struct ActorHandler<A, P>
+pub struct Executor<A, P>
     where
-        A: ActorTrait + 'static,
-        P: ActorProps<A>
+        A: Actor + 'static,
+        P: Props<A>
 {
     actor: A,
     actor_props: P,
-    actor_config: ActorConfig,
+    actor_config: Config,
     mailbox: Mailbox<A>,
     queue: Receiver<MessageEnvelope<A>>,
-    actor_address: ActorAddress,
+    actor_address: Address,
     is_startup: bool,
     system_triggered_stop: bool,
     last_wakeup: Instant,
     context: Context<A>,
 }
 
-unsafe impl<A, P> Send for ActorHandler<A, P> where A: ActorTrait + UnwindSafe + 'static, P: ActorProps<A> {}
-unsafe impl<A, P> Sync for ActorHandler<A, P> where A: ActorTrait + UnwindSafe + 'static, P: ActorProps<A> {}
+unsafe impl<A, P> Send for Executor<A, P> where A: Actor + UnwindSafe + 'static, P: Props<A> {}
+unsafe impl<A, P> Sync for Executor<A, P> where A: Actor + UnwindSafe + 'static, P: Props<A> {}
 
-impl<A, P> ActorHandlerTrait for ActorHandler<A, P>
+impl<A, P> ExecutorTrait for Executor<A, P>
     where
-        A: ActorTrait + UnwindSafe + 'static,
-        P: ActorProps<A>
+        A: Actor + UnwindSafe + 'static,
+        P: Props<A>
 {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {
         if system_is_stopping && !self.system_triggered_stop {
@@ -101,11 +101,11 @@ impl<A, P> ActorHandlerTrait for ActorHandler<A, P>
         ActorState::Running
     }
 
-    fn get_config(&self) -> &ActorConfig {
+    fn get_config(&self) -> &Config {
         &self.actor_config
     }
 
-    fn get_address(&self) -> ActorAddress {
+    fn get_address(&self) -> Address {
         self.actor_address.clone()
     }
 
@@ -123,21 +123,21 @@ impl<A, P> ActorHandlerTrait for ActorHandler<A, P>
     }
 }
 
-impl<A, P> ActorHandler<A, P>
+impl<A, P> Executor<A, P>
     where
-        A: ActorTrait,
-        P: ActorProps<A>
+        A: Actor,
+        P: Props<A>
 {
     pub fn new(
         actor_props: P,
-        actor_config: ActorConfig,
+        actor_config: Config,
         mailbox: Mailbox<A>,
         receiver: Receiver<MessageEnvelope<A>>,
         system: ActorSystem,
         system_name: String,
-        actor_ref: ActorRef<A>,
+        actor_ref: ActorWrapper<A>,
     ) -> Self {
-        let actor_address = ActorAddress {
+        let actor_address = Address {
             actor: actor_config.actor_name.clone(),
             system: system_name,
             pool: actor_config.pool_name.clone(),
@@ -165,7 +165,7 @@ impl<A, P> ActorHandler<A, P>
     pub fn send<M>(&self, msg: M)
         where
             A: Handler<M>,
-            M: MessageTrait + 'static,
+            M: ActorMessage + 'static,
     {
         self.mailbox.msg_in.send(MessageEnvelope::new(msg)).unwrap();
     }

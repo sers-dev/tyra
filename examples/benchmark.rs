@@ -1,11 +1,11 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
+use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, Props};
 
 struct MessageA {}
 
-impl MessageTrait for MessageA {}
+impl ActorMessage for MessageA {}
 
 
 struct Benchmark {
@@ -21,7 +21,7 @@ struct BenchmarkProps {
     name: String,
 }
 
-impl ActorProps<Benchmark> for BenchmarkProps {
+impl Props<Benchmark> for BenchmarkProps {
     fn new_actor(&self, context: Context<Benchmark>) -> Benchmark {
         Benchmark::new(self.total_msgs, self.name.clone(), context)
     }
@@ -39,7 +39,7 @@ impl Benchmark {
     }
 }
 
-impl ActorTrait for Benchmark {
+impl Actor for Benchmark {
     fn on_system_stop(&mut self) {
         self.ctx.actor_ref.stop();
     }

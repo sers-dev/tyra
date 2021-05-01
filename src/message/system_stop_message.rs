@@ -1,5 +1,5 @@
-use crate::message::message::MessageTrait;
+use crate::message::actor_message::ActorMessage;
 
 pub struct SystemStopMessage {}
 
-impl MessageTrait for SystemStopMessage {}
+impl ActorMessage for SystemStopMessage {}

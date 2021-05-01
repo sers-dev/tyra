@@ -1,25 +1,25 @@
-use crate::prelude::ActorTrait;
-use crate::actor::actor_ref::ActorRef;
-use crate::system::ActorSystem;
+use crate::prelude::Actor;
+use crate::actor::actor_wrapper::ActorWrapper;
+use crate::system::actor_system::ActorSystem;
 use std::panic::UnwindSafe;
 
 pub struct Context<A>
 where
     Self: Send + Sync,
-    A: ActorTrait + 'static,
+    A: Actor + 'static,
 {
-    pub actor_ref: ActorRef<A>,
+    pub actor_ref: ActorWrapper<A>,
     pub system: ActorSystem,
 }
 
 impl<A> UnwindSafe for Context<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {}
 
 impl<A> Clone for Context<A>
     where
-        A: ActorTrait + 'static,
+        A: Actor + 'static,
 {
     fn clone(&self) -> Self {
         Self {

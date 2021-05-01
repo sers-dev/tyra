@@ -1,31 +1,31 @@
-use crate::actor::actor::ActorTrait;
+use crate::actor::actor::Actor;
 use crate::actor::mailbox::Mailbox;
-use crate::system::ActorSystem;
+use crate::system::actor_system::ActorSystem;
 use std::panic::UnwindSafe;
-use crate::message::message::MessageTrait;
+use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
-use crate::actor::address::ActorAddress;
+use crate::actor::address::Address;
 use crate::actor::handler::Handler;
 
-pub struct ActorRef<A>
+pub struct ActorWrapper<A>
 where
-    A: ActorTrait + 'static,
+    A: Actor + 'static,
 {
     mailbox: Mailbox<A>,
-    address: ActorAddress,
+    address: Address,
     system: ActorSystem,
 }
 
-impl<A> UnwindSafe for ActorRef<A>
+impl<A> UnwindSafe for ActorWrapper<A>
 where
-    A: ActorTrait + 'static,
+    A: Actor + 'static,
 {}
 
-impl<A> ActorRef<A>
+impl<A> ActorWrapper<A>
 where
-    A: ActorTrait + UnwindSafe,
+    A: Actor + UnwindSafe,
 {
-    pub fn new(mailbox: Mailbox<A>, address: ActorAddress, system: ActorSystem) -> Self {
+    pub fn new(mailbox: Mailbox<A>, address: Address, system: ActorSystem) -> Self {
         Self {
             mailbox,
             address,
@@ -36,7 +36,7 @@ where
     pub fn send<M>(&self, msg: M)
     where
         A: Handler<M>,
-        M: MessageTrait + 'static,
+        M: ActorMessage + 'static,
     {
         if self.mailbox.is_stopped() {
             return;
@@ -54,14 +54,14 @@ where
         self.send(ActorStopMessage {});
     }
 
-    pub fn get_address(&self) -> ActorAddress {
+    pub fn get_address(&self) -> Address {
         self.address.clone()
     }
 }
 
-impl<A> Clone for ActorRef<A>
+impl<A> Clone for ActorWrapper<A>
 where
-    A: ActorTrait + UnwindSafe,
+    A: Actor + UnwindSafe,
 {
     fn clone(&self) -> Self {
         Self {

@@ -1,19 +1,19 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
+use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, Props};
 
 #[derive(Clone)]
 struct TestMsg {}
 
-impl MessageTrait for TestMsg {}
+impl ActorMessage for TestMsg {}
 
 #[derive(Clone)]
 struct StopActor {
     ctx: Context<Self>
 }
 
-impl ActorTrait for StopActor {
+impl Actor for StopActor {
     fn pre_start(&mut self) {
         println!("PRE START")
     }
@@ -33,7 +33,7 @@ impl Handler<TestMsg> for StopActor {
 
 struct StopActorProps {}
 
-impl ActorProps<StopActor> for StopActorProps {
+impl Props<StopActor> for StopActorProps {
     fn new_actor(&self, context: Context<StopActor>) -> StopActor {
         StopActor{
             ctx: context

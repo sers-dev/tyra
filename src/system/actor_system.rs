@@ -1,34 +1,34 @@
-use crate::actor::actor::ActorTrait;
+use crate::actor::actor::Actor;
 use dashmap::DashMap;
 use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
 use crate::config::tyractorsaur_config::{TyractorsaurConfig, DEFAULT_POOL};
 use crate::config::pool_config::ThreadPoolConfig;
 use crossbeam_channel::{Sender, Receiver, unbounded, bounded};
-use crate::actor::actor_handler::{ActorHandlerTrait, ActorHandler};
+use crate::actor::executor::{ExecutorTrait, Executor};
 use std::collections::HashMap;
 use std::time::{Instant, Duration};
 use threadpool::ThreadPool;
 use crate::actor::actor_state::ActorState;
 use std::thread::sleep;
 use crate::message::serialized_message::SerializedMessage;
-use crate::actor::builder::ActorBuilder;
-use crate::actor::actor_config::ActorConfig;
-use crate::actor::actor_ref::ActorRef;
+use crate::actor::builder::Builder;
+use crate::actor::config::Config;
+use crate::actor::actor_wrapper::ActorWrapper;
 use std::panic::UnwindSafe;
 use crate::actor::mailbox::Mailbox;
 use crate::actor::context::Context;
-use crate::actor::address::ActorAddress;
-use crate::actor::props::ActorProps;
+use crate::actor::address::Address;
+use crate::actor::props::Props;
 
 pub struct WakeupMessage {
     iteration: usize,
-    actor_address: ActorAddress,
+    actor_address: Address,
 }
 
 #[derive(Clone)]
 pub struct ActorSystem {
-    actors: DashMap<ActorAddress, Arc<dyn ActorTrait>>,
+    actors: DashMap<Address, Arc<dyn Actor>>,
     total_actor_count: Arc<AtomicUsize>,
     name: String,
     is_forced_stop: Arc<AtomicBool>,
@@ -40,12 +40,12 @@ pub struct ActorSystem {
             String,
             (
                 ThreadPoolConfig,
-                Sender<Arc<RwLock<dyn ActorHandlerTrait>>>,
-                Receiver<Arc<RwLock<dyn ActorHandlerTrait>>>,
+                Sender<Arc<RwLock<dyn ExecutorTrait>>>,
+                Receiver<Arc<RwLock<dyn ExecutorTrait>>>,
             ),
         >,
     >,
-    sleeping_actors: Arc<DashMap<ActorAddress, Arc<RwLock<dyn ActorHandlerTrait>>>>,
+    sleeping_actors: Arc<DashMap<Address, Arc<RwLock<dyn ExecutorTrait>>>>,
     wakeup_queue_in: Sender<WakeupMessage>,
     wakeup_queue_out: Receiver<WakeupMessage>,
 }
@@ -108,14 +108,14 @@ impl ActorSystem {
     }
 
     fn wake(&self) {
-        let mut wake_deduplication: HashMap<ActorAddress, Instant> = HashMap::new();
+        let mut wake_deduplication: HashMap<Address, Instant> = HashMap::new();
         let recv_timeout = Duration::from_secs(1);
         loop {
             if self.is_stopped.load(Ordering::Relaxed) {
                 return;
             }
             if self.is_stopping.load(Ordering::Relaxed) {
-                let mut keys: Vec<ActorAddress> = Vec::new();
+                let mut keys: Vec<Address> = Vec::new();
                 for key in self.sleeping_actors.iter() {
                     keys.push(key.key().clone());
                 }
@@ -266,7 +266,7 @@ impl ActorSystem {
         }
     }
 
-    pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
+    pub fn send_to_address(&self, address: &Address, msg: SerializedMessage) {
         let target = self.actors.get(address);
         if target.is_some() {
             let target = target.unwrap();
@@ -274,14 +274,14 @@ impl ActorSystem {
         }
     }
 
-    pub fn builder(&self, name: impl Into<String>) -> ActorBuilder {
-        ActorBuilder::new(self.clone(), name.into())
+    pub fn builder(&self, name: impl Into<String>) -> Builder {
+        Builder::new(self.clone(), name.into())
     }
 
-    pub fn spawn<A, P>(&self, actor_props: P, actor_config: ActorConfig) -> ActorRef<A>
+    pub fn spawn<A, P>(&self, actor_props: P, actor_config: Config) -> ActorWrapper<A>
     where
-        A: ActorTrait + UnwindSafe + 'static,
-        P: ActorProps<A> + 'static,
+        A: Actor + UnwindSafe + 'static,
+        P: Props<A> + 'static,
     {
         let (sender, receiver) = if actor_config.mailbox_size == 0 {
             unbounded()
@@ -294,20 +294,20 @@ impl ActorSystem {
             is_sleeping: Arc::new(AtomicBool::new(true)),
             msg_in: sender,
         };
-        let actor_address = ActorAddress {
+        let actor_address = Address {
             actor: actor_config.actor_name.clone(),
             system: self.name.clone(),
             pool: actor_config.pool_name.clone(),
             remote: String::from("local"),
         };
-        let actor_ref = ActorRef::new(mailbox.clone(), actor_address.clone(), self.clone());
+        let actor_ref = ActorWrapper::new(mailbox.clone(), actor_address.clone(), self.clone());
 
         let context = Context {
             system: self.clone(),
             actor_ref: actor_ref.clone(),
         };
         let actor = actor_props.new_actor(context);
-        let actor_handler = ActorHandler::new(
+        let actor_handler = Executor::new(
             actor_props,
             actor_config,
             mailbox.clone(),
@@ -327,7 +327,7 @@ impl ActorSystem {
         actor_ref
     }
 
-    pub fn remove_actor(&self, address: &ActorAddress) {
+    pub fn remove_actor(&self, address: &Address) {
         self.actors.remove(address);
     }
 
@@ -364,7 +364,7 @@ impl ActorSystem {
         &self.config
     }
 
-    pub fn wakeup(&self, actor_address: ActorAddress) {
+    pub fn wakeup(&self, actor_address: Address) {
         self.wakeup_queue_in
             .send(WakeupMessage {
                 iteration: 0,

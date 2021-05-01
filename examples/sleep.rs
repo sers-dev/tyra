@@ -1,14 +1,14 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
+use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, Props};
 
 #[derive(Clone)]
 struct SleepMsg {
     text: String,
 }
 
-impl MessageTrait for SleepMsg {}
+impl ActorMessage for SleepMsg {}
 
 #[derive(Clone)]
 struct SleepActor {
@@ -16,7 +16,7 @@ struct SleepActor {
     counter: usize,
 }
 
-impl ActorTrait for SleepActor {}
+impl Actor for SleepActor {}
 
 impl Handler<SleepMsg> for SleepActor {
     fn handle(&mut self, _msg: SleepMsg, _context: &Context<Self>) {
@@ -35,7 +35,7 @@ struct SleepActorProps {
     counter: usize,
 }
 
-impl ActorProps<SleepActor> for SleepActorProps {
+impl Props<SleepActor> for SleepActorProps {
     fn new_actor(&self, _context: Context<SleepActor>) -> SleepActor {
         SleepActor{
             counter: self.counter,

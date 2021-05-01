@@ -1,1 +1,0 @@
-pub trait MessageTrait: Send + Sync {}

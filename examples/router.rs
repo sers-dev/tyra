@@ -1,20 +1,20 @@
-use tyractorsaur::prelude::{MessageTrait, ActorTrait, ActorProps, Context, Handler, TyractorsaurConfig, ActorSystem, RoundRobinRouterProps, RouterMessage, AddActorMessage, RemoveActorMessage};
+use tyractorsaur::prelude::{ActorMessage, Actor, Props, Context, Handler, TyractorsaurConfig, ActorSystem, RoundRobinRouterProps, RouterMessage, AddActorMessage, RemoveActorMessage};
 use std::time::Duration;
 use std::process::exit;
 use std::thread::sleep;
 
 struct MessageA {}
-impl MessageTrait for MessageA {}
+impl ActorMessage for MessageA {}
 
 struct HelloWorld {
     counter: usize,
 }
-impl ActorTrait for HelloWorld {}
+impl Actor for HelloWorld {}
 
 #[derive(Clone)]
 struct HelloWorldProps {}
 
-impl ActorProps<HelloWorld> for HelloWorldProps {
+impl Props<HelloWorld> for HelloWorldProps {
     fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
         HelloWorld {
             counter: 0,

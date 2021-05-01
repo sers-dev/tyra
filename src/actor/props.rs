@@ -1,10 +1,10 @@
-use crate::actor::actor::ActorTrait;
+use crate::actor::actor::Actor;
 use std::panic::UnwindSafe;
 use crate::actor::context::Context;
 
-pub trait ActorProps<A>
+pub trait Props<A>
     where
-        A: ActorTrait + UnwindSafe + 'static,
+        A: Actor + UnwindSafe + 'static,
 {
     fn new_actor(&self, context: Context<A>) -> A;
 }

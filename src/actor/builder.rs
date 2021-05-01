@@ -1,22 +1,22 @@
-use crate::system::ActorSystem;
-use crate::actor::actor_config::{ActorConfig, RestartPolicy};
+use crate::system::actor_system::ActorSystem;
+use crate::actor::config::{Config, RestartPolicy};
 use crate::config::tyractorsaur_config::DEFAULT_POOL;
-use crate::actor::actor_ref::ActorRef;
-use crate::actor::actor::ActorTrait;
+use crate::actor::actor_wrapper::ActorWrapper;
+use crate::actor::actor::Actor;
 use std::panic::UnwindSafe;
-use crate::actor::props::ActorProps;
+use crate::actor::props::Props;
 
 #[derive(Clone)]
-pub struct ActorBuilder {
+pub struct Builder {
     system: ActorSystem,
-    actor_config: ActorConfig,
+    actor_config: Config,
 }
 
-impl ActorBuilder {
-    pub fn new(system: ActorSystem, actor_name: String) -> ActorBuilder {
+impl Builder {
+    pub fn new(system: ActorSystem, actor_name: String) -> Builder {
         let config = system.get_config();
 
-        let actor_config = ActorConfig {
+        let actor_config = Config {
             actor_name,
             pool_name: String::from(DEFAULT_POOL),
             mailbox_size: config.global.default_mailbox_size,
@@ -24,40 +24,40 @@ impl ActorBuilder {
             restart_policy: config.global.default_restart_policy,
         };
 
-        ActorBuilder {
+        Builder {
             system,
             actor_config,
         }
     }
 
-    pub fn set_restart_policy(mut self, restart_policy: RestartPolicy) -> ActorBuilder {
+    pub fn set_restart_policy(mut self, restart_policy: RestartPolicy) -> Builder {
         self.actor_config.restart_policy = restart_policy;
         self
     }
 
-    pub fn set_pool_name(mut self, pool_name: impl Into<String>) -> ActorBuilder {
+    pub fn set_pool_name(mut self, pool_name: impl Into<String>) -> Builder {
         self.actor_config.pool_name = pool_name.into();
         self
     }
 
-    pub fn set_message_throughput(mut self, message_throughput: usize) -> ActorBuilder {
+    pub fn set_message_throughput(mut self, message_throughput: usize) -> Builder {
         self.actor_config.message_throughput = message_throughput;
         self
     }
 
-    pub fn set_mailbox_unbounded(self) -> ActorBuilder {
+    pub fn set_mailbox_unbounded(self) -> Builder {
         self.set_mailbox_size(0)
     }
 
-    pub fn set_mailbox_size(mut self, mailbox_size: usize) -> ActorBuilder {
+    pub fn set_mailbox_size(mut self, mailbox_size: usize) -> Builder {
         self.actor_config.mailbox_size = mailbox_size;
         self
     }
 
-    pub fn build<A, P>(&self, props: P) -> ActorRef<A>
+    pub fn build<A, P>(&self, props: P) -> ActorWrapper<A>
     where
-        A: ActorTrait + UnwindSafe + 'static,
-        P: ActorProps<A> + 'static,
+        A: Actor + UnwindSafe + 'static,
+        P: Props<A> + 'static,
     {
         self.system.spawn(props, self.actor_config.clone())
     }

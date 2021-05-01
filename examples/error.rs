@@ -1,13 +1,13 @@
 use std::process::exit;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
+use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, Props};
 
 #[derive(Clone)]
 struct ErrMsg {
     text: String,
 }
 
-impl MessageTrait for ErrMsg {}
+impl ActorMessage for ErrMsg {}
 
 #[derive(Clone)]
 struct ErrActor {
@@ -15,7 +15,7 @@ struct ErrActor {
     counter: usize,
 }
 
-impl ActorTrait for ErrActor {}
+impl Actor for ErrActor {}
 
 impl Handler<ErrMsg> for ErrActor {
     fn handle(&mut self, msg: ErrMsg, _context: &Context<Self>) {
@@ -32,7 +32,7 @@ struct ErrActorProps {
     counter: usize,
 }
 
-impl ActorProps<ErrActor> for ErrActorProps {
+impl Props<ErrActor> for ErrActorProps {
     fn new_actor(&self, _context: Context<ErrActor>) -> ErrActor {
         ErrActor {
             text: self.text.clone(),

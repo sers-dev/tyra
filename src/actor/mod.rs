@@ -1,7 +1,7 @@
-pub mod actor_config;
+pub mod config;
 pub mod actor;
-pub mod actor_handler;
-pub mod actor_ref;
+pub mod executor;
+pub mod actor_wrapper;
 pub mod actor_state;
 pub mod builder;
 pub mod context;

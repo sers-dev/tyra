@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActorConfig {
+pub struct Config {
     pub actor_name: String,
     pub pool_name: String,
     pub mailbox_size: usize,

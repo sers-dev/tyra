@@ -1,6 +1,6 @@
 use std::process::exit;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, ActorTrait, Context, Handler, MessageTrait, TyractorsaurConfig, ActorProps};
+use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, Props};
 
 struct MessageA {
     text: String,
@@ -10,27 +10,27 @@ struct MessageB {
     text: String,
 }
 
-impl MessageTrait for MessageA {}
+impl ActorMessage for MessageA {}
 
-impl MessageTrait for MessageB {}
+impl ActorMessage for MessageB {}
 
 struct MessageUnsupported {}
 
-impl MessageTrait for MessageUnsupported {}
+impl ActorMessage for MessageUnsupported {}
 
 struct HelloWorld {
     text: String,
     count: usize,
 }
 
-impl ActorTrait for HelloWorld {}
+impl Actor for HelloWorld {}
 
 struct HelloWorldProps {
     text: String,
     count: usize,
 }
 
-impl ActorProps<HelloWorld> for HelloWorldProps {
+impl Props<HelloWorld> for HelloWorldProps {
     fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
         HelloWorld {
             count: self.count,
