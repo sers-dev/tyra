@@ -1,7 +1,6 @@
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum MessageType {
-    Unknown,
+    Other,
     ActorStopMessage,
     SystemStopMessage,
-    RemoteMessage,
 }

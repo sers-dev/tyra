@@ -4,74 +4,9 @@ use crate::actor::actor::Actor;
 use crate::message::actor_message::ActorMessage;
 use crate::actor::handler::Handler;
 use crate::actor::actor_factory::ActorFactory;
-
-pub struct RouterMessage<M>
-where
-    M: ActorMessage + 'static,
-{
-    pub msg: M
-}
-impl<M> ActorMessage for RouterMessage<M>
-    where
-        M: ActorMessage + 'static,
-{}
-
-impl<M> RouterMessage<M>
-    where
-        M: ActorMessage + 'static,
-{
-    pub fn new(msg: M) -> Self {
-        Self {
-            msg
-        }
-    }
-}
-
-pub struct AddActorMessage<A>
-where
-    A: Actor + 'static,
-{
-    actor: ActorWrapper<A>
-}
-
-impl<A> AddActorMessage<A>
-    where
-        A: Actor + 'static,
-{
-    pub fn new(actor: ActorWrapper<A>) -> Self {
-        Self {
-            actor,
-        }
-    }
-}
-
-impl<A> ActorMessage for AddActorMessage<A>
-    where
-        A: Actor + 'static,
-{}
-
-pub struct RemoveActorMessage<A>
-    where
-        A: Actor + 'static,
-{
-    actor: ActorWrapper<A>
-}
-
-impl<A> RemoveActorMessage<A>
-    where
-        A: Actor + 'static,
-{
-    pub fn new(actor: ActorWrapper<A>) -> Self {
-        Self {
-            actor,
-        }
-    }
-}
-impl<A> ActorMessage for RemoveActorMessage<A>
-    where
-        A: Actor + 'static,
-{}
-
+use crate::router::add_actor_message::AddActorMessage;
+use crate::router::remove_actor_message::RemoveActorMessage;
+use crate::router::router_message::RouterMessage;
 
 pub struct RoundRobinRouter<A>
     where

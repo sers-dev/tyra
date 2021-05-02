@@ -11,8 +11,8 @@ pub mod handler;
 pub mod actor_factory;
 
 pub mod prelude {
-    pub use crate::actor::context::*;
-    pub use crate::actor::actor::*;
-    pub use crate::actor::actor_factory::*;
-    pub use crate::actor::handler::*;
+    pub use crate::actor::context::Context;
+    pub use crate::actor::actor::Actor;
+    pub use crate::actor::actor_factory::ActorFactory;
+    pub use crate::actor::handler::Handler;
 }

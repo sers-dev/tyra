@@ -6,7 +6,6 @@ pub mod serialized_message;
 pub mod envelope;
 
 pub mod prelude {
-    pub use crate::message::message_type::*;
-    pub use crate::message::actor_message::*;
-    pub use crate::message::serialized_message::*;
+    pub use crate::message::actor_message::ActorMessage;
+    pub use crate::message::serialized_message::SerializedMessage;
 }

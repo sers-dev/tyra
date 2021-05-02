@@ -57,6 +57,6 @@ impl<A, M> MessageEnvelopeTrait<A> for SyncMessageEnvelope<M>
                 return MessageType::SystemStopMessage;
             }
         }
-        MessageType::Unknown
+        MessageType::Other
     }
 }
