@@ -18,7 +18,7 @@ use crate::actor::handler::Handler;
 use crate::actor::actor_factory::ActorFactory;
 
 pub trait ExecutorTrait: Send + Sync {
-    fn handle(&mut self, system_is_stopping: bool) -> ActorState;
+    fn handle(&mut self, is_system_stopping: bool) -> ActorState;
     fn get_config(&self) -> &ActorConfig;
     fn get_address(&self) -> ActorAddress;
     fn is_sleeping(&self) -> bool;
