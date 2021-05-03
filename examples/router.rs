@@ -1,7 +1,8 @@
-use tyractorsaur::prelude::{ActorMessage, Actor, ActorFactory, Context, Handler, TyractorsaurConfig, ActorSystem, RoundRobinRouterFactory, RouterMessage, AddActorMessage, RemoveActorMessage};
+use tyractorsaur::prelude::{ActorMessage, Actor, ActorFactory, Context, Handler, TyractorsaurConfig, ActorSystem};
 use std::time::Duration;
 use std::process::exit;
 use std::thread::sleep;
+use tyractorsaur::router::{RoundRobinRouterFactory, AddActorMessage, RouterMessage, RemoveActorMessage};
 
 struct MessageA {}
 impl ActorMessage for MessageA {}

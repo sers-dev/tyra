@@ -4,9 +4,9 @@ use crate::actor::actor::Actor;
 use crate::message::actor_message::ActorMessage;
 use crate::actor::handler::Handler;
 use crate::actor::actor_factory::ActorFactory;
-use crate::router::add_actor_message::AddActorMessage;
-use crate::router::remove_actor_message::RemoveActorMessage;
-use crate::router::router_message::RouterMessage;
+use crate::routers::add_actor_message::AddActorMessage;
+use crate::routers::remove_actor_message::RemoveActorMessage;
+use crate::routers::router_message::RouterMessage;
 
 pub struct RoundRobinRouter<A>
     where

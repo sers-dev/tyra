@@ -8,6 +8,8 @@
   - `ActorRef` -> `ActorWrapper`
   - `ActorProps` -> `ActorFactory`
   - `ActorHandler` -> `Executor`
+- moved routers from `mod prelude` to `mod router`
+- add documentation
 
 # WIP 0.0.8
 
