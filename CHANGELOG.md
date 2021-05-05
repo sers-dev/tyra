@@ -1,5 +1,10 @@
 # WIP 0.1.0
 
+All releases before this one set the groundwork for the actor framework and can be considered as Alpha releases.
+Starting with this release the framework can be considered to be in Beta, which is why the only real changes between `0.1.0` and `0.0.8` consist of refactoring, documentation and API cleanup.
+
+Although a lot of work went into Refactoring of the public facing API, please do not yet consider the current API to be stable and expect some slight changes throughout the next Releases
+
 - cleanup
 - refactoring
 - the following User facing resources have been renamed:
