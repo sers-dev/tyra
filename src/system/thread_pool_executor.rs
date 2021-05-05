@@ -8,7 +8,7 @@ use dashmap::DashMap;
 use crate::config::pool_config::ThreadPoolConfig;
 use crossbeam_channel::{Sender, Receiver, unbounded, bounded};
 use crate::actor::executor::ExecutorTrait;
-use crate::system::system_status::ActorSystemStatus;
+use crate::system::system_state::SystemState;
 use crate::system::wakeup_manager::WakeupManager;
 
 #[derive(Clone)]
@@ -49,10 +49,10 @@ impl ThreadPoolExecutor {
         }
     }
 
-    pub fn start(&self, system_status: ActorSystemStatus, wakeup_manager: WakeupManager) {
+    pub fn start(&self, system_state: SystemState, wakeup_manager: WakeupManager) {
         let mut pools: HashMap<String, ThreadPool> = HashMap::new();
         loop {
-            let is_stopped = system_status.is_stopped();
+            let is_stopped = system_state.is_stopped();
             if is_stopped {
                 for pool in pools.iter() {
                     pool.1.join()
@@ -84,14 +84,14 @@ impl ThreadPoolExecutor {
                     let receiver = pool_receiver.clone();
                     let pool_name = pool_name.clone();
                     let recv_timeout = Duration::from_secs(1);
-                    let system_status = system_status.clone();
+                    let system_state = system_state.clone();
                     let wakeup_manager = wakeup_manager.clone();
                     pools.get(&pool_name).unwrap().execute(move || loop {
-                        let is_system_stopping = system_status.is_stopping();
+                        let is_system_stopping = system_state.is_stopping();
                         let mut actor_state = ActorState::Running;
                         let msg = receiver.recv_timeout(recv_timeout);
                         if msg.is_err() {
-                            if system_status.is_stopped() {
+                            if system_state.is_stopped() {
                                 return;
                             }
                             continue;
@@ -110,16 +110,18 @@ impl ThreadPoolExecutor {
 
                         if actor_state == ActorState::Running {
                             sender.send(ar).unwrap();
-                        } else if actor_state == ActorState::Sleeping {
+                        } else {
                             let address;
                             {
                                 let actor_ref = ar.write().unwrap();
                                 address = actor_ref.get_address();
                             }
-                            wakeup_manager.add_sleeping_actor(address, ar);
-                        } else {
-                            println!("Actor has been stopped");
-                            system_status.decrement_actor_count();
+                            if actor_state == ActorState::Sleeping {
+                                wakeup_manager.add_sleeping_actor(address, ar);
+                            } else {
+                                println!("Actor has been stopped");
+                                system_state.remove_actor(&address);
+                            }
                         }
                     });
                 }

@@ -1,5 +1,4 @@
 use crate::actor::actor::Actor;
-use dashmap::DashMap;
 use std::sync::{Arc, RwLock};
 use crate::config::tyractorsaur_config::{TyractorsaurConfig, DEFAULT_POOL};
 use crate::config::pool_config::ThreadPoolConfig;
@@ -16,7 +15,7 @@ use crate::actor::mailbox::Mailbox;
 use crate::actor::context::Context;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_factory::ActorFactory;
-use crate::system::system_status::ActorSystemStatus;
+use crate::system::system_state::SystemState;
 use crate::system::thread_pool_executor::ThreadPoolExecutor;
 use crate::system::wakeup_manager::WakeupManager;
 use std::sync::atomic::AtomicBool;
@@ -29,10 +28,9 @@ pub struct WakeupMessage {
 
 #[derive(Clone)]
 pub struct ActorSystem {
-    status: ActorSystemStatus,
+    state: SystemState,
     thread_pool_executor: ThreadPoolExecutor,
     wakeup_manager: WakeupManager,
-    actors: DashMap<ActorAddress, Arc<dyn Actor>>,
     name: String,
     config: Arc<TyractorsaurConfig>,
 }
@@ -41,10 +39,9 @@ impl ActorSystem {
     pub fn new(config: TyractorsaurConfig) -> Self {
         let thread_pool_config = config.thread_pool.clone();
         let system = ActorSystem {
-            status: ActorSystemStatus::new(),
+            state: SystemState::new(),
             thread_pool_executor: ThreadPoolExecutor::new(),
             wakeup_manager: WakeupManager::new(),
-            actors: DashMap::new(),
             name: config.global.name.clone(),
             config: Arc::new(config.clone()),
         };
@@ -79,20 +76,16 @@ impl ActorSystem {
     }
 
     fn wake(&self) {
-        self.wakeup_manager.manage(self.status.clone(), self.thread_pool_executor.clone());
+        self.wakeup_manager.manage(self.state.clone(), self.thread_pool_executor.clone());
 
     }
 
     fn manage_threads(&self) {
-        self.thread_pool_executor.start(self.status.clone(), self.wakeup_manager.clone());
+        self.thread_pool_executor.start(self.state.clone(), self.wakeup_manager.clone());
     }
 
     pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
-        let target = self.actors.get(address);
-        if target.is_some() {
-            let target = target.unwrap();
-            target.handle_serialized_message(msg);
-        }
+        self.state.send_to_address(address, msg);
     }
 
     pub fn builder(&self, name: impl Into<String>) -> ActorBuilder {
@@ -121,7 +114,7 @@ impl ActorSystem {
             pool: actor_config.pool_name.clone(),
             remote: String::from("local"),
         };
-        let actor_ref = ActorWrapper::new(mailbox.clone(), actor_address.clone(), self.clone());
+        let actor_ref = ActorWrapper::new(mailbox.clone(), actor_address.clone(), self.wakeup_manager.clone());
 
         let context = Context {
             system: self.clone(),
@@ -138,21 +131,16 @@ impl ActorSystem {
             actor_ref.clone(),
         );
 
-        self.actors.insert(actor_address.clone(), Arc::new(actor));
+        self.state.add_actor(actor_address.clone(), Arc::new(actor));
         self.wakeup_manager.add_sleeping_actor(actor_handler.get_address(), Arc::new(RwLock::new(actor_handler)));
-        self.status.increment_actor_count();
         actor_ref
     }
 
-    pub fn remove_actor(&self, address: &ActorAddress) {
-        self.actors.remove(address);
-    }
-
     pub fn stop(&self, graceful_termination_timeout: Duration) {
-        if self.status.is_stopping() {
+        if self.state.is_stopping() {
             return;
         }
-        self.status.stop();
+        self.state.stop();
         let s = self.clone();
         std::thread::spawn(move || s.shutdown(graceful_termination_timeout));
     }
@@ -160,29 +148,25 @@ impl ActorSystem {
     fn shutdown(&self, timeout: Duration) {
         let now = Instant::now();
         let mut is_forced_stop = false;
-        while self.status.get_actor_count() != 0 {
+        while self.state.get_actor_count() != 0 {
             if now.elapsed() >= timeout {
                 is_forced_stop = true;
                 break;
             }
             sleep(Duration::from_secs(1));
         }
-        self.actors.clear();
-        self.status.finalize_stop(is_forced_stop);
+        self.state.finalize_stop(is_forced_stop);
     }
 
     pub fn await_shutdown(&self) -> i32 {
-        while !self.status.is_stopped() {
+        while !self.state.is_stopped() {
             sleep(Duration::from_secs(1));
         }
-        self.status.is_force_stopped() as i32
+        self.state.is_force_stopped() as i32
     }
 
     pub fn get_config(&self) -> &TyractorsaurConfig {
         &self.config
     }
 
-    pub fn wakeup(&self, actor_address: ActorAddress) {
-        self.wakeup_manager.wakeup(actor_address);
-    }
 }

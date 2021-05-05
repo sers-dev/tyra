@@ -7,7 +7,7 @@ use crate::actor::executor::ExecutorTrait;
 use dashmap::DashMap;
 use crossbeam_channel::{Sender, Receiver, unbounded};
 use crate::system::thread_pool_executor::ThreadPoolExecutor;
-use crate::system::system_status::ActorSystemStatus;
+use crate::system::system_state::SystemState;
 
 #[derive(Clone)]
 pub struct WakeupManager {
@@ -37,7 +37,7 @@ impl WakeupManager {
         }).unwrap();
     }
 
-    pub fn manage(&self, system_status: ActorSystemStatus, thread_pool_executor: ThreadPoolExecutor) {
+    pub fn manage(&self, system_status: SystemState, thread_pool_executor: ThreadPoolExecutor) {
         let mut wake_deduplication: HashMap<ActorAddress, Instant> = HashMap::new();
         let recv_timeout = Duration::from_secs(1);
         loop {
