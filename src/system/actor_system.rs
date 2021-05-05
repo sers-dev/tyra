@@ -16,7 +16,7 @@ use crate::actor::context::Context;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_factory::ActorFactory;
 use crate::system::system_state::SystemState;
-use crate::system::thread_pool_executor::ThreadPoolExecutor;
+use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
 use std::sync::atomic::AtomicBool;
 
@@ -29,7 +29,7 @@ pub struct WakeupMessage {
 #[derive(Clone)]
 pub struct ActorSystem {
     state: SystemState,
-    thread_pool_executor: ThreadPoolExecutor,
+    thread_pool_manager: ThreadPoolManager,
     wakeup_manager: WakeupManager,
     name: String,
     config: Arc<TyractorsaurConfig>,
@@ -40,7 +40,7 @@ impl ActorSystem {
         let thread_pool_config = config.thread_pool.clone();
         let system = ActorSystem {
             state: SystemState::new(),
-            thread_pool_executor: ThreadPoolExecutor::new(),
+            thread_pool_manager: ThreadPoolManager::new(),
             wakeup_manager: WakeupManager::new(),
             name: config.global.name.clone(),
             config: Arc::new(config.clone()),
@@ -65,7 +65,7 @@ impl ActorSystem {
     }
 
     pub fn add_pool_with_config(&self, name: &str, thread_pool_config: ThreadPoolConfig) {
-        self.thread_pool_executor.add_pool_with_config(name, thread_pool_config);
+        self.thread_pool_manager.add_pool_with_config(name, thread_pool_config);
     }
 
     fn start(&self) {
@@ -76,12 +76,12 @@ impl ActorSystem {
     }
 
     fn wake(&self) {
-        self.wakeup_manager.manage(self.state.clone(), self.thread_pool_executor.clone());
+        self.wakeup_manager.manage(self.state.clone(), self.thread_pool_manager.clone());
 
     }
 
     fn manage_threads(&self) {
-        self.thread_pool_executor.start(self.state.clone(), self.wakeup_manager.clone());
+        self.thread_pool_manager.start(self.state.clone(), self.wakeup_manager.clone());
     }
 
     pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {

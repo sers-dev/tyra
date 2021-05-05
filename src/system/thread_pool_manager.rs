@@ -12,7 +12,7 @@ use crate::system::system_state::SystemState;
 use crate::system::wakeup_manager::WakeupManager;
 
 #[derive(Clone)]
-pub struct ThreadPoolExecutor {
+pub struct ThreadPoolManager {
     thread_pools: Arc<
         DashMap<
             String,
@@ -25,7 +25,7 @@ pub struct ThreadPoolExecutor {
     >,
 }
 
-impl ThreadPoolExecutor {
+impl ThreadPoolManager {
     pub fn new() -> Self {
         Self {
             thread_pools: Arc::new(DashMap::new()),

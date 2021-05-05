@@ -6,7 +6,7 @@ use std::sync::{Arc, RwLock};
 use crate::actor::executor::ExecutorTrait;
 use dashmap::DashMap;
 use crossbeam_channel::{Sender, Receiver, unbounded};
-use crate::system::thread_pool_executor::ThreadPoolExecutor;
+use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::system_state::SystemState;
 
 #[derive(Clone)]
@@ -37,7 +37,7 @@ impl WakeupManager {
         }).unwrap();
     }
 
-    pub fn manage(&self, system_status: SystemState, thread_pool_executor: ThreadPoolExecutor) {
+    pub fn manage(&self, system_status: SystemState, thread_pool_manager: ThreadPoolManager) {
         let mut wake_deduplication: HashMap<ActorAddress, Instant> = HashMap::new();
         let recv_timeout = Duration::from_secs(1);
         loop {
@@ -57,7 +57,7 @@ impl WakeupManager {
                         let mut actor_ref = actor_ref.write().unwrap();
                         actor_ref.wakeup();
                     }
-                    let sender = thread_pool_executor.get_pool_sender(&pool_name);
+                    let sender = thread_pool_manager.get_pool_sender(&pool_name);
                     sender.send(actor_ref).unwrap();
                 }
                 continue;
@@ -107,7 +107,7 @@ impl WakeupManager {
                 let mut actor_ref = actor_ref.write().unwrap();
                 actor_ref.wakeup();
             }
-            let sender = thread_pool_executor.get_pool_sender(&wakeup_message.actor_address.pool);
+            let sender = thread_pool_manager.get_pool_sender(&wakeup_message.actor_address.pool);
             sender.send(actor_ref).unwrap();
         }
     }
