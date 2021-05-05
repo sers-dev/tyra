@@ -4,7 +4,7 @@ use crate::config::tyractorsaur_config::{TyractorsaurConfig, DEFAULT_POOL};
 use crate::config::pool_config::ThreadPoolConfig;
 use crossbeam_channel::{unbounded, bounded};
 use crate::actor::executor::{ExecutorTrait, Executor};
-use std::time::{Instant, Duration};
+use std::time::Duration;
 use std::thread::sleep;
 use crate::message::serialized_message::SerializedMessage;
 use crate::actor::actor_builder::ActorBuilder;
@@ -38,19 +38,31 @@ pub struct ActorSystem {
 impl ActorSystem {
     pub fn new(config: TyractorsaurConfig) -> Self {
         let thread_pool_config = config.thread_pool.clone();
-        let system = ActorSystem {
-            state: SystemState::new(),
-            thread_pool_manager: ThreadPoolManager::new(),
-            wakeup_manager: WakeupManager::new(),
-            name: config.global.name.clone(),
-            config: Arc::new(config.clone()),
-        };
+
+        let state = SystemState::new();
+        let thread_pool_manager = ThreadPoolManager::new();
+        let wakeup_manager = WakeupManager::new();
 
         for (key, value) in thread_pool_config.config.iter() {
-            system.add_pool_with_config(key, value.clone());
+            thread_pool_manager.add_pool_with_config(key, value.clone());
         }
-        system.start();
-        system
+
+        let s = state.clone();
+        let t = thread_pool_manager.clone();
+        let w = wakeup_manager.clone();
+        std::thread::spawn(move || t.manage(s, w));
+        let s = state.clone();
+        let t = thread_pool_manager.clone();
+        let w = wakeup_manager.clone();
+        std::thread::spawn(move || w.manage(s, t));
+
+        ActorSystem {
+            state,
+            thread_pool_manager,
+            wakeup_manager,
+            name: config.global.name.clone(),
+            config: Arc::new(config.clone()),
+        }
     }
 
     pub fn add_pool(&self, name: &str) {
@@ -66,22 +78,6 @@ impl ActorSystem {
 
     pub fn add_pool_with_config(&self, name: &str, thread_pool_config: ThreadPoolConfig) {
         self.thread_pool_manager.add_pool_with_config(name, thread_pool_config);
-    }
-
-    fn start(&self) {
-        let s = self.clone();
-        std::thread::spawn(move || s.manage_threads());
-        let s = self.clone();
-        std::thread::spawn(move || s.wake());
-    }
-
-    fn wake(&self) {
-        self.wakeup_manager.manage(self.state.clone(), self.thread_pool_manager.clone());
-
-    }
-
-    fn manage_threads(&self) {
-        self.thread_pool_manager.start(self.state.clone(), self.wakeup_manager.clone());
     }
 
     pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
@@ -137,25 +133,7 @@ impl ActorSystem {
     }
 
     pub fn stop(&self, graceful_termination_timeout: Duration) {
-        if self.state.is_stopping() {
-            return;
-        }
-        self.state.stop();
-        let s = self.clone();
-        std::thread::spawn(move || s.shutdown(graceful_termination_timeout));
-    }
-
-    fn shutdown(&self, timeout: Duration) {
-        let now = Instant::now();
-        let mut is_forced_stop = false;
-        while self.state.get_actor_count() != 0 {
-            if now.elapsed() >= timeout {
-                is_forced_stop = true;
-                break;
-            }
-            sleep(Duration::from_secs(1));
-        }
-        self.state.finalize_stop(is_forced_stop);
+        self.state.stop(graceful_termination_timeout);
     }
 
     pub fn await_shutdown(&self) -> i32 {

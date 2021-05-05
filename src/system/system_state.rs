@@ -4,6 +4,8 @@ use dashmap::DashMap;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor::Actor;
 use crate::message::serialized_message::SerializedMessage;
+use std::thread::sleep;
+use std::time::{Instant, Duration};
 
 #[derive(Clone)]
 pub struct SystemState {
@@ -25,14 +27,24 @@ impl SystemState {
         }
     }
 
-    pub fn stop(&self) {
+    pub fn stop(&self, graceful_termination_timeout: Duration) {
+        if self.is_stopping() {
+            return;
+        }
         self.is_stopping.store(true, Ordering::Relaxed);
+        let s = self.clone();
+        std::thread::spawn(move || s.shutdown(graceful_termination_timeout));
     }
 
-    pub fn finalize_stop(&self, force: bool) {
-        if force {
-            self.is_force_stopped.store(true, Ordering::Relaxed);
-            self.actors.clear();
+    fn shutdown(&self, timeout: Duration) {
+        let now = Instant::now();
+        while self.get_actor_count() != 0 {
+            if now.elapsed() >= timeout {
+                self.is_force_stopped.store(true, Ordering::Relaxed);
+                self.actors.clear();
+                break;
+            }
+            sleep(timeout / 10);
         }
         self.is_stopped.store(true, Ordering::Relaxed);
     }

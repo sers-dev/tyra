@@ -49,7 +49,7 @@ impl ThreadPoolManager {
         }
     }
 
-    pub fn start(&self, system_state: SystemState, wakeup_manager: WakeupManager) {
+    pub fn manage(&self, system_state: SystemState, wakeup_manager: WakeupManager) {
         let mut pools: HashMap<String, ThreadPool> = HashMap::new();
         loop {
             let is_stopped = system_state.is_stopped();
