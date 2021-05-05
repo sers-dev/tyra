@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use crate::actor::actor_address::ActorAddress;
 use std::time::{Instant, Duration};
-use crate::system::actor_system::WakeupMessage;
 use std::sync::{Arc, RwLock};
 use crate::actor::executor::ExecutorTrait;
 use dashmap::DashMap;
@@ -9,11 +8,16 @@ use crossbeam_channel::{Sender, Receiver, unbounded};
 use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::system_state::SystemState;
 
+pub struct Wakeup {
+    pub iteration: usize,
+    pub actor_address: ActorAddress,
+}
+
 #[derive(Clone)]
 pub struct WakeupManager {
     sleeping_actors: Arc<DashMap<ActorAddress, Arc<RwLock<dyn ExecutorTrait>>>>,
-    wakeup_queue_in: Sender<WakeupMessage>,
-    wakeup_queue_out: Receiver<WakeupMessage>,
+    wakeup_queue_in: Sender<Wakeup>,
+    wakeup_queue_out: Receiver<Wakeup>,
 }
 
 impl WakeupManager {
@@ -31,7 +35,7 @@ impl WakeupManager {
     }
 
     pub fn wakeup(&self, address: ActorAddress) {
-        self.wakeup_queue_in.send(WakeupMessage {
+        self.wakeup_queue_in.send(Wakeup {
             actor_address: address,
             iteration: 0
         }).unwrap();
@@ -90,7 +94,7 @@ impl WakeupManager {
                 .contains_key(&wakeup_message.actor_address)
             {
                 self.wakeup_queue_in
-                    .send(WakeupMessage {
+                    .send(Wakeup {
                         iteration: (wakeup_message.iteration + 1),
                         actor_address: wakeup_message.actor_address,
                     })

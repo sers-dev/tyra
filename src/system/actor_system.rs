@@ -20,11 +20,6 @@ use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
 use std::sync::atomic::AtomicBool;
 
-pub struct WakeupMessage {
-    pub iteration: usize,
-    pub actor_address: ActorAddress,
-}
-
 
 #[derive(Clone)]
 pub struct ActorSystem {
