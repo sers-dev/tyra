@@ -7,7 +7,6 @@ pub struct ThreadPoolConfig {
     pub threads_min: usize,
     pub threads_max: usize,
     pub threads_factor: f32,
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

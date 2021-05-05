@@ -1,12 +1,13 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, ActorFactory};
+use tyractorsaur::prelude::{
+    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+};
 
 struct MessageA {}
 
 impl ActorMessage for MessageA {}
-
 
 struct Benchmark {
     ctx: Context<Self>,
@@ -77,10 +78,12 @@ fn main() {
 
     let message_count = 10000000;
 
-    let actor = actor_system.builder("benchmark-single-actor").build(BenchmarkFactory {
-        name: String::from("benchmark"),
-        total_msgs: message_count as usize,
-    });
+    let actor = actor_system
+        .builder("benchmark-single-actor")
+        .build(BenchmarkFactory {
+            name: String::from("benchmark"),
+            total_msgs: message_count as usize,
+        });
     println!("Actors have been created");
     let start = Instant::now();
 

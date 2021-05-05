@@ -1,11 +1,11 @@
-use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
-use std::sync::Arc;
-use dashmap::DashMap;
-use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor::Actor;
+use crate::actor::actor_address::ActorAddress;
 use crate::message::serialized_message::SerializedMessage;
+use dashmap::DashMap;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::thread::sleep;
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
 #[derive(Clone)]
 pub struct SystemState {
@@ -82,6 +82,4 @@ impl SystemState {
         self.total_actor_count.fetch_add(1, Ordering::Relaxed);
         self.actors.insert(address, actor);
     }
-
-
 }

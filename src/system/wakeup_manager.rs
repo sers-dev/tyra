@@ -1,12 +1,12 @@
-use std::collections::HashMap;
 use crate::actor::actor_address::ActorAddress;
-use std::time::{Instant, Duration};
-use std::sync::{Arc, RwLock};
 use crate::actor::executor::ExecutorTrait;
-use dashmap::DashMap;
-use crossbeam_channel::{Sender, Receiver, unbounded};
-use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::system_state::SystemState;
+use crate::system::thread_pool_manager::ThreadPoolManager;
+use crossbeam_channel::{unbounded, Receiver, Sender};
+use dashmap::DashMap;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+use std::time::{Duration, Instant};
 
 pub struct Wakeup {
     pub iteration: usize,
@@ -35,10 +35,12 @@ impl WakeupManager {
     }
 
     pub fn wakeup(&self, address: ActorAddress) {
-        self.wakeup_queue_in.send(Wakeup {
-            actor_address: address,
-            iteration: 0
-        }).unwrap();
+        self.wakeup_queue_in
+            .send(Wakeup {
+                actor_address: address,
+                iteration: 0,
+            })
+            .unwrap();
     }
 
     pub fn manage(&self, system_status: SystemState, thread_pool_manager: ThreadPoolManager) {
@@ -116,4 +118,3 @@ impl WakeupManager {
         }
     }
 }
-

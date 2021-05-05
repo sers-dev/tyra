@@ -1,7 +1,9 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, ActorFactory};
+use tyractorsaur::prelude::{
+    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+};
 
 #[derive(Clone)]
 struct TestMsg {}
@@ -10,7 +12,7 @@ impl ActorMessage for TestMsg {}
 
 #[derive(Clone)]
 struct StopActor {
-    ctx: Context<Self>
+    ctx: Context<Self>,
 }
 
 impl Actor for StopActor {
@@ -35,9 +37,7 @@ struct StopActorFactory {}
 
 impl ActorFactory<StopActor> for StopActorFactory {
     fn new_actor(&self, context: Context<StopActor>) -> StopActor {
-        StopActor{
-            ctx: context
-        }
+        StopActor { ctx: context }
     }
 }
 

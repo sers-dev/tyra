@@ -1,11 +1,11 @@
 use crate::actor::actor::Actor;
-use crate::actor::mailbox::Mailbox;
-use std::panic::UnwindSafe;
-use crate::message::actor_message::ActorMessage;
-use crate::message::actor_stop_message::ActorStopMessage;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::handler::Handler;
+use crate::actor::mailbox::Mailbox;
+use crate::message::actor_message::ActorMessage;
+use crate::message::actor_stop_message::ActorStopMessage;
 use crate::system::wakeup_manager::WakeupManager;
+use std::panic::UnwindSafe;
 
 pub struct ActorWrapper<A>
 where
@@ -16,10 +16,7 @@ where
     wakeup_manager: WakeupManager,
 }
 
-impl<A> UnwindSafe for ActorWrapper<A>
-where
-    A: Actor + 'static,
-{}
+impl<A> UnwindSafe for ActorWrapper<A> where A: Actor + 'static {}
 
 impl<A> ActorWrapper<A>
 where

@@ -1,8 +1,12 @@
-use tyractorsaur::prelude::{ActorMessage, Actor, ActorFactory, Context, Handler, TyractorsaurConfig, ActorSystem};
-use std::time::Duration;
 use std::process::exit;
 use std::thread::sleep;
-use tyractorsaur::router::{RoundRobinRouterFactory, AddActorMessage, RouterMessage, RemoveActorMessage};
+use std::time::Duration;
+use tyractorsaur::prelude::{
+    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+};
+use tyractorsaur::router::{
+    AddActorMessage, RemoveActorMessage, RoundRobinRouterFactory, RouterMessage,
+};
 
 struct MessageA {}
 impl ActorMessage for MessageA {}
@@ -17,9 +21,7 @@ struct HelloWorldFactory {}
 
 impl ActorFactory<HelloWorld> for HelloWorldFactory {
     fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
-        HelloWorld {
-            counter: 0,
-        }
+        HelloWorld { counter: 0 }
     }
 }
 impl Handler<MessageA> for HelloWorld {
@@ -28,7 +30,6 @@ impl Handler<MessageA> for HelloWorld {
         println!("Received MSG {}", self.counter);
     }
 }
-
 
 fn main() {
     let actor_config = TyractorsaurConfig::new().unwrap();
@@ -46,9 +47,7 @@ fn main() {
         .build(hw);
 
     let router_factory = RoundRobinRouterFactory::new();
-    let router  = actor_system
-        .builder("hello-router")
-        .build(router_factory);
+    let router = actor_system.builder("hello-router").build(router_factory);
 
     router.send(AddActorMessage::new(x));
     router.send(AddActorMessage::new(y.clone()));
@@ -67,9 +66,6 @@ fn main() {
     router.send(RemoveActorMessage::new(y));
     router.send(RouterMessage::new(MessageA {}));
     router.send(RouterMessage::new(MessageA {}));
-
-
-
 
     actor_system.stop(Duration::from_secs(1));
     exit(actor_system.await_shutdown());

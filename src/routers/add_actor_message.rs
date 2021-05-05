@@ -3,24 +3,19 @@ use crate::actor::actor_wrapper::ActorWrapper;
 use crate::message::actor_message::ActorMessage;
 
 pub struct AddActorMessage<A>
-    where
-        A: Actor + 'static,
+where
+    A: Actor + 'static,
 {
-    pub actor: ActorWrapper<A>
+    pub actor: ActorWrapper<A>,
 }
 
 impl<A> AddActorMessage<A>
-    where
-        A: Actor + 'static,
+where
+    A: Actor + 'static,
 {
     pub fn new(actor: ActorWrapper<A>) -> Self {
-        Self {
-            actor,
-        }
+        Self { actor }
     }
 }
 
-impl<A> ActorMessage for AddActorMessage<A>
-    where
-        A: Actor + 'static,
-{}
+impl<A> ActorMessage for AddActorMessage<A> where A: Actor + 'static {}

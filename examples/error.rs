@@ -1,6 +1,8 @@
 use std::process::exit;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, ActorFactory};
+use tyractorsaur::prelude::{
+    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+};
 
 #[derive(Clone)]
 struct ErrMsg {

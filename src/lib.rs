@@ -67,10 +67,10 @@
 //!    - FAQ
 //!    - Getting Started
 
-mod config;
-mod routers;
-mod message;
 mod actor;
+mod config;
+mod message;
+mod routers;
 mod system;
 
 /// core components

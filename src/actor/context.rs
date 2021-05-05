@@ -1,5 +1,5 @@
-use crate::prelude::Actor;
 use crate::actor::actor_wrapper::ActorWrapper;
+use crate::prelude::Actor;
 use crate::system::actor_system::ActorSystem;
 use std::panic::UnwindSafe;
 
@@ -12,14 +12,11 @@ where
     pub system: ActorSystem,
 }
 
-impl<A> UnwindSafe for Context<A>
-    where
-        A: Actor + 'static,
-{}
+impl<A> UnwindSafe for Context<A> where A: Actor + 'static {}
 
 impl<A> Clone for Context<A>
-    where
-        A: Actor + 'static,
+where
+    A: Actor + 'static,
 {
     fn clone(&self) -> Self {
         Self {

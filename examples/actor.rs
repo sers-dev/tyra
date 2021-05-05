@@ -1,6 +1,8 @@
 use std::process::exit;
 use std::time::Duration;
-use tyractorsaur::prelude::{ActorSystem, Actor, Context, Handler, ActorMessage, TyractorsaurConfig, ActorFactory};
+use tyractorsaur::prelude::{
+    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+};
 
 struct MessageA {
     text: String,
@@ -34,7 +36,7 @@ impl ActorFactory<HelloWorld> for HelloWorldFactory {
     fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
         HelloWorld {
             count: self.count,
-            text: self.text.clone()
+            text: self.text.clone(),
         }
     }
 }

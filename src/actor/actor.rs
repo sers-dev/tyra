@@ -1,5 +1,5 @@
-use std::panic::UnwindSafe;
 use crate::message::serialized_message::SerializedMessage;
+use std::panic::UnwindSafe;
 
 pub trait Actor: Send + Sync + UnwindSafe {
     fn pre_start(&mut self) {}
@@ -8,4 +8,3 @@ pub trait Actor: Send + Sync + UnwindSafe {
     fn on_system_stop(&mut self) {}
     fn handle_serialized_message(&self, _msg: SerializedMessage) {}
 }
-

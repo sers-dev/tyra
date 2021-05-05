@@ -1,10 +1,10 @@
-use crate::system::actor_system::ActorSystem;
-use crate::actor::actor_config::{ActorConfig, RestartPolicy};
-use crate::config::tyractorsaur_config::DEFAULT_POOL;
-use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::actor::Actor;
-use std::panic::UnwindSafe;
+use crate::actor::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor::actor_factory::ActorFactory;
+use crate::actor::actor_wrapper::ActorWrapper;
+use crate::config::tyractorsaur_config::DEFAULT_POOL;
+use crate::system::actor_system::ActorSystem;
+use std::panic::UnwindSafe;
 
 #[derive(Clone)]
 pub struct ActorBuilder {

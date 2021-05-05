@@ -1,15 +1,15 @@
-use std::collections::HashMap;
-use threadpool::ThreadPool;
-use std::time::Duration;
 use crate::actor::actor_state::ActorState;
-use std::thread::sleep;
-use std::sync::{Arc, RwLock};
-use dashmap::DashMap;
-use crate::config::pool_config::ThreadPoolConfig;
-use crossbeam_channel::{Sender, Receiver, unbounded, bounded};
 use crate::actor::executor::ExecutorTrait;
+use crate::config::pool_config::ThreadPoolConfig;
 use crate::system::system_state::SystemState;
 use crate::system::wakeup_manager::WakeupManager;
+use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
+use dashmap::DashMap;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+use std::thread::sleep;
+use std::time::Duration;
+use threadpool::ThreadPool;
 
 #[derive(Clone)]
 pub struct ThreadPoolManager {
@@ -45,7 +45,8 @@ impl ThreadPoolManager {
             } else {
                 bounded(thread_pool_config.actor_limit)
             };
-            self.thread_pools.insert(String::from(name), (thread_pool_config, sender, receiver));
+            self.thread_pools
+                .insert(String::from(name), (thread_pool_config, sender, receiver));
         }
     }
 
@@ -67,8 +68,7 @@ impl ThreadPoolManager {
                     let mut thread_count = thread_count.floor() as usize;
                     if thread_count < pool_config.threads_min {
                         thread_count = pool_config.threads_min;
-                    }
-                    else if thread_count > pool_config.threads_max {
+                    } else if thread_count > pool_config.threads_max {
                         thread_count = pool_config.threads_max;
                     }
 
@@ -76,7 +76,6 @@ impl ThreadPoolManager {
                         pool_name.clone(),
                         ThreadPool::with_name(pool_name.clone(), thread_count),
                     );
-
                 }
                 let current = pools.get(&pool_name).unwrap();
                 for _i in current.active_count()..current.max_count() {
@@ -130,4 +129,3 @@ impl ThreadPoolManager {
         }
     }
 }
-

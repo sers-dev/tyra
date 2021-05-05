@@ -1,21 +1,21 @@
-use crate::actor::actor_state::ActorState;
-use crate::actor::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor::actor::Actor;
-use crate::actor::mailbox::Mailbox;
-use crossbeam_channel::Receiver;
-use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
-use std::time::{Instant, Duration};
-use crate::system::actor_system::ActorSystem;
-use crate::actor::context::Context;
-use std::panic::{UnwindSafe, catch_unwind, AssertUnwindSafe};
-use crate::message::system_stop_message::SystemStopMessage;
-use std::sync::atomic::Ordering;
-use crate::message::message_type::MessageType;
-use crate::actor::actor_wrapper::ActorWrapper;
-use crate::message::actor_message::ActorMessage;
 use crate::actor::actor_address::ActorAddress;
-use crate::actor::handler::Handler;
+use crate::actor::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor::actor_factory::ActorFactory;
+use crate::actor::actor_state::ActorState;
+use crate::actor::actor_wrapper::ActorWrapper;
+use crate::actor::context::Context;
+use crate::actor::handler::Handler;
+use crate::actor::mailbox::Mailbox;
+use crate::message::actor_message::ActorMessage;
+use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
+use crate::message::message_type::MessageType;
+use crate::message::system_stop_message::SystemStopMessage;
+use crate::system::actor_system::ActorSystem;
+use crossbeam_channel::Receiver;
+use std::panic::{catch_unwind, AssertUnwindSafe, UnwindSafe};
+use std::sync::atomic::Ordering;
+use std::time::{Duration, Instant};
 
 pub trait ExecutorTrait: Send + Sync {
     fn handle(&mut self, is_system_stopping: bool) -> ActorState;
@@ -27,9 +27,9 @@ pub trait ExecutorTrait: Send + Sync {
 }
 
 pub struct Executor<A, P>
-    where
-        A: Actor + 'static,
-        P: ActorFactory<A>
+where
+    A: Actor + 'static,
+    P: ActorFactory<A>,
 {
     actor: A,
     actor_props: P,
@@ -43,13 +43,23 @@ pub struct Executor<A, P>
     context: Context<A>,
 }
 
-unsafe impl<A, P> Send for Executor<A, P> where A: Actor + UnwindSafe + 'static, P: ActorFactory<A> {}
-unsafe impl<A, P> Sync for Executor<A, P> where A: Actor + UnwindSafe + 'static, P: ActorFactory<A> {}
+unsafe impl<A, P> Send for Executor<A, P>
+where
+    A: Actor + UnwindSafe + 'static,
+    P: ActorFactory<A>,
+{
+}
+unsafe impl<A, P> Sync for Executor<A, P>
+where
+    A: Actor + UnwindSafe + 'static,
+    P: ActorFactory<A>,
+{
+}
 
 impl<A, P> ExecutorTrait for Executor<A, P>
-    where
-        A: Actor + UnwindSafe + 'static,
-        P: ActorFactory<A>
+where
+    A: Actor + UnwindSafe + 'static,
+    P: ActorFactory<A>,
 {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {
         if system_is_stopping && !self.system_triggered_stop {
@@ -124,9 +134,9 @@ impl<A, P> ExecutorTrait for Executor<A, P>
 }
 
 impl<A, P> Executor<A, P>
-    where
-        A: Actor,
-        P: ActorFactory<A>
+where
+    A: Actor,
+    P: ActorFactory<A>,
 {
     pub fn new(
         actor_props: P,
@@ -163,9 +173,9 @@ impl<A, P> Executor<A, P>
         }
     }
     pub fn send<M>(&self, msg: M)
-        where
-            A: Handler<M>,
-            M: ActorMessage + 'static,
+    where
+        A: Handler<M>,
+        M: ActorMessage + 'static,
     {
         self.mailbox.msg_in.send(MessageEnvelope::new(msg)).unwrap();
     }

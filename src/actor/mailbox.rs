@@ -1,11 +1,11 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use crossbeam_channel::Sender;
-use crate::message::envelope::MessageEnvelope;
-use crate::actor::actor::{Actor};
-use std::panic::UnwindSafe;
-use crate::message::actor_message::ActorMessage;
+use crate::actor::actor::Actor;
 use crate::actor::handler::Handler;
+use crate::message::actor_message::ActorMessage;
+use crate::message::envelope::MessageEnvelope;
+use crossbeam_channel::Sender;
+use std::panic::UnwindSafe;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 pub struct Mailbox<A> {
     pub is_stopped: Arc<AtomicBool>,
@@ -14,8 +14,8 @@ pub struct Mailbox<A> {
 }
 
 impl<A> Clone for Mailbox<A>
-    where
-        A: Actor + UnwindSafe,
+where
+    A: Actor + UnwindSafe,
 {
     fn clone(&self) -> Self {
         Self {
@@ -26,15 +26,14 @@ impl<A> Clone for Mailbox<A>
     }
 }
 
-
 impl<A> Mailbox<A>
 where
     A: Actor,
 {
     pub fn send<M>(&self, msg: M)
-        where
-            A: Handler<M>,
-            M: ActorMessage + 'static,
+    where
+        A: Handler<M>,
+        M: ActorMessage + 'static,
     {
         self.msg_in.send(MessageEnvelope::new(msg)).unwrap();
     }

@@ -1,25 +1,24 @@
 use crate::actor::actor::Actor;
-use std::sync::{Arc, RwLock};
-use crate::config::tyractorsaur_config::{TyractorsaurConfig, DEFAULT_POOL};
-use crate::config::pool_config::ThreadPoolConfig;
-use crossbeam_channel::{unbounded, bounded};
-use crate::actor::executor::{ExecutorTrait, Executor};
-use std::time::Duration;
-use std::thread::sleep;
-use crate::message::serialized_message::SerializedMessage;
+use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_builder::ActorBuilder;
 use crate::actor::actor_config::ActorConfig;
-use crate::actor::actor_wrapper::ActorWrapper;
-use std::panic::UnwindSafe;
-use crate::actor::mailbox::Mailbox;
-use crate::actor::context::Context;
-use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_factory::ActorFactory;
+use crate::actor::actor_wrapper::ActorWrapper;
+use crate::actor::context::Context;
+use crate::actor::executor::{Executor, ExecutorTrait};
+use crate::actor::mailbox::Mailbox;
+use crate::config::pool_config::ThreadPoolConfig;
+use crate::config::tyractorsaur_config::{TyractorsaurConfig, DEFAULT_POOL};
+use crate::message::serialized_message::SerializedMessage;
 use crate::system::system_state::SystemState;
 use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
+use crossbeam_channel::{bounded, unbounded};
+use std::panic::UnwindSafe;
 use std::sync::atomic::AtomicBool;
-
+use std::sync::{Arc, RwLock};
+use std::thread::sleep;
+use std::time::Duration;
 
 #[derive(Clone)]
 pub struct ActorSystem {
@@ -72,7 +71,8 @@ impl ActorSystem {
     }
 
     pub fn add_pool_with_config(&self, name: &str, thread_pool_config: ThreadPoolConfig) {
-        self.thread_pool_manager.add_pool_with_config(name, thread_pool_config);
+        self.thread_pool_manager
+            .add_pool_with_config(name, thread_pool_config);
     }
 
     pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
@@ -105,7 +105,11 @@ impl ActorSystem {
             pool: actor_config.pool_name.clone(),
             remote: String::from("local"),
         };
-        let actor_ref = ActorWrapper::new(mailbox.clone(), actor_address.clone(), self.wakeup_manager.clone());
+        let actor_ref = ActorWrapper::new(
+            mailbox.clone(),
+            actor_address.clone(),
+            self.wakeup_manager.clone(),
+        );
 
         let context = Context {
             system: self.clone(),
@@ -123,7 +127,10 @@ impl ActorSystem {
         );
 
         self.state.add_actor(actor_address.clone(), Arc::new(actor));
-        self.wakeup_manager.add_sleeping_actor(actor_handler.get_address(), Arc::new(RwLock::new(actor_handler)));
+        self.wakeup_manager.add_sleeping_actor(
+            actor_handler.get_address(),
+            Arc::new(RwLock::new(actor_handler)),
+        );
         actor_ref
     }
 
@@ -141,5 +148,4 @@ impl ActorSystem {
     pub fn get_config(&self) -> &TyractorsaurConfig {
         &self.config
     }
-
 }
