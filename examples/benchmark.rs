@@ -2,7 +2,7 @@ use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tyractorsaur::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyractorsaurConfig,
 };
 
 struct MessageA {}
@@ -10,7 +10,7 @@ struct MessageA {}
 impl ActorMessage for MessageA {}
 
 struct Benchmark {
-    ctx: Context<Self>,
+    ctx: ActorContext<Self>,
     total_msgs: usize,
     name: String,
     count: usize,
@@ -23,13 +23,13 @@ struct BenchmarkFactory {
 }
 
 impl ActorFactory<Benchmark> for BenchmarkFactory {
-    fn new_actor(&self, context: Context<Benchmark>) -> Benchmark {
+    fn new_actor(&self, context: ActorContext<Benchmark>) -> Benchmark {
         Benchmark::new(self.total_msgs, self.name.clone(), context)
     }
 }
 
 impl Benchmark {
-    pub fn new(total_msgs: usize, name: String, context: Context<Self>) -> Self {
+    pub fn new(total_msgs: usize, name: String, context: ActorContext<Self>) -> Self {
         Self {
             ctx: context,
             total_msgs,
@@ -47,7 +47,7 @@ impl Actor for Benchmark {
 }
 
 impl Handler<MessageA> for Benchmark {
-    fn handle(&mut self, _msg: MessageA, context: &Context<Self>) {
+    fn handle(&mut self, _msg: MessageA, context: &ActorContext<Self>) {
         if self.count == 0 {
             println!("Sleep 3 now");
             sleep(Duration::from_secs((3) as u64));

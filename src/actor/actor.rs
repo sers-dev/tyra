@@ -1,6 +1,7 @@
 use crate::message::serialized_message::SerializedMessage;
 use std::panic::UnwindSafe;
 
+/// Core trait to define Actors
 pub trait Actor: Send + Sync + UnwindSafe {
     fn pre_start(&mut self) {}
     fn post_stop(&mut self) {}

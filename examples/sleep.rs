@@ -2,7 +2,7 @@ use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
 use tyractorsaur::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyractorsaurConfig,
 };
 
 #[derive(Clone)]
@@ -21,7 +21,7 @@ struct SleepActor {
 impl Actor for SleepActor {}
 
 impl Handler<SleepMsg> for SleepActor {
-    fn handle(&mut self, _msg: SleepMsg, _context: &Context<Self>) {
+    fn handle(&mut self, _msg: SleepMsg, _context: &ActorContext<Self>) {
         self.counter += 1;
         //if self.counter == 1 {
         sleep(Duration::from_secs(3));
@@ -38,7 +38,7 @@ struct SleepActorFactory {
 }
 
 impl ActorFactory<SleepActor> for SleepActorFactory {
-    fn new_actor(&self, _context: Context<SleepActor>) -> SleepActor {
+    fn new_actor(&self, _context: ActorContext<SleepActor>) -> SleepActor {
         SleepActor {
             counter: self.counter,
             text: self.text.clone(),

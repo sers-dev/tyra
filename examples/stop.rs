@@ -2,7 +2,7 @@ use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
 use tyractorsaur::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyractorsaurConfig,
 };
 
 #[derive(Clone)]
@@ -12,7 +12,7 @@ impl ActorMessage for TestMsg {}
 
 #[derive(Clone)]
 struct StopActor {
-    ctx: Context<Self>,
+    ctx: ActorContext<Self>,
 }
 
 impl Actor for StopActor {
@@ -26,7 +26,7 @@ impl Actor for StopActor {
 }
 
 impl Handler<TestMsg> for StopActor {
-    fn handle(&mut self, _msg: TestMsg, context: &Context<Self>) {
+    fn handle(&mut self, _msg: TestMsg, context: &ActorContext<Self>) {
         context.actor_ref.send(TestMsg {});
         println!("Message received!");
         sleep(Duration::from_millis(100));
@@ -36,7 +36,7 @@ impl Handler<TestMsg> for StopActor {
 struct StopActorFactory {}
 
 impl ActorFactory<StopActor> for StopActorFactory {
-    fn new_actor(&self, context: Context<StopActor>) -> StopActor {
+    fn new_actor(&self, context: ActorContext<StopActor>) -> StopActor {
         StopActor { ctx: context }
     }
 }

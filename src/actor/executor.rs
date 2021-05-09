@@ -4,7 +4,7 @@ use crate::actor::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_state::ActorState;
 use crate::actor::actor_wrapper::ActorWrapper;
-use crate::actor::context::Context;
+use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::actor::mailbox::Mailbox;
 use crate::message::actor_message::ActorMessage;
@@ -40,7 +40,7 @@ where
     is_startup: bool,
     system_triggered_stop: bool,
     last_wakeup: Instant,
-    context: Context<A>,
+    context: ActorContext<A>,
 }
 
 unsafe impl<A, P> Send for Executor<A, P>
@@ -154,7 +154,7 @@ where
             remote: String::from("local"),
         };
 
-        let context = Context {
+        let context = ActorContext {
             actor_ref,
             system: system.clone(),
         };

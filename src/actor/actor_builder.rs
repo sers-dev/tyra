@@ -19,9 +19,9 @@ impl ActorBuilder {
         let actor_config = ActorConfig {
             actor_name,
             pool_name: String::from(DEFAULT_POOL),
-            mailbox_size: config.global.default_mailbox_size,
-            message_throughput: config.global.default_message_throughput,
-            restart_policy: config.global.default_restart_policy,
+            mailbox_size: config.general.default_mailbox_size,
+            message_throughput: config.general.default_message_throughput,
+            restart_policy: config.general.default_restart_policy,
         };
 
         ActorBuilder {

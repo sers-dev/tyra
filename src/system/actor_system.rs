@@ -4,7 +4,7 @@ use crate::actor::actor_builder::ActorBuilder;
 use crate::actor::actor_config::ActorConfig;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
-use crate::actor::context::Context;
+use crate::actor::context::ActorContext;
 use crate::actor::executor::{Executor, ExecutorTrait};
 use crate::actor::mailbox::Mailbox;
 use crate::config::pool_config::ThreadPoolConfig;
@@ -20,6 +20,7 @@ use std::sync::{Arc, RwLock};
 use std::thread::sleep;
 use std::time::Duration;
 
+/// Manages thread pools and actors
 #[derive(Clone)]
 pub struct ActorSystem {
     state: SystemState,
@@ -54,7 +55,7 @@ impl ActorSystem {
             state,
             thread_pool_manager,
             wakeup_manager,
-            name: config.global.name.clone(),
+            name: config.general.name.clone(),
             config: Arc::new(config.clone()),
         }
     }
@@ -111,7 +112,7 @@ impl ActorSystem {
             self.wakeup_manager.clone(),
         );
 
-        let context = Context {
+        let context = ActorContext {
             system: self.clone(),
             actor_ref: actor_ref.clone(),
         };

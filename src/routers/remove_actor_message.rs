@@ -2,6 +2,7 @@ use crate::actor::actor::Actor;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::message::actor_message::ActorMessage;
 
+/// Removes an Actor to the Router
 pub struct RemoveActorMessage<A>
 where
     A: Actor + 'static,

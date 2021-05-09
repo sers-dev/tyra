@@ -26,7 +26,7 @@
 //! // setup required Factory
 //! struct HelloWorldFactory {}
 //! impl ActorFactory<HelloWorld> for HelloWorldFactory {
-//!     fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
+//!     fn new_actor(&self, _context: ActorContext<HelloWorld>) -> HelloWorld {
 //!         HelloWorld {}
 //!     }
 //! }
@@ -34,7 +34,7 @@
 //! // each supported message has its own Handler implementation
 //! // this is where the actual work is done
 //! impl Handler<FooBar> for HelloWorld {
-//!     fn handle(&mut self, _msg: FooBar, _context: &Context<Self>) {
+//!     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) {
 //!         println!("Message Received!");
 //!     }
 //! }

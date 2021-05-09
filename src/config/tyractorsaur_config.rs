@@ -1,4 +1,4 @@
-use crate::config::global_config::GlobalConfig;
+use crate::config::global_config::GeneralConfig;
 use crate::config::pool_config::PoolConfig;
 
 use config::{Config, ConfigError, Environment, File, FileFormat};
@@ -6,9 +6,10 @@ use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_POOL: &str = "default";
 
+/// Main configuration, consists of [GeneralConfig] and [PoolConfig]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TyractorsaurConfig {
-    pub global: GlobalConfig,
+    pub general: GeneralConfig,
     pub thread_pool: PoolConfig,
 }
 
@@ -27,8 +28,8 @@ impl TyractorsaurConfig {
             .expect("Could not parse ENV variables");
 
         let mut parsed: TyractorsaurConfig = config.try_into().expect("Could not parse Config");
-        if parsed.global.name == "$HOSTNAME" {
-            parsed.global.name = String::from(hostname::get().unwrap().to_str().unwrap());
+        if parsed.general.name == "$HOSTNAME" {
+            parsed.general.name = String::from(hostname::get().unwrap().to_str().unwrap());
         }
 
         Ok(parsed)

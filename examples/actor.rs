@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::time::Duration;
 use tyractorsaur::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyractorsaurConfig,
 };
 
 struct MessageA {
@@ -33,7 +33,7 @@ struct HelloWorldFactory {
 }
 
 impl ActorFactory<HelloWorld> for HelloWorldFactory {
-    fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
+    fn new_actor(&self, _context: ActorContext<HelloWorld>) -> HelloWorld {
         HelloWorld {
             count: self.count,
             text: self.text.clone(),
@@ -41,7 +41,7 @@ impl ActorFactory<HelloWorld> for HelloWorldFactory {
     }
 }
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&mut self, msg: MessageA, _context: &Context<Self>) {
+    fn handle(&mut self, msg: MessageA, _context: &ActorContext<Self>) {
         let text: String = [self.text.clone(), String::from(msg.text)].join(" -> ");
         self.count += 1;
         println!("AAAA: {} Count: {}", text, self.count)
@@ -49,7 +49,7 @@ impl Handler<MessageA> for HelloWorld {
 }
 
 impl Handler<MessageB> for HelloWorld {
-    fn handle(&mut self, msg: MessageB, _context: &Context<Self>) {
+    fn handle(&mut self, msg: MessageB, _context: &ActorContext<Self>) {
         let text: String = [self.text.clone(), String::from(msg.text)].join(" -> ");
         self.count -= 1;
         println!("BBBB: {} Count: {}", text, self.count)

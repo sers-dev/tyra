@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::time::Duration;
 use tyractorsaur::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyractorsaurConfig,
 };
 
 #[derive(Clone)]
@@ -20,7 +20,7 @@ struct ErrActor {
 impl Actor for ErrActor {}
 
 impl Handler<ErrMsg> for ErrActor {
-    fn handle(&mut self, msg: ErrMsg, _context: &Context<Self>) {
+    fn handle(&mut self, msg: ErrMsg, _context: &ActorContext<Self>) {
         self.counter += 1;
         if msg.text == "sers+1" {
             panic!("ficl");
@@ -35,7 +35,7 @@ struct ErrActorFactory {
 }
 
 impl ActorFactory<ErrActor> for ErrActorFactory {
-    fn new_actor(&self, _context: Context<ErrActor>) -> ErrActor {
+    fn new_actor(&self, _context: ActorContext<ErrActor>) -> ErrActor {
         ErrActor {
             text: self.text.clone(),
             counter: self.counter,

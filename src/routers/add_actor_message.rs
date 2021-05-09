@@ -2,6 +2,7 @@ use crate::actor::actor::Actor;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::message::actor_message::ActorMessage;
 
+/// Adds an Actor to the Router
 pub struct AddActorMessage<A>
 where
     A: Actor + 'static,

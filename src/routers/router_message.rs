@@ -1,5 +1,6 @@
 use crate::message::actor_message::ActorMessage;
 
+/// Wraps any [ActorMessage](../prelude/trait.ActorMessage.html) to be sent to a Router
 pub struct RouterMessage<M>
 where
     M: ActorMessage + 'static,

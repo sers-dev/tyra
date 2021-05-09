@@ -13,6 +13,6 @@ pub mod mailbox;
 pub mod prelude {
     pub use crate::actor::actor::Actor;
     pub use crate::actor::actor_factory::ActorFactory;
-    pub use crate::actor::context::Context;
+    pub use crate::actor::context::ActorContext;
     pub use crate::actor::handler::Handler;
 }

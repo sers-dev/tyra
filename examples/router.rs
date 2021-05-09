@@ -2,7 +2,7 @@ use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
 use tyractorsaur::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, Context, Handler, TyractorsaurConfig,
+    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyractorsaurConfig,
 };
 use tyractorsaur::router::{
     AddActorMessage, RemoveActorMessage, RoundRobinRouterFactory, RouterMessage,
@@ -20,12 +20,12 @@ impl Actor for HelloWorld {}
 struct HelloWorldFactory {}
 
 impl ActorFactory<HelloWorld> for HelloWorldFactory {
-    fn new_actor(&self, _context: Context<HelloWorld>) -> HelloWorld {
+    fn new_actor(&self, _context: ActorContext<HelloWorld>) -> HelloWorld {
         HelloWorld { counter: 0 }
     }
 }
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&mut self, _msg: MessageA, _context: &Context<Self>) {
+    fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) {
         self.counter += 1;
         println!("Received MSG {}", self.counter);
     }
