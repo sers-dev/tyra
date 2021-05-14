@@ -19,7 +19,7 @@ use crate::message::system_stop_message::SystemStopMessage;
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
 ///
-/// impl Handler<Foobar> for TestActor {
+/// impl Handler<FooBar> for TestActor {
 ///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) {
 ///     }
 /// }

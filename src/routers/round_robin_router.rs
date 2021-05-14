@@ -19,6 +19,59 @@ where
 }
 
 /// implements [ActorFactory](../prelude/trait.ActorFactory.html) to spawn a RoundRobinRouter within an [ActorSystem](../prelude/struct.ActorSystem.html)
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```rust
+/// use tyractorsaur::prelude::*;
+/// use std::process::exit;
+/// use std::time::Duration;
+///
+/// // define message
+/// struct FooBar {}
+/// impl ActorMessage for FooBar {}
+///
+/// // define actor
+/// struct HelloWorld {}
+/// impl Actor for HelloWorld {}
+///
+/// // setup required Factory
+/// struct HelloWorldFactory {}
+/// impl ActorFactory<HelloWorld> for HelloWorldFactory {
+///     fn new_actor(&self, _context: ActorContext<HelloWorld>) -> HelloWorld {
+///         HelloWorld {}
+///     }
+/// }
+///
+/// // setup Message Handler for Actor
+/// impl Handler<FooBar> for HelloWorld {
+///     fn handle(&mut self, msg: FooBar, context: &ActorContext<Self>) {
+///
+///     }
+///
+/// }
+///
+/// // create a new actor system with the default config
+/// use tyractorsaur::router::{RoundRobinRouterFactory, AddActorMessage, RouterMessage};
+/// let actor_config = TyractorsaurConfig::new().unwrap();
+/// let actor_system = ActorSystem::new(actor_config);
+///
+/// // create the actor
+/// let actor_factory = HelloWorldFactory {};
+/// let actor = actor_system
+///     .builder("hello-world")
+///     .build(actor_factory);
+///
+/// // create the router, fill it, and route a message
+/// let router_factory = RoundRobinRouterFactory::new();
+/// let router = actor_system
+///     .builder("router-hello-world")
+///     .build(router_factory);
+/// router.send(AddActorMessage::new(actor.clone()));
+/// router.send(RouterMessage::new(FooBar{}));
+/// ```
 pub struct RoundRobinRouterFactory {}
 
 impl RoundRobinRouterFactory {
