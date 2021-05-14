@@ -15,6 +15,7 @@ use crate::actor::executor::{Executor, ExecutorTrait};
 use crate::system::wakeup_manager::WakeupManager;
 use crate::system::system_state::SystemState;
 
+/// Used to create [Actor]s in the [ActorSystem]
 #[derive(Clone)]
 pub struct ActorBuilder {
     system: ActorSystem,
@@ -24,6 +25,7 @@ pub struct ActorBuilder {
 }
 
 impl ActorBuilder {
+    /// This is called through [ActorSystem.builder](../prelude/struct.ActorSystem.html#method.builder)
     pub fn new(system: ActorSystem, system_state: SystemState, wakeup_manager: WakeupManager, actor_name: String) -> ActorBuilder {
         let config = system.get_config();
 
@@ -67,6 +69,7 @@ impl ActorBuilder {
         self
     }
 
+    /// Creates the defined [Actor] on the [ActorSystem]
     pub fn build<A, P>(&self, props: P) -> ActorWrapper<A>
     where
         A: Actor + UnwindSafe + 'static,

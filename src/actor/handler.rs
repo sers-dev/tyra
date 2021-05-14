@@ -5,6 +5,25 @@ use crate::message::actor_stop_message::ActorStopMessage;
 use crate::message::system_stop_message::SystemStopMessage;
 
 /// Defines which [ActorMessage] is supported per [Actor]
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```rust
+/// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, ActorMessage, Handler};
+///
+/// struct TestActor {}
+/// impl Actor for TestActor {}
+///
+/// struct FooBar {}
+/// impl ActorMessage for FooBar {}
+///
+/// impl Handler<Foobar> for TestActor {
+///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) {
+///     }
+/// }
+/// ```
 pub trait Handler<M: ?Sized>
 where
     Self: Actor + Sized,

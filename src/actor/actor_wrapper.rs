@@ -7,6 +7,7 @@ use crate::message::actor_stop_message::ActorStopMessage;
 use crate::system::wakeup_manager::WakeupManager;
 use std::panic::UnwindSafe;
 
+/// Wrapper used to interact with [Actor]
 pub struct ActorWrapper<A>
 where
     A: Actor + 'static,
@@ -22,6 +23,7 @@ impl<A> ActorWrapper<A>
 where
     A: Actor + UnwindSafe,
 {
+    /// Automatically called by the [ActorBuilder.build](../prelude/struct.ActorBuilder.html#method.build)
     pub fn new(mailbox: Mailbox<A>, address: ActorAddress, wakeup_manager: WakeupManager) -> Self {
         Self {
             mailbox,

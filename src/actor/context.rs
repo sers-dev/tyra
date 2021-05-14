@@ -3,7 +3,9 @@ use crate::prelude::Actor;
 use crate::system::actor_system::ActorSystem;
 use std::panic::UnwindSafe;
 
-/// Enables access to [ActorSystem] and [Actor] within  [Handler](./trait.Handler.html) implementations
+/// Enables access to [ActorSystem] and [Actor] within [Handler](./trait.Handler.html) implementations
+///
+/// Also injected into [ActorFactory.new_actor](../prelude/trait.ActorFactory.html#tymethod.new_actor), so that it can be stored within the Actor
 pub struct ActorContext<A>
 where
     Self: Send + Sync,

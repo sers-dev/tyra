@@ -9,6 +9,7 @@ pub struct ActorConfig {
     pub restart_policy: RestartPolicy,
 }
 
+/// Defines behavior of [Actor](../prelude/trait.Actor.html) in case of a panic when handling a message
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
 pub enum RestartPolicy {
     Never,
