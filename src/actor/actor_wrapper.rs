@@ -50,8 +50,8 @@ where
         self.send(ActorStopMessage {});
     }
 
-    pub fn get_address(&self) -> ActorAddress {
-        self.address.clone()
+    pub fn get_address(&self) -> &ActorAddress {
+        &self.address
     }
 }
 

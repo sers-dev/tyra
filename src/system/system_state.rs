@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 
 #[derive(Clone)]
 pub struct SystemState {
-    actors: DashMap<ActorAddress, Arc<dyn Actor>>,
+    actors: Arc<DashMap<ActorAddress, Arc<dyn Actor>>>,
     total_actor_count: Arc<AtomicUsize>,
     is_stopped: Arc<AtomicBool>,
     is_stopping: Arc<AtomicBool>,
@@ -19,7 +19,7 @@ pub struct SystemState {
 impl SystemState {
     pub fn new() -> Self {
         Self {
-            actors: DashMap::new(),
+            actors: Arc::new(DashMap::new()),
             total_actor_count: Arc::new(AtomicUsize::new(0)),
             is_stopped: Arc::new(AtomicBool::new(false)),
             is_stopping: Arc::new(AtomicBool::new(false)),

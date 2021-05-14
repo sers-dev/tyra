@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_POOL: &str = "default";
 
-/// Main configuration, consists of [GeneralConfig] and [PoolConfig]
+/// See [default.toml](https://github.com/sers-dev/tyractorsaur/blob/master/src/config/default.toml) for overview of all configurations & their defaults
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TyractorsaurConfig {
     pub general: GeneralConfig,

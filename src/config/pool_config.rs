@@ -10,6 +10,17 @@ pub struct ThreadPoolConfig {
     pub threads_factor: f32,
 }
 
+impl ThreadPoolConfig {
+    pub fn new(actor_limit: usize, threads_min: usize, threads_max: usize, threads_factor: f32) -> Self {
+        Self {
+            actor_limit,
+            threads_min,
+            threads_max,
+            threads_factor,
+        }
+    }
+}
+
 /// Map of [ThreadPoolConfig]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PoolConfig {

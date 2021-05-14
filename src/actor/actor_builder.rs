@@ -5,15 +5,26 @@ use crate::actor::actor_wrapper::ActorWrapper;
 use crate::config::tyractorsaur_config::DEFAULT_POOL;
 use crate::system::actor_system::ActorSystem;
 use std::panic::UnwindSafe;
+use crossbeam_channel::{unbounded, bounded};
+use crate::actor::mailbox::Mailbox;
+use std::sync::{Arc, RwLock};
+use std::sync::atomic::AtomicBool;
+use crate::actor::actor_address::ActorAddress;
+use crate::actor::context::ActorContext;
+use crate::actor::executor::{Executor, ExecutorTrait};
+use crate::system::wakeup_manager::WakeupManager;
+use crate::system::system_state::SystemState;
 
 #[derive(Clone)]
 pub struct ActorBuilder {
     system: ActorSystem,
+    system_state: SystemState,
+    wakeup_manager: WakeupManager,
     actor_config: ActorConfig,
 }
 
 impl ActorBuilder {
-    pub fn new(system: ActorSystem, actor_name: String) -> ActorBuilder {
+    pub fn new(system: ActorSystem, system_state: SystemState, wakeup_manager: WakeupManager, actor_name: String) -> ActorBuilder {
         let config = system.get_config();
 
         let actor_config = ActorConfig {
@@ -26,6 +37,8 @@ impl ActorBuilder {
 
         ActorBuilder {
             system,
+            system_state,
+            wakeup_manager,
             actor_config,
         }
     }
@@ -59,6 +72,58 @@ impl ActorBuilder {
         A: Actor + UnwindSafe + 'static,
         P: ActorFactory<A> + 'static,
     {
-        self.system.spawn(props, self.actor_config.clone())
+        self.spawn(props, self.actor_config.clone())
+    }
+
+
+    fn spawn<A, P>(&self, actor_props: P, actor_config: ActorConfig) -> ActorWrapper<A>
+        where
+            A: Actor + UnwindSafe + 'static,
+            P: ActorFactory<A> + 'static,
+    {
+        let (sender, receiver) = if actor_config.mailbox_size == 0 {
+            unbounded()
+        } else {
+            bounded(actor_config.mailbox_size)
+        };
+
+        let mailbox = Mailbox {
+            is_stopped: Arc::new(AtomicBool::new(false)),
+            is_sleeping: Arc::new(AtomicBool::new(true)),
+            msg_in: sender,
+        };
+        let actor_address = ActorAddress {
+            actor: actor_config.actor_name.clone(),
+            system: String::from(self.system.get_name()),
+            pool: actor_config.pool_name.clone(),
+            remote: String::from("local"),
+        };
+        let actor_ref = ActorWrapper::new(
+            mailbox.clone(),
+            actor_address.clone(),
+            self.wakeup_manager.clone(),
+        );
+
+        let context = ActorContext {
+            system: self.system.clone(),
+            actor_ref: actor_ref.clone(),
+        };
+        let actor = actor_props.new_actor(context);
+        let actor_handler = Executor::new(
+            actor_props,
+            actor_config,
+            mailbox.clone(),
+            receiver,
+            self.system.clone(),
+            String::from(self.system.get_name()),
+            actor_ref.clone(),
+        );
+
+        self.system_state.add_actor(actor_address.clone(), Arc::new(actor));
+        self.wakeup_manager.add_sleeping_actor(
+            actor_handler.get_address(),
+            Arc::new(RwLock::new(actor_handler)),
+        );
+        actor_ref
     }
 }

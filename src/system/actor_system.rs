@@ -1,22 +1,12 @@
-use crate::actor::actor::Actor;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_builder::ActorBuilder;
-use crate::actor::actor_config::ActorConfig;
-use crate::actor::actor_factory::ActorFactory;
-use crate::actor::actor_wrapper::ActorWrapper;
-use crate::actor::context::ActorContext;
-use crate::actor::executor::{Executor, ExecutorTrait};
-use crate::actor::mailbox::Mailbox;
 use crate::config::pool_config::ThreadPoolConfig;
 use crate::config::tyractorsaur_config::{TyractorsaurConfig, DEFAULT_POOL};
 use crate::message::serialized_message::SerializedMessage;
 use crate::system::system_state::SystemState;
 use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
-use crossbeam_channel::{bounded, unbounded};
-use std::panic::UnwindSafe;
-use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -31,6 +21,18 @@ pub struct ActorSystem {
 }
 
 impl ActorSystem {
+    /// Creates and starts a new ActorSystem based on supplied configuration
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem};
+    ///
+    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// ```
     pub fn new(config: TyractorsaurConfig) -> Self {
         let thread_pool_config = config.thread_pool.clone();
 
@@ -60,6 +62,19 @@ impl ActorSystem {
         }
     }
 
+    /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyractorsaur/blob/master/src/config/default.toml)
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem};
+    ///
+    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// actor_system.add_pool("test");
+    /// ```
     pub fn add_pool(&self, name: &str) {
         let default_config = self.config.thread_pool.config.get(DEFAULT_POOL).unwrap();
         let config = self
@@ -71,74 +86,142 @@ impl ActorSystem {
         self.add_pool_with_config(name, config.clone());
     }
 
+    /// Adds a new named pool with custom [pool configuration](../prelude/struct.ThreadPoolConfig.html)
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ThreadPoolConfig};
+    ///
+    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// let pool_config = ThreadPoolConfig::new(0, 2, 4, 1.0);
+    /// actor_system.add_pool_with_config("test", pool_config);
+    /// ```
     pub fn add_pool_with_config(&self, name: &str, thread_pool_config: ThreadPoolConfig) {
         self.thread_pool_manager
             .add_pool_with_config(name, thread_pool_config);
     }
 
+    /// Sends a [SerializedMessage](../prelude/struct.SerializedMessage.html) to an Actor by Address
+    ///
+    /// # Important Note
+    ///
+    /// This function will call the [ActorTrait.handle_serialized_message](../prelude/trait.Actor.html#method.handle_serialized_message) on the same thread that this function is called
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
+    ///
+    /// struct TestActor {}
+    ///
+    /// impl Actor for TestActor {
+    ///     fn handle_serialized_message(&self, msg: SerializedMessage) {
+    ///         assert_eq!(0, msg.content.len());
+    ///     }
+    /// }
+    ///
+    /// struct TestFactory {}
+    ///
+    /// impl ActorFactory<TestActor> for TestFactory {
+    ///     fn new_actor(&self, _context: ActorContext<TestActor>) -> TestActor {
+    ///         TestActor {}
+    ///     }
+    /// }
+    ///
+    ///
+    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// let actor_wrapper = actor_system.builder("test").build(TestFactory{});
+    /// let address = actor_wrapper.get_address();
+    /// actor_system.send_to_address(address, SerializedMessage::new(Vec::new()));
+    /// ```
     pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
         self.state.send_to_address(address, msg);
     }
 
+    /// Returns a Builder to configure and spawn an actor in the system
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
+    ///
+    /// struct TestActor {}
+    ///
+    /// impl Actor for TestActor {
+    ///     fn handle_serialized_message(&self, msg: SerializedMessage) {
+    ///         assert_eq!(0, msg.content.len());
+    ///     }
+    /// }
+    ///
+    /// struct TestFactory {}
+    ///
+    /// impl ActorFactory<TestActor> for TestFactory {
+    ///     fn new_actor(&self, _context: ActorContext<TestActor>) -> TestActor {
+    ///         TestActor {}
+    ///     }
+    /// }
+    ///
+    ///
+    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// let builder = actor_system.builder("test");
+    /// ```
     pub fn builder(&self, name: impl Into<String>) -> ActorBuilder {
-        ActorBuilder::new(self.clone(), name.into())
+        ActorBuilder::new(self.clone(), self.state.clone(), self.wakeup_manager.clone(),name.into())
     }
 
-    pub fn spawn<A, P>(&self, actor_props: P, actor_config: ActorConfig) -> ActorWrapper<A>
-    where
-        A: Actor + UnwindSafe + 'static,
-        P: ActorFactory<A> + 'static,
-    {
-        let (sender, receiver) = if actor_config.mailbox_size == 0 {
-            unbounded()
-        } else {
-            bounded(actor_config.mailbox_size)
-        };
-
-        let mailbox = Mailbox {
-            is_stopped: Arc::new(AtomicBool::new(false)),
-            is_sleeping: Arc::new(AtomicBool::new(true)),
-            msg_in: sender,
-        };
-        let actor_address = ActorAddress {
-            actor: actor_config.actor_name.clone(),
-            system: self.name.clone(),
-            pool: actor_config.pool_name.clone(),
-            remote: String::from("local"),
-        };
-        let actor_ref = ActorWrapper::new(
-            mailbox.clone(),
-            actor_address.clone(),
-            self.wakeup_manager.clone(),
-        );
-
-        let context = ActorContext {
-            system: self.clone(),
-            actor_ref: actor_ref.clone(),
-        };
-        let actor = actor_props.new_actor(context);
-        let actor_handler = Executor::new(
-            actor_props,
-            actor_config,
-            mailbox.clone(),
-            receiver,
-            self.clone(),
-            self.name.clone(),
-            actor_ref.clone(),
-        );
-
-        self.state.add_actor(actor_address.clone(), Arc::new(actor));
-        self.wakeup_manager.add_sleeping_actor(
-            actor_handler.get_address(),
-            Arc::new(RwLock::new(actor_handler)),
-        );
-        actor_ref
-    }
-
+    /// Sends a SystemStopMessage to all running Actors, and wakes them up if necessary.
+    /// Users can implement their own clean system stop behavior, by implementing [Actor.on_system_stop](../prelude/trait.Actor.html#method.on_system_stop) and [Actor.on_actor_stop](../prelude/trait.Actor.html#method.on_actor_stop)
+    ///
+    /// System will stop after all actors have been stopped or after `graceful_termination_timeout`
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ThreadPoolConfig};
+    /// use std::time::Duration;
+    ///
+    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// actor_system.stop(Duration::from_secs(1));
+    /// ```
     pub fn stop(&self, graceful_termination_timeout: Duration) {
         self.state.stop(graceful_termination_timeout);
     }
 
+    /// Waits for the system to stop
+    ///
+    /// # Returns
+    ///
+    /// `0 as i32` if cleanly stopped by removing all actors from system
+    ///
+    /// `1 as i32` if force stopped after stop timeout
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ThreadPoolConfig};
+    /// use std::time::Duration;
+    /// use std::process::exit;
+    ///
+    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// actor_system.stop(Duration::from_secs(1));
+    /// exit(actor_system.await_shutdown());
+    /// ```
     pub fn await_shutdown(&self) -> i32 {
         while !self.state.is_stopped() {
             sleep(Duration::from_secs(1));
@@ -146,7 +229,41 @@ impl ActorSystem {
         self.state.is_force_stopped() as i32
     }
 
+    /// Returns a reference to the [TyractorsaurConfig](../prelude/struct.TyractorsaurConfig.html)
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ThreadPoolConfig};
+    /// use std::time::Duration;
+    /// use std::process::exit;
+    ///
+    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// let conf = actor_system.get_config();
+    /// ```
     pub fn get_config(&self) -> &TyractorsaurConfig {
         &self.config
+    }
+
+    /// Returns the configured name of the system
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ThreadPoolConfig};
+    /// use std::time::Duration;
+    /// use std::process::exit;
+    ///
+    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// let name = actor_system.get_name();
+    /// ```
+    pub fn get_name(&self) -> &str {
+        &self.name
     }
 }
