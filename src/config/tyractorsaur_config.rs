@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_POOL: &str = "default";
 
-/// See [default.toml](https://github.com/sers-dev/tyractorsaur/blob/master/src/config/default.toml) for overview of all configurations & their defaults
+/// See [default.toml](https://github.com/sers-dev/tyractorsaur/blob/master/src/config/default.toml) for documentation of all configurations & their defaults
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TyractorsaurConfig {
     pub general: GeneralConfig,
@@ -14,6 +14,24 @@ pub struct TyractorsaurConfig {
 }
 
 impl TyractorsaurConfig {
+    /// Required for [ActorSystem.new](../prelude/struct.ActorSystem.html#method.new)
+    ///
+    /// Loads default config from [default.toml](https://github.com/sers-dev/tyractorsaur/blob/master/src/config/default.toml)
+    /// Overwrites defaults through environment variables. Replace toml `.` with `_CONFIG_`, i.e. `TYRACTORSAUR_GENERAL_CONFIG_DEFAULT_MAILBOX_SIZE=1`
+    ///
+    /// Replaces `$HOSTNAME` with the actual hostname of the system for the `TYRACTORSAUR_GENERAL_CONFIG_NAME`
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    ///
+    /// use tyractorsaur::prelude::TyractorsaurConfig;
+    ///
+    /// let mut config = TyractorsaurConfig::new().unwrap();
+    /// config.general.name = String::from("HelloWorld");
+    /// ```
     pub fn new() -> Result<Self, ConfigError> {
         let mut config = Config::new();
 

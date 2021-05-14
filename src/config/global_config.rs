@@ -1,7 +1,6 @@
 use crate::actor::actor_config::RestartPolicy;
 use serde::{Deserialize, Serialize};
 
-/// Configures System name and defaults
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GeneralConfig {
     pub name: String,
