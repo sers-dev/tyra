@@ -52,9 +52,9 @@ fn main() {
         counter: 0,
     };
     let x = actor_system
-        .builder("hello-world")
+        .builder()
         .set_mailbox_size(7)
-        .build(hw);
+        .spawn("hello-world", hw).unwrap();
     x.send(ErrMsg {
         text: String::from("sers+1"),
     });

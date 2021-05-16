@@ -79,11 +79,11 @@ fn main() {
     let message_count = 10000000;
 
     let actor = actor_system
-        .builder("benchmark-single-actor")
-        .build(BenchmarkFactory {
+        .builder()
+        .spawn("benchmark-single-actor", BenchmarkFactory {
             name: String::from("benchmark"),
             total_msgs: message_count as usize,
-        });
+        }).unwrap();
     println!("Actors have been created");
     let start = Instant::now();
 

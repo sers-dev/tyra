@@ -47,8 +47,9 @@
 //!     // create an actor and send it a message
 //!     let factory = HelloWorldFactory {};
 //!     let actor = actor_system
-//!         .builder("hello-world")
-//!         .build(factory);
+//!         .builder()
+//!         .spawn("hello-world", factory)
+//!         .unwrap();
 //!     actor.send(FooBar {});
 //!
 //!     // cleanup

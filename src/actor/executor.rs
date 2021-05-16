@@ -140,19 +140,13 @@ where
 {
     pub fn new(
         actor_props: P,
+        actor_address: ActorAddress,
         actor_config: ActorConfig,
         mailbox: Mailbox<A>,
         receiver: Receiver<MessageEnvelope<A>>,
         system: ActorSystem,
-        system_name: String,
         actor_ref: ActorWrapper<A>,
     ) -> Self {
-        let actor_address = ActorAddress {
-            actor: actor_config.actor_name.clone(),
-            system: system_name,
-            pool: actor_config.pool_name.clone(),
-            remote: String::from("local"),
-        };
 
         let context = ActorContext {
             actor_ref,

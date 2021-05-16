@@ -61,14 +61,16 @@ where
 /// // create the actor
 /// let actor_factory = HelloWorldFactory {};
 /// let actor = actor_system
-///     .builder("hello-world")
-///     .build(actor_factory);
+///     .builder()
+///     .spawn("hello-world", actor_factory)
+///     .unwrap();
 ///
 /// // create the router, fill it, and route a message
 /// let router_factory = RoundRobinRouterFactory::new();
 /// let router = actor_system
-///     .builder("router-hello-world")
-///     .build(router_factory);
+///     .builder()
+///     .spawn("router-hello-world", router_factory)
+///     .unwrap();
 /// router.send(AddActorMessage::new(actor.clone()));
 /// router.send(RouterMessage::new(FooBar{}));
 /// ```

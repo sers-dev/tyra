@@ -37,17 +37,17 @@ fn main() {
 
     let hw = HelloWorldFactory {};
     let x = actor_system
-        .builder("hello-world-1")
+        .builder()
         .set_mailbox_size(7)
-        .build(hw.clone());
+        .spawn("hello-world-1", hw.clone()).unwrap();
 
     let y = actor_system
-        .builder("hello-world-2")
+        .builder()
         .set_mailbox_size(7)
-        .build(hw);
+        .spawn("hello-world-2", hw).unwrap();
 
     let router_factory = RoundRobinRouterFactory::new();
-    let router = actor_system.builder("hello-router").build(router_factory);
+    let router = actor_system.builder().spawn("hello-router", router_factory).unwrap();
 
     router.send(AddActorMessage::new(x));
     router.send(AddActorMessage::new(y.clone()));

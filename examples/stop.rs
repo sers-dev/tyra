@@ -47,9 +47,9 @@ fn main() {
 
     let hw = StopActorFactory {};
     let x = actor_system
-        .builder("hello-world")
+        .builder()
         .set_mailbox_size(7)
-        .build(hw);
+        .spawn("hello-world", hw).unwrap();
     // this is obviously handled, because it's the actor is still running
     x.send(TestMsg {});
     sleep(Duration::from_millis(700));

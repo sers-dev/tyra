@@ -55,9 +55,9 @@ fn main() {
         counter: 0,
     };
     let x = actor_system
-        .builder("hello-world")
+        .builder()
         .set_mailbox_unbounded()
-        .build(hw);
+        .spawn("hello-world", hw).unwrap();
     x.send(SleepMsg {
         text: String::from("sers+1"),
     });

@@ -68,10 +68,10 @@ fn main() {
         count: 0,
     };
     let x = actor_system
-        .builder("hello-world")
+        .builder()
         .set_mailbox_size(7)
         .set_pool_name("aye")
-        .build(hw);
+        .spawn("hello-world", hw).unwrap();
     x.send(MessageA {
         text: String::from("sers+1"),
     });

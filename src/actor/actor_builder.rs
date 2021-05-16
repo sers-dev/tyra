@@ -14,23 +14,35 @@ use crate::actor::context::ActorContext;
 use crate::actor::executor::{Executor, ExecutorTrait};
 use crate::system::wakeup_manager::WakeupManager;
 use crate::system::system_state::SystemState;
+use dashmap::DashMap;
 
 /// Used to create [Actor]s in the [ActorSystem]
+///
+/// Each builder keeps a clone-safe storage of already created Actors.
+///
+/// In case the same `ActorAddress` is used multiple times with the same builder for an already running actor, it will simply return the `ActorWrapper<A>` without creating the actor a second time.
+/// See [.spawn()](#method.spawn) for a detailed explanation
 #[derive(Clone)]
-pub struct ActorBuilder {
+pub struct ActorBuilder<A>
+where
+    A: Actor + UnwindSafe + 'static,
+{
+    existing: Arc<DashMap<ActorAddress, ActorWrapper<A>>>,
     system: ActorSystem,
     system_state: SystemState,
     wakeup_manager: WakeupManager,
     actor_config: ActorConfig,
 }
 
-impl ActorBuilder {
+impl<A> ActorBuilder<A>
+    where
+        A: Actor + UnwindSafe + 'static,
+{
     /// This is called through [ActorSystem.builder](../prelude/struct.ActorSystem.html#method.builder)
-    pub fn new(system: ActorSystem, system_state: SystemState, wakeup_manager: WakeupManager, actor_name: String) -> ActorBuilder {
+    pub fn new(system: ActorSystem, system_state: SystemState, wakeup_manager: WakeupManager) -> ActorBuilder<A> {
         let config = system.get_config();
 
         let actor_config = ActorConfig {
-            actor_name,
             pool_name: String::from(DEFAULT_POOL),
             mailbox_size: config.general.default_mailbox_size,
             message_throughput: config.general.default_message_throughput,
@@ -38,6 +50,7 @@ impl ActorBuilder {
         };
 
         ActorBuilder {
+            existing: Arc::new(DashMap::new()),
             system,
             system_state,
             wakeup_manager,
@@ -45,49 +58,63 @@ impl ActorBuilder {
         }
     }
 
-    pub fn set_restart_policy(mut self, restart_policy: RestartPolicy) -> ActorBuilder {
+    pub fn set_restart_policy(mut self, restart_policy: RestartPolicy) -> ActorBuilder<A> {
         self.actor_config.restart_policy = restart_policy;
         self
     }
 
-    pub fn set_pool_name(mut self, pool_name: impl Into<String>) -> ActorBuilder {
+    pub fn set_pool_name(mut self, pool_name: impl Into<String>) -> ActorBuilder<A> {
         self.actor_config.pool_name = pool_name.into();
         self
     }
 
-    pub fn set_message_throughput(mut self, message_throughput: usize) -> ActorBuilder {
+    pub fn set_message_throughput(mut self, message_throughput: usize) -> ActorBuilder<A> {
         self.actor_config.message_throughput = message_throughput;
         self
     }
 
-    pub fn set_mailbox_unbounded(self) -> ActorBuilder {
+    pub fn set_mailbox_unbounded(self) -> ActorBuilder<A> {
         self.set_mailbox_size(0)
     }
 
-    pub fn set_mailbox_size(mut self, mailbox_size: usize) -> ActorBuilder {
+    pub fn set_mailbox_size(mut self, mailbox_size: usize) -> ActorBuilder<A> {
         self.actor_config.mailbox_size = mailbox_size;
         self
     }
 
     /// Creates the defined [Actor] on the [ActorSystem]
-    pub fn build<A, P>(&self, props: P) -> ActorWrapper<A>
+    ///
+    /// # Returns
+    ///
+    /// `Some(ActorWrapper<A>)` if actor is not running in the system
+    ///
+    /// `Some(ActorWrapper<A>)` if the actor is running on the system AND actor was created by the same builder or a clone of it
+    ///
+    /// `None` if actor is running on the system AND actor was not created by the same builder or a clone of it
+    ///
+    pub fn spawn<P>(&self, name: impl Into<String>, props: P) -> Option<ActorWrapper<A>>
     where
-        A: Actor + UnwindSafe + 'static,
         P: ActorFactory<A> + 'static,
     {
-        self.spawn(props, self.actor_config.clone())
-    }
+        let actor_address = ActorAddress {
+            actor: name.into(),
+            system: String::from(self.system.get_name()),
+            pool: self.actor_config.pool_name.clone(),
+            remote: String::from("local"),
+        };
 
+        if self.system_state.is_actor_active(&actor_address) {
+            if !self.existing.contains_key(&actor_address) {
+                return None
+            }
+            let to_return = self.existing.get(&actor_address).unwrap().value().clone();
+            return Some(to_return)
+        }
 
-    fn spawn<A, P>(&self, actor_props: P, actor_config: ActorConfig) -> ActorWrapper<A>
-        where
-            A: Actor + UnwindSafe + 'static,
-            P: ActorFactory<A> + 'static,
-    {
-        let (sender, receiver) = if actor_config.mailbox_size == 0 {
+        let (sender, receiver) = if self.actor_config.mailbox_size == 0 {
             unbounded()
         } else {
-            bounded(actor_config.mailbox_size)
+            bounded(self.actor_config.mailbox_size)
         };
 
         let mailbox = Mailbox {
@@ -95,12 +122,7 @@ impl ActorBuilder {
             is_sleeping: Arc::new(AtomicBool::new(true)),
             msg_in: sender,
         };
-        let actor_address = ActorAddress {
-            actor: actor_config.actor_name.clone(),
-            system: String::from(self.system.get_name()),
-            pool: actor_config.pool_name.clone(),
-            remote: String::from("local"),
-        };
+
         let actor_ref = ActorWrapper::new(
             mailbox.clone(),
             actor_address.clone(),
@@ -111,14 +133,14 @@ impl ActorBuilder {
             system: self.system.clone(),
             actor_ref: actor_ref.clone(),
         };
-        let actor = actor_props.new_actor(context);
+        let actor = props.new_actor(context);
         let actor_handler = Executor::new(
-            actor_props,
-            actor_config,
+            props,
+            actor_address.clone(),
+            self.actor_config.clone(),
             mailbox.clone(),
             receiver,
             self.system.clone(),
-            String::from(self.system.get_name()),
             actor_ref.clone(),
         );
 
@@ -127,6 +149,8 @@ impl ActorBuilder {
             actor_handler.get_address(),
             Arc::new(RwLock::new(actor_handler)),
         );
-        actor_ref
+
+        self.existing.insert(actor_address, actor_ref.clone());
+        Some(actor_ref)
     }
 }

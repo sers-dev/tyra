@@ -9,6 +9,7 @@ use crate::system::wakeup_manager::WakeupManager;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
+use crate::actor::actor::Actor;
 
 /// Manages thread pools and actors
 #[derive(Clone)]
@@ -137,7 +138,7 @@ impl ActorSystem {
     ///
     /// let actor_config = TyractorsaurConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
-    /// let actor_wrapper = actor_system.builder("test").build(TestFactory{});
+    /// let actor_wrapper = actor_system.builder().spawn("test", TestFactory{}).unwrap();
     /// let address = actor_wrapper.get_address();
     /// actor_system.send_to_address(address, SerializedMessage::new(Vec::new()));
     /// ```
@@ -173,10 +174,14 @@ impl ActorSystem {
     ///
     /// let actor_config = TyractorsaurConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
-    /// let builder = actor_system.builder("test");
+    /// let builder = actor_system.builder();
+    /// builder.spawn("test", TestFactory{}).unwrap();
     /// ```
-    pub fn builder(&self, name: impl Into<String>) -> ActorBuilder {
-        ActorBuilder::new(self.clone(), self.state.clone(), self.wakeup_manager.clone(),name.into())
+    pub fn builder<A>(&self) -> ActorBuilder<A>
+    where
+        A: Actor
+    {
+        ActorBuilder::new(self.clone(), self.state.clone(), self.wakeup_manager.clone())
     }
 
     /// Sends a SystemStopMessage to all running Actors, and wakes them up if necessary.

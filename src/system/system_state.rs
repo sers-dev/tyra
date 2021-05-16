@@ -82,4 +82,8 @@ impl SystemState {
         self.total_actor_count.fetch_add(1, Ordering::Relaxed);
         self.actors.insert(address, actor);
     }
+
+    pub fn is_actor_active(&self, address: &ActorAddress) -> bool {
+        self.actors.contains_key(address)
+    }
 }

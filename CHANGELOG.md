@@ -16,6 +16,10 @@ Although a lot of work went into Refactoring of the public facing API, please do
 - moved routers from `mod prelude` to `mod router`
 - add documentation
 - fixed a bug where `ActorSystem.send_to_address()` was not correctly executed
+- refactor `ActorBuilder` to `ActorBuilder<A>`
+  - stores Actors that have already been created
+    - creating the same Actor with a Builder twice, will create a single Actor and return the `ActorWrapper<A>` for both
+    - returns `None` if the ActorAddress exists, but was not created by the same Builder
 
 # WIP 0.0.8
 
