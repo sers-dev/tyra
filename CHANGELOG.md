@@ -1,5 +1,7 @@
 # WIP 0.2.0
 
+- add documentation link to metadata
+
 # 0.1.1
 
 - pin `lexical-core` to `0.7.6` to fix doc generation on nightlyfor `docs.rs`

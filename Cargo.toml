@@ -6,6 +6,7 @@ edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/sers-dev/tyractorsaur"
 homepage = "https://github.com/sers-dev/tyractorsaur"
+documentation = "https://docs.rs/tyractorsaur"
 description = "Typed Actor System"
 keywords = ["typed", "actor", "scaling", "concurrency", "tyractorsaur"]
 categories = ["network-programming", "asynchronous", "concurrency"]
