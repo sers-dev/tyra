@@ -12,7 +12,7 @@ The current development status can be tracked in the [CHANGELOG.md](CHANGELOG.md
 
 ## Documentation
 
-[docs.rs](https://docs.rs/crate/tyractorsaur/) or generate your own with `cargo doc`
+[docs.rs](https://docs.rs/tyractorsaur/) or generate your own with `cargo doc`
 
 
 ## License
