@@ -2,6 +2,7 @@
 
 `Tyractorsaur` is a cross platform Typed Actor System Written in Rust.
 
+
 ## Current State
 
 It is `NOT` production ready.
@@ -9,18 +10,10 @@ It is `NOT` production ready.
 The current development status can be tracked in the [CHANGELOG.md](CHANGELOG.md)
 
 
+## Documentation
 
-## Configuration
+[docs.rs](https://docs.rs/crate/tyractorsaur/) or generate your own with `cargo doc`
 
-[Default Config](src/config/default.toml)
-
-There are two ways to configure Tyractorsaur
- - environment variables in the form of `TYRACTORSAUR_CONFIG_<KEY>` i.e. `TYRACTORSAUR_CONFIG_NAME=custom`
- - creating the configuration as mutable and overwriting the values in your code
-   ```rust
-   let mut actor_config = TyractorsaurConfig::new().unwrap();
-   actor_config.actor.name = String::from("custom-name");
-   ```
 
 ## License
 
