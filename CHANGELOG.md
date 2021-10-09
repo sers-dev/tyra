@@ -1,6 +1,9 @@
 # WIP 0.2.0
 
 - add documentation link to metadata
+- update dependencies
+  - upgrade `config` to `0.11.0`
+  - remove explicit `lexical-core`, since documentation should now be able to be generated without it
 
 # 0.1.1
 
