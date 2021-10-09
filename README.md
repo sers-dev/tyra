@@ -1,18 +1,18 @@
-# Tyractorsaur (TYped Rust ACTOR "SAUR")
+# Tyra (TYped Rust Actor)
 
-`Tyractorsaur` is a cross platform Typed Actor System Written in Rust.
+`Tyra` is a cross platform Typed Actor System Written in Rust.
 
 
 ## Current State
 
 It is `NOT` production ready.
-`Tyractorsaur` is in very early development steps. 
+`Tyra` is in very early development steps. 
 The current development status can be tracked in the [CHANGELOG.md](CHANGELOG.md)
 
 
 ## Documentation
 
-[docs.rs](https://docs.rs/tyractorsaur/) or generate your own with `cargo doc`
+[docs.rs](https://docs.rs/tyra/) or generate your own with `cargo doc`
 
 
 ## License

@@ -12,7 +12,7 @@ use std::panic::UnwindSafe;
 /// Basic usage:
 ///
 /// ```rust
-/// use tyractorsaur::prelude::{Actor, SerializedMessage, ActorFactory, ActorContext};
+/// use tyra::prelude::{Actor, SerializedMessage, ActorFactory, ActorContext};
 ///
 /// struct TestActor {}
 ///

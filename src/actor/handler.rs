@@ -11,7 +11,7 @@ use crate::message::system_stop_message::SystemStopMessage;
 /// Basic usage:
 ///
 /// ```rust
-/// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, ActorMessage, Handler};
+/// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, ActorMessage, Handler};
 ///
 /// struct TestActor {}
 /// impl Actor for TestActor {}

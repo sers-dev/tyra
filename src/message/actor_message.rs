@@ -5,7 +5,7 @@
 /// Basic usage:
 ///
 /// ```rust
-/// use tyractorsaur::prelude::ActorMessage;
+/// use tyra::prelude::ActorMessage;
 ///
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}

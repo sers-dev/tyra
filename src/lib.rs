@@ -1,4 +1,4 @@
-//! Tyractorsaur is a [configurable](./prelude/struct.TyractorsaurConfig.html) typed actor framework
+//! Tyra is a [configurable](./prelude/struct.TyraConfig.html) typed actor framework
 //!
 //! An [Actor](./prelude/trait.Actor.html) is an object with which you can only interact by sending predefined [messages](./prelude/trait.ActorMessage.html)
 //!
@@ -11,7 +11,7 @@
 //! Basic usage:
 //!
 //! ```rust
-//! use tyractorsaur::prelude::*;
+//! use tyra::prelude::*;
 //! use std::process::exit;
 //! use std::time::Duration;
 //!
@@ -41,7 +41,7 @@
 //!
 //! fn main() {
 //!     // create a new actor system with the default config
-//!     let actor_config = TyractorsaurConfig::new().unwrap();
+//!     let actor_config = TyraConfig::new().unwrap();
 //!     let actor_system = ActorSystem::new(actor_config);
 //!
 //!     // create an actor and send it a message
@@ -66,7 +66,7 @@
 //! ```text
 //!                             ┌──────────────────────┐
 //!                             │                      │
-//!                             │  TyractorsaurConfig  │
+//!                             │  TyraConfig  │
 //!                             │                      │
 //!                             └──────────┬───────────┘
 //!                                        │

@@ -25,7 +25,7 @@ where
 /// Basic usage:
 ///
 /// ```rust
-/// use tyractorsaur::prelude::*;
+/// use tyra::prelude::*;
 /// use std::process::exit;
 /// use std::time::Duration;
 ///
@@ -54,8 +54,8 @@ where
 /// }
 ///
 /// // create a new actor system with the default config
-/// use tyractorsaur::router::{RoundRobinRouterFactory, AddActorMessage, RouterMessage};
-/// let actor_config = TyractorsaurConfig::new().unwrap();
+/// use tyra::router::{RoundRobinRouterFactory, AddActorMessage, RouterMessage};
+/// let actor_config = TyraConfig::new().unwrap();
 /// let actor_system = ActorSystem::new(actor_config);
 ///
 /// // create the actor
