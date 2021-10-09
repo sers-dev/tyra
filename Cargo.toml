@@ -1,20 +1,20 @@
 [package]
-name = "tyractorsaur"
-version = "0.2.0"
+name = "tyra"
+version = "0.3.0"
 authors = ["sers.dev <admin@sers.dev>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/sers-dev/tyractorsaur"
-homepage = "https://github.com/sers-dev/tyractorsaur"
-documentation = "https://docs.rs/tyractorsaur"
+repository = "https://github.com/sers-dev/tyra"
+homepage = "https://github.com/sers-dev/tyra"
+documentation = "https://docs.rs/tyra"
 description = "Typed Actor System"
-keywords = ["typed", "actor", "scaling", "concurrency", "tyractorsaur"]
+keywords = ["typed", "actor", "scaling", "concurrency", "tyra"]
 categories = ["network-programming", "asynchronous", "concurrency"]
 exclude = ["/.github", ".gitignore"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "tyractorsaur"
+name = "tyra"
 path = "src/lib.rs"
 
 [dependencies]

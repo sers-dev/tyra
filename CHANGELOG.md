@@ -1,3 +1,10 @@
+# 0.3.0
+
+- renamed to `tyra`
+  - equal to `tyractorsaur` release `0.2.0`
+  - all releases before `0.2.0` will still be available as `tyractorsaur`, but will not be migrated to `tyra`
+  - all releases after this one will only be available as `tyra`
+
 # 0.2.0
 
 - add documentation link to metadata
@@ -112,7 +119,7 @@ Although a lot of work went into Refactoring of the public facing API, please do
 
 # 0.0.1
 
-- initial release. Each published release on https://crates.io/crates/tyractorsaur will be tracked in GitHub releases 
+- initial release. Each published release on https://crates.io/crates/tyra will be tracked in GitHub releases 
 - core functionality is working
   - create system and spawn pools 
   - create actors and add them into pools of the existing system 

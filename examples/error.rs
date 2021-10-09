@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::time::Duration;
-use tyractorsaur::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyractorsaurConfig,
+use tyra::prelude::{
+    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig,
 };
 
 #[derive(Clone)]
@@ -44,7 +44,7 @@ impl ActorFactory<ErrActor> for ErrActorFactory {
 }
 
 fn main() {
-    let actor_config = TyractorsaurConfig::new().unwrap();
+    let actor_config = TyraConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
     let hw = ErrActorFactory {

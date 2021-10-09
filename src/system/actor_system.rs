@@ -1,7 +1,7 @@
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_builder::ActorBuilder;
 use crate::config::pool_config::ThreadPoolConfig;
-use crate::config::tyractorsaur_config::{TyractorsaurConfig, DEFAULT_POOL};
+use crate::config::tyra_config::{TyraConfig, DEFAULT_POOL};
 use crate::message::serialized_message::SerializedMessage;
 use crate::system::system_state::SystemState;
 use crate::system::thread_pool_manager::ThreadPoolManager;
@@ -18,7 +18,7 @@ pub struct ActorSystem {
     thread_pool_manager: ThreadPoolManager,
     wakeup_manager: WakeupManager,
     name: String,
-    config: Arc<TyractorsaurConfig>,
+    config: Arc<TyraConfig>,
 }
 
 impl ActorSystem {
@@ -29,12 +29,12 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem};
+    /// use tyra::prelude::{TyraConfig, ActorSystem};
     ///
-    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
     /// ```
-    pub fn new(config: TyractorsaurConfig) -> Self {
+    pub fn new(config: TyraConfig) -> Self {
         let thread_pool_config = config.thread_pool.clone();
 
         let state = SystemState::new();
@@ -63,16 +63,16 @@ impl ActorSystem {
         }
     }
 
-    /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyractorsaur/blob/master/src/config/default.toml)
+    /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyra/blob/master/src/config/default.toml)
     ///
     /// # Examples
     ///
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem};
+    /// use tyra::prelude::{TyraConfig, ActorSystem};
     ///
-    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
     /// actor_system.add_pool("test");
     /// ```
@@ -94,9 +94,9 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ThreadPoolConfig};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ThreadPoolConfig};
     ///
-    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
     /// let pool_config = ThreadPoolConfig::new(0, 2, 4, 1.0);
     /// actor_system.add_pool_with_config("test", pool_config);
@@ -117,7 +117,7 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
     ///
     /// struct TestActor {}
     ///
@@ -136,7 +136,7 @@ impl ActorSystem {
     /// }
     ///
     ///
-    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
     /// let actor_wrapper = actor_system.builder().spawn("test", TestFactory{}).unwrap();
     /// let address = actor_wrapper.get_address();
@@ -153,7 +153,7 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
     ///
     /// struct TestActor {}
     ///
@@ -172,7 +172,7 @@ impl ActorSystem {
     /// }
     ///
     ///
-    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
     /// let builder = actor_system.builder();
     /// builder.spawn("test", TestFactory{}).unwrap();
@@ -194,10 +194,10 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ThreadPoolConfig};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ThreadPoolConfig};
     /// use std::time::Duration;
     ///
-    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
     /// actor_system.stop(Duration::from_secs(1));
     /// ```
@@ -218,11 +218,11 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ThreadPoolConfig};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ThreadPoolConfig};
     /// use std::time::Duration;
     /// use std::process::exit;
     ///
-    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
     /// actor_system.stop(Duration::from_secs(1));
     /// exit(actor_system.await_shutdown());
@@ -234,22 +234,22 @@ impl ActorSystem {
         self.state.is_force_stopped() as i32
     }
 
-    /// Returns a reference to the [TyractorsaurConfig](../prelude/struct.TyractorsaurConfig.html)
+    /// Returns a reference to the [TyraConfig](../prelude/struct.TyraConfig.html)
     ///
     /// # Examples
     ///
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ThreadPoolConfig};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ThreadPoolConfig};
     /// use std::time::Duration;
     /// use std::process::exit;
     ///
-    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
     /// let conf = actor_system.get_config();
     /// ```
-    pub fn get_config(&self) -> &TyractorsaurConfig {
+    pub fn get_config(&self) -> &TyraConfig {
         &self.config
     }
 
@@ -260,11 +260,11 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyractorsaur::prelude::{TyractorsaurConfig, ActorSystem, ThreadPoolConfig};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ThreadPoolConfig};
     /// use std::time::Duration;
     /// use std::process::exit;
     ///
-    /// let actor_config = TyractorsaurConfig::new().unwrap();
+    /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
     /// let name = actor_system.get_name();
     /// ```
