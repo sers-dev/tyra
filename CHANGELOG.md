@@ -1,6 +1,9 @@
 # 0.3.0
 
 - renamed to `tyra`
+  - equal to `tyractorsaur` release `0.2.0`
+  - all releases before `0.2.0` will still be available as `tyractorsaur`, but will not be migrated to `tyra`
+  - all releases after this one will only be available as `tyra`
 
 # 0.2.0
 
