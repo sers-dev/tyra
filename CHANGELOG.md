@@ -1,3 +1,7 @@
+# WIP 0.4.0
+
+- added `serialize` example
+
 # 0.3.0
 
 - renamed to `tyra`
