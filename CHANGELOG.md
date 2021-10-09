@@ -1,6 +1,7 @@
 # WIP 0.4.0
 
 - added `serialize` example
+- added `router_benchmark` example
 
 # 0.3.0
 
