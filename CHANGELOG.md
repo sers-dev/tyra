@@ -1,4 +1,4 @@
-# WIP 0.2.0
+# 0.2.0
 
 - add documentation link to metadata
 - update dependencies
