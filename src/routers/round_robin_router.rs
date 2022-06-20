@@ -126,7 +126,6 @@ where
     fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) {
         self.route_to.push(msg.actor);
         self.can_route = true;
-        sleep(Duration::from_millis((750) as u64));
     }
 }
 
