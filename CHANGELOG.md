@@ -2,6 +2,10 @@
 
 - added `serialize` example
 - added `router_benchmark` example
+- added `bulk_router_benchmark` example
+- added `BulkActorMessage` and `BulkRouterMessage`
+  - all implemented Messages `M` automatically support being sent through a `BulkActorMessage<M>` wrapper
+- env configuration now done with `TYRA` prefix instead of `TYRACTOSAUR`
 
 # 0.3.0
 

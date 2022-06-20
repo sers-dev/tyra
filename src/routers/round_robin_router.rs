@@ -1,12 +1,18 @@
+use std::fmt::Debug;
+use std::thread::{sleep, Thread};
+use std::time::Duration;
 use crate::actor::actor::Actor;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
+use crate::prelude::BulkActorMessage;
 use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
 use crate::routers::router_message::RouterMessage;
+use crate::routers::bulk_router_message::BulkRouterMessage;
+
 
 pub struct RoundRobinRouter<A>
 where
@@ -121,6 +127,7 @@ where
     fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) {
         self.route_to.push(msg.actor);
         self.can_route = true;
+        sleep(Duration::from_millis((750) as u64));
     }
 }
 
@@ -156,5 +163,33 @@ where
 
         let forward_to = self.route_to.get(self.route_index).unwrap();
         forward_to.send(msg.msg);
+    }
+}
+
+impl<A, M> Handler<BulkRouterMessage<M>> for RoundRobinRouter<A>
+    where
+        A: Actor + Handler<BulkActorMessage<M>> + 'static,
+        M: ActorMessage + 'static + Debug,
+{
+    fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) {
+        if !self.can_route {
+            return;
+        }
+
+        let total_messages = msg.data.len();
+        let total_routees = self.route_to.len();
+        let messages_per_routee = total_messages / total_routees;
+
+        for _ in 0..total_routees {
+            self.route_index += 1;
+            if self.route_index >= self.route_to.len() {
+                self.route_index = 0;
+            }
+
+            let forward_to = self.route_to.get(self.route_index).unwrap();
+            let chunk :Vec<M> = msg.data.drain(0..messages_per_routee).collect();
+            forward_to.send(BulkActorMessage::new(chunk));
+        }
+
     }
 }

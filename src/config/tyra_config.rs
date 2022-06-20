@@ -42,7 +42,7 @@ impl TyraConfig {
             .expect("Could not load default Config");
 
         config
-            .merge(Environment::with_prefix("TYRACTORSAUR").separator("_CONFIG_"))
+            .merge(Environment::with_prefix("TYRA").separator("_CONFIG_"))
             .expect("Could not parse ENV variables");
 
         let mut parsed: TyraConfig = config.try_into().expect("Could not parse Config");

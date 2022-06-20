@@ -107,6 +107,7 @@ mod config;
 mod message;
 mod routers;
 mod system;
+mod cluster;
 
 /// core components
 pub mod prelude {
@@ -114,6 +115,7 @@ pub mod prelude {
     pub use crate::config::prelude::*;
     pub use crate::message::prelude::*;
     pub use crate::system::prelude::*;
+    pub use crate::cluster::prelude::*;
 }
 
 /// collection of different router implementations

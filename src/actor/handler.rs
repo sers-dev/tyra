@@ -3,6 +3,7 @@ use crate::actor::context::ActorContext;
 use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::message::system_stop_message::SystemStopMessage;
+use crate::prelude::BulkActorMessage;
 
 /// Defines which [ActorMessage] is supported per [Actor]
 ///
@@ -47,5 +48,18 @@ where
 {
     fn handle(&mut self, _msg: SystemStopMessage, _context: &ActorContext<A>) {
         self.on_system_stop();
+    }
+}
+
+impl<M, A> Handler<BulkActorMessage<M>> for A
+where
+    Self: Actor + Sized,
+    A: Handler<M>,
+    M: ActorMessage
+{
+    fn handle(&mut self, msg: BulkActorMessage<M>, context: &ActorContext<Self>) {
+        for i in msg.data.into_iter() {
+            self.handle(i, context);
+        }
     }
 }
