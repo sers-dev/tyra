@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::thread::{sleep, Thread};
 use std::time::Duration;
 use crate::actor::actor::Actor;
 use crate::actor::actor_factory::ActorFactory;
