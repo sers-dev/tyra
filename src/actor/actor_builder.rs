@@ -15,6 +15,7 @@ use crate::actor::executor::{Executor, ExecutorTrait};
 use crate::system::wakeup_manager::WakeupManager;
 use crate::system::system_state::SystemState;
 use dashmap::DashMap;
+use crate::prelude::{ActorMessageDeserializer, Handler, SerializedMessage};
 
 /// Used to create [Actor]s in the [ActorSystem]
 ///
@@ -25,7 +26,7 @@ use dashmap::DashMap;
 #[derive(Clone)]
 pub struct ActorBuilder<A>
 where
-    A: Actor + UnwindSafe + 'static,
+    A: Actor + UnwindSafe + 'static + ActorMessageDeserializer,
 {
     existing: Arc<DashMap<ActorAddress, ActorWrapper<A>>>,
     system: ActorSystem,
@@ -36,7 +37,7 @@ where
 
 impl<A> ActorBuilder<A>
     where
-        A: Actor + UnwindSafe + 'static,
+        A: Actor + UnwindSafe + 'static + Handler<SerializedMessage> + ActorMessageDeserializer,
 {
     /// This is called through [ActorSystem.builder](../prelude/struct.ActorSystem.html#method.builder)
     pub fn new(system: ActorSystem, system_state: SystemState, wakeup_manager: WakeupManager) -> ActorBuilder<A> {
@@ -103,12 +104,14 @@ impl<A> ActorBuilder<A>
             remote: String::from("local"),
         };
 
-        if self.system_state.is_actor_active(&actor_address) {
+        if self.system_state.is_mailbox_active(&actor_address) {
+            println!("YOU GET A COPY");
+            return self.system_state.get_actor_ref(actor_address);
             if !self.existing.contains_key(&actor_address) {
                 return None
             }
             let to_return = self.existing.get(&actor_address).unwrap().value().clone();
-            return Some(to_return)
+            //return Some(to_return)
         }
 
         let (sender, receiver) = if self.actor_config.mailbox_size == 0 {
@@ -129,11 +132,6 @@ impl<A> ActorBuilder<A>
             self.wakeup_manager.clone(),
         );
 
-        let context = ActorContext {
-            system: self.system.clone(),
-            actor_ref: actor_ref.clone(),
-        };
-        let actor = props.new_actor(context);
         let actor_handler = Executor::new(
             props,
             actor_address.clone(),
@@ -144,7 +142,7 @@ impl<A> ActorBuilder<A>
             actor_ref.clone(),
         );
 
-        self.system_state.add_actor(actor_address.clone(), Arc::new(actor));
+        self.system_state.add_mailbox(actor_address.clone(), mailbox);
         self.wakeup_manager.add_sleeping_actor(
             actor_handler.get_address(),
             Arc::new(RwLock::new(actor_handler)),

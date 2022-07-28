@@ -1,9 +1,10 @@
+use std::panic::UnwindSafe;
 use crate::actor::actor::Actor;
 use crate::actor::context::ActorContext;
 use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::message::system_stop_message::SystemStopMessage;
-use crate::prelude::BulkActorMessage;
+use crate::prelude::{BulkActorMessage, SerializedMessage};
 
 /// Defines which [ActorMessage] is supported per [Actor]
 ///
@@ -37,8 +38,8 @@ impl<A> Handler<ActorStopMessage> for A
 where
     A: Actor + Sized,
 {
-    fn handle(&mut self, _msg: ActorStopMessage, _context: &ActorContext<A>) {
-        self.on_actor_stop();
+    fn handle(&mut self, _msg: ActorStopMessage, context: &ActorContext<A>) {
+        self.on_actor_stop(context);
     }
 }
 
@@ -46,8 +47,8 @@ impl<A> Handler<SystemStopMessage> for A
 where
     A: Actor + Sized,
 {
-    fn handle(&mut self, _msg: SystemStopMessage, _context: &ActorContext<A>) {
-        self.on_system_stop();
+    fn handle(&mut self, _msg: SystemStopMessage, context: &ActorContext<A>) {
+        self.on_system_stop(context);
     }
 }
 
@@ -63,3 +64,86 @@ where
         }
     }
 }
+
+impl<A> Handler<SerializedMessage> for A
+    where
+        A: Actor + Sized + ActorMessageDeserializer,
+{
+    fn handle(&mut self, msg: SerializedMessage, context: &ActorContext<A>) {
+        self.handle_serialized_message(msg, context);
+    }
+}
+
+
+impl<A> Actor for A
+    where
+        A: ActorMessageDeserializer {
+    fn on_actor_stop(&mut self, context: &ActorContext<Self>) where Self: Actor + Sized {
+        self.on_actor_stop_int(context);
+    }
+
+    fn on_system_stop(&mut self, context: &ActorContext<Self>) where Self: Actor + Sized {
+        self.on_system_stop_int(context);
+    }
+}
+
+pub trait ActorMessageDeserializer: Actor
+{
+
+    fn handle_serialized_message(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>)
+        where Self: Actor + Sized + 'static {
+        println!("ASDF")
+    }
+
+
+    fn handle_serialized_message_old<A>(&mut self, _msg: SerializedMessage, _context: &ActorContext<A>)
+    where A: Actor + Sized {
+        println!("ASDF")
+    }
+
+    /// executed before the first message is handled
+    ///
+    /// re-executed after actor restart before first message is handled
+    fn pre_start(&mut self, _context: &ActorContext<Self>)
+    where
+        Self: Actor + Sized
+    {
+        println!("PRE_START")
+    }
+
+    fn post_stop(&mut self, _context: &ActorContext<Self>)
+    where
+        Self: Actor + Sized
+    {
+        println!("POST_STOP")
+
+    }
+
+    fn on_actor_stop_int(&mut self, _context: &ActorContext<Self>)
+        where
+            Self: Actor + Sized
+    {
+        println!("ON_STOP ActorMessageDeserializer")
+
+    }
+
+    fn on_system_stop_int(&mut self, context: &ActorContext<Self>)
+        where
+            Self: Actor + Sized
+    {
+        println!("ON_SYS_STOP ActorMessageDeserializer");
+        context.actor_ref.send(ActorStopMessage{});
+
+    }
+
+}
+//impl<A> ActorMessageDeserializer for A
+//where
+//    A: Actor + Sized,
+//{
+//    fn handle_serialized_message<B>(&mut self, _msg: SerializedMessage, _context: &ActorContext<B>)
+//        where B: Actor + Sized {
+//        println!("NA SERS");
+//    }
+//
+//}

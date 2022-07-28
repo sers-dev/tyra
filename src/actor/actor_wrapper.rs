@@ -1,7 +1,7 @@
 use crate::actor::actor::Actor;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::handler::Handler;
-use crate::actor::mailbox::Mailbox;
+use crate::actor::mailbox::{Mailbox, MailTest};
 use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::system::wakeup_manager::WakeupManager;
@@ -31,6 +31,14 @@ where
             wakeup_manager,
         }
     }
+
+    //pub fn from_trait(mailbox: &dyn MailTest, address: ActorAddress, wakeup_manager: WakeupManager) -> Self {
+    //    Self {
+    //        mailbox,
+    //        address,
+    //        wakeup_manager
+    //    }
+    //}
 
     pub fn send<M>(&self, msg: M)
     where

@@ -1,5 +1,6 @@
 use crate::message::serialized_message::SerializedMessage;
 use std::panic::UnwindSafe;
+use crate::prelude::{ActorContext, ActorMessageDeserializer, ActorStopMessage, Handler};
 
 /// Core trait to define Actors
 ///
@@ -18,11 +19,17 @@ use std::panic::UnwindSafe;
 /// Basic usage:
 ///
 /// ```rust
-/// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
+/// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, Handler};
 ///
 /// struct TestActor {}
 ///
 /// impl Actor for TestActor {}
+///
+/// impl Handler<SerializedMessage> for TestActor {
+///     fn handle(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>) {
+///     }
+/// }
+///
 /// ```
 ///
 /// # Architecture
@@ -74,27 +81,41 @@ use std::panic::UnwindSafe;
 ///                                 └──────────────────────────┘
 /// ```
 pub trait Actor: Send + Sync + UnwindSafe {
-    /// executed before the first message is handled
-    ///
-    /// re-executed after actor restart before first message is handled
-    fn pre_start(&mut self) {}
-    /// executed after the last message is handled
-    ///
-    /// also executed in case the actor panics while it handles a message
-    fn post_stop(&mut self) {}
+    ///// executed before the first message is handled
+    /////
+    ///// re-executed after actor restart before first message is handled
+    //fn pre_start(&mut self) {}
+    ///// executed after the last message is handled
+    /////
+    ///// also executed in case the actor panics while it handles a message
+    //fn post_stop(&mut self) {}
     /// executed when Actor handles internal ActorStopMessage
     ///
     /// After this is called, the Actor will not accept any more messages, but messages within the mailbox will still be processed
-    fn on_actor_stop(&mut self) {}
+    //fn on_actor_stop(&mut self) {}
+    fn on_actor_stop(&mut self, _context: &ActorContext<Self>)
+        where
+            Self: Actor + Sized
+    {
+        //println!("ON_STOP")
+
+    }
     /// executed when Actor handles internal SystemStopMessage initiated by [ActorSystem.stop](../prelude/struct.ActorSystem.html#method.stop)
     ///
-    /// Without any custom implementation, the [ActorSystem.stop](../prelude/struct.ActorSystem.html#method.stop) will always end in timeout
-    fn on_system_stop(&mut self) {}
-    /// executed when [ActorSystem.send_to_address](../prelude/struct.ActorSystem.html#method.send_to_address) is called
-    ///
-    /// # Important Note
-    ///
-    /// This is the only function that is not necessarily executed on the thread_pool of the Actor
-    /// It is executed on whatever thread calls [ActorSystem.send_to_address](../prelude/struct.ActorSystem.html#method.send_to_address)
-    fn handle_serialized_message(&self, _msg: SerializedMessage) {}
+    /// Default behavior sends an `ActorStopMessage` to all actors which will trigger a clean shutdown
+    fn on_system_stop(&mut self, context: &ActorContext<Self>)
+        where
+            Self: Actor + Sized
+    {
+        //println!("ON_SYS_STOP");
+        //context.actor_ref.send(ActorStopMessage{});
+
+    }
+    ///// // executed when [ActorSystem.send_to_address](../prelude/struct.ActorSystem.html#method.send_to_address) is called
+    /////
+    ///// # Important Note
+    /////
+    ///// This is the only function that is not necessarily executed on the thread_pool of the Actor
+    ///// It is executed on whatever thread calls [ActorSystem.send_to_address](../prelude/struct.ActorSystem.html#method.send_to_address)
+    //fn handle_serialized_message(&self, _msg: SerializedMessage) {}
 }

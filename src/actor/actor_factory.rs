@@ -12,13 +12,14 @@ use std::panic::UnwindSafe;
 /// Basic usage:
 ///
 /// ```rust
-/// use tyra::prelude::{Actor, SerializedMessage, ActorFactory, ActorContext};
+/// use tyra::prelude::{Actor, SerializedMessage, ActorFactory, ActorContext, Handler};
 ///
 /// struct TestActor {}
 ///
-/// impl Actor for TestActor {
-///     fn handle_serialized_message(&self, msg: SerializedMessage) {
-///         assert_eq!(0, msg.content.len());
+/// impl Actor for TestActor {}
+///
+/// impl Handler<SerializedMessage> for TestActor {
+///     fn handle(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>) {
 ///     }
 /// }
 ///

@@ -113,7 +113,7 @@ impl<A> Actor for RoundRobinRouter<A>
 where
     A: Actor + 'static,
 {
-    fn on_system_stop(&mut self) {
+    fn on_system_stop(&mut self, _context: &ActorContext<RoundRobinRouter<A>>) {
         self.context.actor_ref.stop();
     }
 }

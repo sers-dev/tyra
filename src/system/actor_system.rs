@@ -10,6 +10,7 @@ use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 use crate::actor::actor::Actor;
+use crate::prelude::{ActorMessageDeserializer, Handler};
 
 /// Manages thread pools and actors
 #[derive(Clone)]
@@ -37,9 +38,9 @@ impl ActorSystem {
     pub fn new(config: TyraConfig) -> Self {
         let thread_pool_config = config.thread_pool.clone();
 
-        let state = SystemState::new();
         let thread_pool_manager = ThreadPoolManager::new();
         let wakeup_manager = WakeupManager::new();
+        let state = SystemState::new(wakeup_manager.clone());
 
         for (key, value) in thread_pool_config.config.iter() {
             thread_pool_manager.add_pool_with_config(key, value.clone());
@@ -117,13 +118,14 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, Handler};
     ///
     /// struct TestActor {}
     ///
-    /// impl Actor for TestActor {
-    ///     fn handle_serialized_message(&self, msg: SerializedMessage) {
-    ///         assert_eq!(0, msg.content.len());
+    /// impl Actor for TestActor {}
+    ///
+    /// impl Handler<SerializedMessage> for TestActor {
+    ///     fn handle(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>) {
     ///     }
     /// }
     ///
@@ -153,13 +155,14 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, Handler};
     ///
     /// struct TestActor {}
     ///
-    /// impl Actor for TestActor {
-    ///     fn handle_serialized_message(&self, msg: SerializedMessage) {
-    ///         assert_eq!(0, msg.content.len());
+    /// impl Actor for TestActor {}
+    ///
+    /// impl Handler<SerializedMessage> for TestActor {
+    ///     fn handle(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>) {
     ///     }
     /// }
     ///
@@ -179,7 +182,7 @@ impl ActorSystem {
     /// ```
     pub fn builder<A>(&self) -> ActorBuilder<A>
     where
-        A: Actor
+        A: Actor + Handler<SerializedMessage> + ActorMessageDeserializer
     {
         ActorBuilder::new(self.clone(), self.state.clone(), self.wakeup_manager.clone())
     }
@@ -229,7 +232,7 @@ impl ActorSystem {
     /// ```
     pub fn await_shutdown(&self) -> i32 {
         while !self.state.is_stopped() {
-            sleep(Duration::from_secs(1));
+            sleep(Duration::from_millis(1));
         }
         self.state.is_force_stopped() as i32
     }

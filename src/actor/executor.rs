@@ -16,6 +16,7 @@ use crossbeam_channel::Receiver;
 use std::panic::{catch_unwind, AssertUnwindSafe, UnwindSafe};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
+use crate::prelude::ActorMessageDeserializer;
 
 pub trait ExecutorTrait: Send + Sync {
     fn handle(&mut self, is_system_stopping: bool) -> ActorState;
@@ -28,7 +29,7 @@ pub trait ExecutorTrait: Send + Sync {
 
 pub struct Executor<A, P>
 where
-    A: Actor + 'static,
+    A: Actor + 'static + ActorMessageDeserializer,
     P: ActorFactory<A>,
 {
     actor: A,
@@ -45,20 +46,20 @@ where
 
 unsafe impl<A, P> Send for Executor<A, P>
 where
-    A: Actor + UnwindSafe + 'static,
+    A: Actor + UnwindSafe + 'static + ActorMessageDeserializer,
     P: ActorFactory<A>,
 {
 }
 unsafe impl<A, P> Sync for Executor<A, P>
 where
-    A: Actor + UnwindSafe + 'static,
+    A: Actor + UnwindSafe + 'static + ActorMessageDeserializer,
     P: ActorFactory<A>,
 {
 }
 
 impl<A, P> ExecutorTrait for Executor<A, P>
 where
-    A: Actor + UnwindSafe + 'static,
+    A: Actor + UnwindSafe + 'static + ActorMessageDeserializer,
     P: ActorFactory<A>,
 {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {
@@ -68,13 +69,14 @@ where
         }
         if self.is_startup {
             self.is_startup = false;
-            self.actor.pre_start();
+            self.actor.pre_start(&self.context);
+            //self.actor.pre_start();
         }
         let m = self.queue.try_recv();
 
         if m.is_err() {
             if self.is_stopped() {
-                self.actor.post_stop();
+                self.actor.post_stop(&self.context);
                 return ActorState::Stopped;
             }
             self.mailbox.is_sleeping.store(true, Ordering::Relaxed);
@@ -92,7 +94,7 @@ where
         }));
         if result.is_err() {
             println!("ACTOR PANIC");
-            self.actor.post_stop();
+            self.actor.post_stop(&self.context);
 
             if self.actor_config.restart_policy == RestartPolicy::Never || self.is_stopped() {
                 self.mailbox.is_stopped.store(true, Ordering::Relaxed);
@@ -135,7 +137,7 @@ where
 
 impl<A, P> Executor<A, P>
 where
-    A: Actor,
+    A: Actor + ActorMessageDeserializer,
     P: ActorFactory<A>,
 {
     pub fn new(

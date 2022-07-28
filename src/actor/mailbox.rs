@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::actor::actor::Actor;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
@@ -6,11 +7,32 @@ use crossbeam_channel::Sender;
 use std::panic::UnwindSafe;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use crate::prelude::SerializedMessage;
+
+pub trait MailTest: Send + Sync + UnwindSafe {
+    fn send_serialized(&self, _msg: SerializedMessage);
+    fn as_any(&self) -> &dyn Any;
+}
+
 
 pub struct Mailbox<A> {
     pub is_stopped: Arc<AtomicBool>,
     pub is_sleeping: Arc<AtomicBool>,
     pub msg_in: Sender<MessageEnvelope<A>>,
+}
+
+impl<A> MailTest for Mailbox<A>
+    where
+        A: Handler<SerializedMessage> + 'static,
+{
+    fn send_serialized(&self, msg: SerializedMessage)
+    {
+        self.msg_in.send(MessageEnvelope::new(msg)).unwrap();
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl<A> Clone for Mailbox<A>
@@ -46,3 +68,4 @@ where
         self.is_stopped.load(Ordering::Relaxed)
     }
 }
+

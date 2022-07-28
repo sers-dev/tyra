@@ -119,7 +119,7 @@ impl ThreadPoolManager {
                                 wakeup_manager.add_sleeping_actor(address, ar);
                             } else {
                                 println!("Actor has been stopped");
-                                system_state.remove_actor(&address);
+                                system_state.remove_mailbox(&address);
                             }
                         }
                     });
