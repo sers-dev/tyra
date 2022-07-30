@@ -1,6 +1,6 @@
 use crate::actor::context::ActorContext;
-use std::panic::UnwindSafe;
 use crate::prelude::Actor;
+use std::panic::UnwindSafe;
 
 /// [Actor] can only be created from a Factory
 ///

@@ -3,9 +3,9 @@ use crate::actor::handler::Handler;
 use crate::actor::mailbox::Mailbox;
 use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
+use crate::prelude::Actor;
 use crate::system::wakeup_manager::WakeupManager;
 use std::panic::UnwindSafe;
-use crate::prelude::Actor;
 
 /// Wrapper used to interact with [Actor]
 pub struct ActorWrapper<A>

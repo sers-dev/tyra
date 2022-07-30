@@ -1,5 +1,5 @@
-use std::panic::UnwindSafe;
 use crate::prelude::{ActorContext, ActorStopMessage, SerializedMessage};
+use std::panic::UnwindSafe;
 
 /// Core trait to define Actors
 ///
@@ -75,12 +75,14 @@ use crate::prelude::{ActorContext, ActorStopMessage, SerializedMessage};
 ///                                 │                          │
 ///                                 └──────────────────────────┘
 /// ```
-pub trait Actor: Send + Sync + UnwindSafe + Sized
-{
-
+pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// executed whenever Actor receives a [SerializedMessage](../prelude/struct.SerializedMessage.html)
-    fn handle_serialized_message(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>) {}
-
+    fn handle_serialized_message(
+        &mut self,
+        _msg: SerializedMessage,
+        _context: &ActorContext<Self>,
+    ) {
+    }
 
     /// executed before the first message is handled
     ///
@@ -100,9 +102,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized
     /// executed when Actor handles internal SystemStopMessage initiated by [ActorSystem.stop](../prelude/struct.ActorSystem.html#method.stop)
     ///
     /// Default behavior sends an `ActorStopMessage` to all actors which will trigger a clean shutdown
-    fn on_system_stop(&mut self, context: &ActorContext<Self>)
-    {
-        context.actor_ref.send(ActorStopMessage{});
+    fn on_system_stop(&mut self, context: &ActorContext<Self>) {
+        context.actor_ref.send(ActorStopMessage {});
     }
-
 }

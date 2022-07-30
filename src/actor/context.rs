@@ -1,7 +1,7 @@
 use crate::actor::actor_wrapper::ActorWrapper;
+use crate::prelude::Actor;
 use crate::system::actor_system::ActorSystem;
 use std::panic::UnwindSafe;
-use crate::prelude::Actor;
 
 /// Enables access to [ActorSystem] and [Actor] within [Handler](./trait.Handler.html) implementations
 ///

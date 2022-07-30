@@ -1,7 +1,9 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, Actor};
+use tyra::prelude::{
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
+};
 
 struct MessageA {}
 
@@ -72,10 +74,14 @@ fn main() {
 
     let actor = actor_system
         .builder()
-        .spawn("benchmark-single-actor", BenchmarkFactory {
-            name: String::from("benchmark"),
-            total_msgs: message_count as usize,
-        }).unwrap();
+        .spawn(
+            "benchmark-single-actor",
+            BenchmarkFactory {
+                name: String::from("benchmark"),
+                total_msgs: message_count as usize,
+            },
+        )
+        .unwrap();
     println!("Actors have been created");
     let start = Instant::now();
 

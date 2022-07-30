@@ -5,10 +5,9 @@ use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
 use crate::prelude::{Actor, BulkActorMessage};
 use crate::routers::add_actor_message::AddActorMessage;
+use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
 use crate::routers::router_message::RouterMessage;
-use crate::routers::bulk_router_message::BulkRouterMessage;
-
 
 pub struct RoundRobinRouter<A>
 where
@@ -105,11 +104,7 @@ where
     }
 }
 
-impl<A> Actor for RoundRobinRouter<A>
-where
-    A: Actor + 'static,
-{
-}
+impl<A> Actor for RoundRobinRouter<A> where A: Actor + 'static {}
 
 impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
 where
@@ -157,9 +152,9 @@ where
 }
 
 impl<A, M> Handler<BulkRouterMessage<M>> for RoundRobinRouter<A>
-    where
-        A: Actor + Handler<BulkActorMessage<M>> + 'static,
-        M: ActorMessage + 'static,
+where
+    A: Actor + Handler<BulkActorMessage<M>> + 'static,
+    M: ActorMessage + 'static,
 {
     fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) {
         if !self.can_route {
@@ -177,9 +172,8 @@ impl<A, M> Handler<BulkRouterMessage<M>> for RoundRobinRouter<A>
             }
 
             let forward_to = self.route_to.get(self.route_index).unwrap();
-            let chunk :Vec<M> = msg.data.drain(0..messages_per_routee).collect();
+            let chunk: Vec<M> = msg.data.drain(0..messages_per_routee).collect();
             forward_to.send(BulkActorMessage::new(chunk));
         }
-
     }
 }

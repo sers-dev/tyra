@@ -1,7 +1,9 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, Actor};
+use tyra::prelude::{
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
+};
 
 #[derive(Clone)]
 struct SleepMsg {}
@@ -43,25 +45,21 @@ fn main() {
     let actor_config = TyraConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    let hw = SleepActorFactory {
-        counter: 0,
-    };
+    let hw = SleepActorFactory { counter: 0 };
     let x = actor_system
         .builder()
         .set_mailbox_unbounded()
-        .spawn("hello-world", hw).unwrap();
-    x.send(SleepMsg {
-    });
+        .spawn("hello-world", hw)
+        .unwrap();
+    x.send(SleepMsg {});
 
     sleep(Duration::from_secs(1));
 
-    x.send(SleepMsg {
-    });
+    x.send(SleepMsg {});
 
     sleep(Duration::from_secs(1));
 
-    x.send(SleepMsg {
-    });
+    x.send(SleepMsg {});
     //loop {
     //    //sleep(Duration::from_micros(1));
     //    x.send(SleepMsg {

@@ -3,13 +3,13 @@ use crate::actor::actor_builder::ActorBuilder;
 use crate::config::pool_config::ThreadPoolConfig;
 use crate::config::tyra_config::{TyraConfig, DEFAULT_POOL};
 use crate::message::serialized_message::SerializedMessage;
+use crate::prelude::{Actor, Handler};
 use crate::system::system_state::SystemState;
 use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use crate::prelude::{Actor, Handler};
 
 /// Manages thread pools and actors
 #[derive(Clone)]
@@ -183,9 +183,13 @@ impl ActorSystem {
     /// ```
     pub fn builder<A>(&self) -> ActorBuilder<A>
     where
-        A: Handler<SerializedMessage> + Actor
+        A: Handler<SerializedMessage> + Actor,
     {
-        ActorBuilder::new(self.clone(), self.state.clone(), self.wakeup_manager.clone())
+        ActorBuilder::new(
+            self.clone(),
+            self.state.clone(),
+            self.wakeup_manager.clone(),
+        )
     }
 
     /// Sends a SystemStopMessage to all running Actors, and wakes them up if necessary.

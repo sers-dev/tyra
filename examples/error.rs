@@ -1,6 +1,8 @@
 use std::process::exit;
 use std::time::Duration;
-use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, Actor};
+use tyra::prelude::{
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
+};
 
 #[derive(Clone)]
 struct ErrMsg {
@@ -42,13 +44,12 @@ fn main() {
     let actor_config = TyraConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    let hw = ErrActorFactory {
-        counter: 0,
-    };
+    let hw = ErrActorFactory { counter: 0 };
     let x = actor_system
         .builder()
         .set_mailbox_size(7)
-        .spawn("hello-world", hw).unwrap();
+        .spawn("hello-world", hw)
+        .unwrap();
     x.send(ErrMsg {
         text: String::from("sers+1"),
     });

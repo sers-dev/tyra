@@ -10,12 +10,12 @@ use crate::message::actor_message::ActorMessage;
 use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
 use crate::message::message_type::MessageType;
 use crate::message::system_stop_message::SystemStopMessage;
+use crate::prelude::Actor;
 use crate::system::actor_system::ActorSystem;
 use crossbeam_channel::Receiver;
 use std::panic::{catch_unwind, AssertUnwindSafe, UnwindSafe};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
-use crate::prelude::Actor;
 
 pub trait ExecutorTrait: Send + Sync {
     fn handle(&mut self, is_system_stopping: bool) -> ActorState;
@@ -148,7 +148,6 @@ where
         system: ActorSystem,
         actor_ref: ActorWrapper<A>,
     ) -> Self {
-
         let context = ActorContext {
             actor_ref,
             system: system.clone(),

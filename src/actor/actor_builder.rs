@@ -1,19 +1,19 @@
+use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
-use crate::config::tyra_config::DEFAULT_POOL;
-use crate::system::actor_system::ActorSystem;
-use std::panic::UnwindSafe;
-use crossbeam_channel::{unbounded, bounded};
-use crate::actor::mailbox::Mailbox;
-use std::sync::{Arc, RwLock};
-use std::sync::atomic::AtomicBool;
-use crate::actor::actor_address::ActorAddress;
 use crate::actor::executor::{Executor, ExecutorTrait};
-use crate::system::wakeup_manager::WakeupManager;
-use crate::system::system_state::SystemState;
-use dashmap::DashMap;
+use crate::actor::mailbox::Mailbox;
+use crate::config::tyra_config::DEFAULT_POOL;
 use crate::prelude::{Actor, Handler, SerializedMessage};
+use crate::system::actor_system::ActorSystem;
+use crate::system::system_state::SystemState;
+use crate::system::wakeup_manager::WakeupManager;
+use crossbeam_channel::{bounded, unbounded};
+use dashmap::DashMap;
+use std::panic::UnwindSafe;
+use std::sync::atomic::AtomicBool;
+use std::sync::{Arc, RwLock};
 
 /// Used to create [Actor]s in the [ActorSystem]
 ///
@@ -34,11 +34,15 @@ where
 }
 
 impl<A> ActorBuilder<A>
-    where
-        A: UnwindSafe + 'static + Handler<SerializedMessage> + Actor,
+where
+    A: UnwindSafe + 'static + Handler<SerializedMessage> + Actor,
 {
     /// This is called through [ActorSystem.builder](../prelude/struct.ActorSystem.html#method.builder)
-    pub fn new(system: ActorSystem, system_state: SystemState, wakeup_manager: WakeupManager) -> ActorBuilder<A> {
+    pub fn new(
+        system: ActorSystem,
+        system_state: SystemState,
+        wakeup_manager: WakeupManager,
+    ) -> ActorBuilder<A> {
         let config = system.get_config();
 
         let actor_config = ActorConfig {
@@ -134,7 +138,8 @@ impl<A> ActorBuilder<A>
             actor_ref.clone(),
         );
 
-        self.system_state.add_mailbox(actor_address.clone(), mailbox);
+        self.system_state
+            .add_mailbox(actor_address.clone(), mailbox);
         self.wakeup_manager.add_sleeping_actor(
             actor_handler.get_address(),
             Arc::new(RwLock::new(actor_handler)),

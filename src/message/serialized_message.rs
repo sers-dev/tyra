@@ -14,9 +14,7 @@ pub struct SerializedMessage {
 
 impl SerializedMessage {
     pub fn new(content: Vec<u8>) -> Self {
-        Self {
-            content
-        }
+        Self { content }
     }
 }
 

@@ -1,24 +1,26 @@
+use serde::{Deserialize, Serialize};
 use std::process::exit;
 use std::time::{Duration, Instant};
-use serde::{Serialize, Deserialize};
-use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, SerializedMessage, Actor};
+use tyra::prelude::{
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, SerializedMessage,
+    TyraConfig,
+};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 struct TestMsg {
-    content: String
+    content: String,
 }
 
 impl ActorMessage for TestMsg {}
 
 #[derive(Clone)]
-struct RemoteActor {
-}
+struct RemoteActor {}
 
 //impl Actor for RemoteActor {}
 
 impl Actor for RemoteActor {
     fn handle_serialized_message(&mut self, msg: SerializedMessage, context: &ActorContext<Self>) {
-        let decoded :TestMsg = bincode::deserialize(&msg.content).unwrap();
+        let decoded: TestMsg = bincode::deserialize(&msg.content).unwrap();
         context.actor_ref.send(decoded);
     }
     //fn pre_start(&mut self, _context: &ActorContext<Self>) {
@@ -40,7 +42,7 @@ struct RemoteActorFactory {}
 
 impl ActorFactory<RemoteActor> for RemoteActorFactory {
     fn new_actor(&self, _context: ActorContext<RemoteActor>) -> RemoteActor {
-        RemoteActor { }
+        RemoteActor {}
     }
 }
 
@@ -52,15 +54,14 @@ fn main() {
     let x = actor_system
         .builder()
         .set_mailbox_size(7)
-        .spawn("hello-world", hw).unwrap();
+        .spawn("hello-world", hw)
+        .unwrap();
     let msg = TestMsg {
-        content: String::from("Hello World!")
+        content: String::from("Hello World!"),
     };
-    let serialized  = bincode::serialize(&msg).unwrap();
+    let serialized = bincode::serialize(&msg).unwrap();
     actor_system.send_to_address(x.get_address(), SerializedMessage::new(serialized));
     let start = Instant::now();
-
-
 
     actor_system.stop(Duration::from_secs(10));
     let result = actor_system.await_shutdown();

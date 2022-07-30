@@ -1,13 +1,13 @@
 use crate::actor::actor_address::ActorAddress;
+use crate::actor::mailbox::{BaseMailbox, Mailbox};
 use crate::message::serialized_message::SerializedMessage;
+use crate::prelude::{ActorWrapper, Handler};
+use crate::system::wakeup_manager::WakeupManager;
 use dashmap::DashMap;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use crate::actor::mailbox::{Mailbox, BaseMailbox};
-use crate::prelude::{ActorWrapper, Handler};
-use crate::system::wakeup_manager::WakeupManager;
 
 #[derive(Clone)]
 pub struct SystemState {
@@ -82,23 +82,26 @@ impl SystemState {
         self.mailboxes.remove(address);
     }
 
-
     pub fn add_mailbox<A>(&self, address: ActorAddress, mailbox: Mailbox<A>)
     where
-        A: Handler<SerializedMessage> + 'static
+        A: Handler<SerializedMessage> + 'static,
     {
         self.total_actor_count.fetch_add(1, Ordering::Relaxed);
         self.mailboxes.insert(address, Arc::new(mailbox));
     }
 
     pub fn get_actor_ref<A>(&self, address: ActorAddress) -> Option<ActorWrapper<A>>
-        where
-            A: Handler<SerializedMessage> + 'static
+    where
+        A: Handler<SerializedMessage> + 'static,
     {
         let mb = self.mailboxes.get(&address).unwrap().value().clone();
         return match mb.as_any().downcast_ref::<Mailbox<A>>() {
-            Some(m) => Some(ActorWrapper::new(m.clone(), address, self.wakeup_manager.clone())),
-            None => None
+            Some(m) => Some(ActorWrapper::new(
+                m.clone(),
+                address,
+                self.wakeup_manager.clone(),
+            )),
+            None => None,
         };
     }
 

@@ -1,7 +1,9 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorWrapper, Actor};
+use tyra::prelude::{
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, ActorWrapper, Handler, TyraConfig,
+};
 use tyra::router::{AddActorMessage, RoundRobinRouterFactory, RouterMessage};
 
 struct MessageA {}
@@ -48,8 +50,7 @@ impl Benchmark {
     }
 }
 
-impl Actor for Benchmark {
-}
+impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) {
@@ -96,8 +97,7 @@ impl Aggregator {
     }
 }
 
-impl Actor for Aggregator {
-}
+impl Actor for Aggregator {}
 
 impl ActorFactory<Aggregator> for AggregatorFactory {
     fn new_actor(&self, context: ActorContext<Aggregator>) -> Aggregator {
@@ -135,7 +135,10 @@ fn main() {
     let actor_count = 7;
 
     let router_factory = RoundRobinRouterFactory::new();
-    let router = actor_system.builder().spawn("benchmark-router", router_factory).unwrap();
+    let router = actor_system
+        .builder()
+        .spawn("benchmark-router", router_factory)
+        .unwrap();
 
     let aggregator = actor_system
         .builder()
@@ -143,25 +146,30 @@ fn main() {
             "aggregator",
             AggregatorFactory {
                 total_actors: actor_count,
-                name: String::from("aggregator")
-            }).unwrap();
+                name: String::from("aggregator"),
+            },
+        )
+        .unwrap();
     for i in 0..actor_count {
         let actor = actor_system
             .builder()
-            .spawn(format!("benchmark-single-actor-{}", i), BenchmarkFactory {
-                name: String::from(format!("benchmark-{}", i)),
-                total_msgs: (message_count.clone() / actor_count.clone()) as usize,
-                aggregator: aggregator.clone(),
-            }).unwrap();
+            .spawn(
+                format!("benchmark-single-actor-{}", i),
+                BenchmarkFactory {
+                    name: String::from(format!("benchmark-{}", i)),
+                    total_msgs: (message_count.clone() / actor_count.clone()) as usize,
+                    aggregator: aggregator.clone(),
+                },
+            )
+            .unwrap();
 
         router.send(AddActorMessage::new(actor));
     }
 
-
     println!("Actors have been created");
     let start = Instant::now();
 
-    aggregator.send(Start{});
+    aggregator.send(Start {});
     for _i in 0..message_count {
         let msg = MessageA {};
         router.send(RouterMessage::new(msg));

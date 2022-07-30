@@ -55,7 +55,7 @@ impl<M, A> Handler<BulkActorMessage<M>> for A
 where
     Self: Actor + Sized,
     A: Handler<M>,
-    M: ActorMessage
+    M: ActorMessage,
 {
     fn handle(&mut self, msg: BulkActorMessage<M>, context: &ActorContext<Self>) {
         for i in msg.data.into_iter() {
@@ -65,8 +65,8 @@ where
 }
 
 impl<A> Handler<SerializedMessage> for A
-    where
-        A: Actor + Sized + Actor,
+where
+    A: Actor + Sized + Actor,
 {
     fn handle(&mut self, msg: SerializedMessage, context: &ActorContext<A>) {
         self.handle_serialized_message(msg, context);
