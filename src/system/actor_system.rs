@@ -9,8 +9,8 @@ use crate::system::wakeup_manager::WakeupManager;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use crate::actor::actor::Actor;
-use crate::prelude::{ActorMessageDeserializer, Handler};
+use crate::actor::base_actor::BaseActor;
+use crate::prelude::{Actor, Handler};
 
 /// Manages thread pools and actors
 #[derive(Clone)]
@@ -118,14 +118,14 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, Handler, ActorMessageDeserializer, ActorMessage};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, BaseActor, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorMessage};
     ///
     /// struct TestActor {}
     ///
     /// struct HelloWorld {}
     /// impl ActorMessage for HelloWorld {}
-    /// impl ActorMessageDeserializer for TestActor {
-    ///     fn handle_serialized_message(&mut self, _msg: SerializedMessage, context: &ActorContext<Self>) where Self: Actor + Sized + 'static {
+    /// impl Actor for TestActor {
+    ///     fn handle_serialized_message(&mut self, _msg: SerializedMessage, context: &ActorContext<Self>) where Self: BaseActor + Sized + 'static {
     ///          context.actor_ref.send(HelloWorld{});
     ///     }
     /// }
@@ -161,11 +161,11 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, Handler, ActorMessageDeserializer};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, BaseActor, ActorFactory, ActorContext, SerializedMessage, Handler, Actor};
     ///
     /// struct TestActor {}
     ///
-    /// impl ActorMessageDeserializer for TestActor {}
+    /// impl Actor for TestActor {}
     ///
     /// struct TestFactory {}
     ///
@@ -183,7 +183,7 @@ impl ActorSystem {
     /// ```
     pub fn builder<A>(&self) -> ActorBuilder<A>
     where
-        A: Actor + Handler<SerializedMessage> + ActorMessageDeserializer
+        A: BaseActor + Handler<SerializedMessage> + Actor
     {
         ActorBuilder::new(self.clone(), self.state.clone(), self.wakeup_manager.clone())
     }

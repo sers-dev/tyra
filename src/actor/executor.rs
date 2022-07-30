@@ -1,4 +1,4 @@
-use crate::actor::actor::Actor;
+use crate::actor::base_actor::BaseActor;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor::actor_factory::ActorFactory;
@@ -16,7 +16,7 @@ use crossbeam_channel::Receiver;
 use std::panic::{catch_unwind, AssertUnwindSafe, UnwindSafe};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
-use crate::prelude::ActorMessageDeserializer;
+use crate::prelude::Actor;
 
 pub trait ExecutorTrait: Send + Sync {
     fn handle(&mut self, is_system_stopping: bool) -> ActorState;
@@ -29,7 +29,7 @@ pub trait ExecutorTrait: Send + Sync {
 
 pub struct Executor<A, P>
 where
-    A: Actor + 'static + ActorMessageDeserializer,
+    A: BaseActor + 'static + Actor,
     P: ActorFactory<A>,
 {
     actor: A,
@@ -46,20 +46,20 @@ where
 
 unsafe impl<A, P> Send for Executor<A, P>
 where
-    A: Actor + UnwindSafe + 'static + ActorMessageDeserializer,
+    A: BaseActor + UnwindSafe + 'static + Actor,
     P: ActorFactory<A>,
 {
 }
 unsafe impl<A, P> Sync for Executor<A, P>
 where
-    A: Actor + UnwindSafe + 'static + ActorMessageDeserializer,
+    A: BaseActor + UnwindSafe + 'static + Actor,
     P: ActorFactory<A>,
 {
 }
 
 impl<A, P> ExecutorTrait for Executor<A, P>
 where
-    A: Actor + UnwindSafe + 'static + ActorMessageDeserializer,
+    A: BaseActor + UnwindSafe + 'static + Actor,
     P: ActorFactory<A>,
 {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {
@@ -137,7 +137,7 @@ where
 
 impl<A, P> Executor<A, P>
 where
-    A: Actor + ActorMessageDeserializer,
+    A: BaseActor + Actor,
     P: ActorFactory<A>,
 {
     pub fn new(

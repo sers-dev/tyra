@@ -1,4 +1,4 @@
-use crate::actor::actor::Actor;
+use crate::actor::base_actor::BaseActor;
 use crate::actor::context::ActorContext;
 use std::panic::UnwindSafe;
 
@@ -12,11 +12,11 @@ use std::panic::UnwindSafe;
 /// Basic usage:
 ///
 /// ```rust
-/// use tyra::prelude::{Actor, SerializedMessage, ActorFactory, ActorContext, Handler};
+/// use tyra::prelude::{BaseActor, SerializedMessage, ActorFactory, ActorContext, Handler};
 ///
 /// struct TestActor {}
 ///
-/// impl Actor for TestActor {}
+/// impl BaseActor for TestActor {}
 ///
 /// impl Handler<SerializedMessage> for TestActor {
 ///     fn handle(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>) {
@@ -33,7 +33,7 @@ use std::panic::UnwindSafe;
 /// ```
 pub trait ActorFactory<A>
 where
-    A: Actor + UnwindSafe + 'static,
+    A: BaseActor + UnwindSafe + 'static,
 {
     /// internally used to create the Actual Actor
     ///

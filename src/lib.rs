@@ -21,7 +21,7 @@
 //!
 //! // define actor
 //! struct HelloWorld {}
-//! impl ActorMessageDeserializer for HelloWorld {}
+//! impl Actor for HelloWorld {}
 //!
 //! // setup required Factory
 //! struct HelloWorldFactory {}

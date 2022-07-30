@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::time::{Duration, Instant};
 use serde::{Serialize, Deserialize};
-use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, SerializedMessage, ActorMessageDeserializer};
+use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, SerializedMessage, Actor};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 struct TestMsg {
@@ -16,8 +16,8 @@ struct RemoteActor {
 
 //impl Actor for RemoteActor {}
 
-impl ActorMessageDeserializer for RemoteActor {
-    fn handle_serialized_message(&mut self, msg: SerializedMessage, context: &ActorContext<Self>) where Self: Actor + Sized + 'static {
+impl Actor for RemoteActor {
+    fn handle_serialized_message(&mut self, msg: SerializedMessage, context: &ActorContext<Self>) {
         let decoded :TestMsg = bincode::deserialize(&msg.content).unwrap();
         //let ctx :&ActorContext<Self> = context;
         context.actor_ref.send(decoded);

@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorMessageDeserializer};
+use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, Actor};
 use tyra::router::{
     AddActorMessage, RemoveActorMessage, RoundRobinRouterFactory, RouterMessage,
 };
@@ -12,7 +12,7 @@ impl ActorMessage for MessageA {}
 struct HelloWorld {
     counter: usize,
 }
-impl ActorMessageDeserializer for HelloWorld {}
+impl Actor for HelloWorld {}
 
 #[derive(Clone)]
 struct HelloWorldFactory {}

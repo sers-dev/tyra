@@ -1,5 +1,5 @@
 use crate::actor::actor_wrapper::ActorWrapper;
-use crate::prelude::Actor;
+use crate::prelude::BaseActor;
 use crate::system::actor_system::ActorSystem;
 use std::panic::UnwindSafe;
 
@@ -9,17 +9,17 @@ use std::panic::UnwindSafe;
 pub struct ActorContext<A>
 where
     Self: Send + Sync,
-    A: Actor + 'static,
+    A: BaseActor + 'static,
 {
     pub actor_ref: ActorWrapper<A>,
     pub system: ActorSystem,
 }
 
-impl<A> UnwindSafe for ActorContext<A> where A: Actor + 'static {}
+impl<A> UnwindSafe for ActorContext<A> where A: BaseActor + 'static {}
 
 impl<A> Clone for ActorContext<A>
 where
-    A: Actor + 'static,
+    A: BaseActor + 'static,
 {
     fn clone(&self) -> Self {
         Self {

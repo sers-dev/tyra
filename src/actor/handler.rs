@@ -1,4 +1,4 @@
-use crate::actor::actor::Actor;
+use crate::actor::base_actor::BaseActor;
 use crate::actor::context::ActorContext;
 use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
@@ -12,10 +12,10 @@ use crate::prelude::{BulkActorMessage, SerializedMessage};
 /// Basic usage:
 ///
 /// ```rust
-/// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, ActorMessage, Handler};
+/// use tyra::prelude::{TyraConfig, ActorSystem, BaseActor, ActorFactory, ActorContext, SerializedMessage, ActorMessage, Handler};
 ///
 /// struct TestActor {}
-/// impl Actor for TestActor {}
+/// impl BaseActor for TestActor {}
 ///
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
@@ -27,7 +27,7 @@ use crate::prelude::{BulkActorMessage, SerializedMessage};
 /// ```
 pub trait Handler<M: ?Sized>
 where
-    Self: Actor + Sized,
+    Self: BaseActor + Sized,
     M: ActorMessage,
 {
     fn handle(&mut self, msg: M, context: &ActorContext<Self>);
@@ -35,7 +35,7 @@ where
 
 impl<A> Handler<ActorStopMessage> for A
 where
-    A: Actor + Sized,
+    A: BaseActor + Sized,
 {
     fn handle(&mut self, _msg: ActorStopMessage, context: &ActorContext<A>) {
         self.on_actor_stop(context);
@@ -44,7 +44,7 @@ where
 
 impl<A> Handler<SystemStopMessage> for A
 where
-    A: Actor + Sized,
+    A: BaseActor + Sized,
 {
     fn handle(&mut self, _msg: SystemStopMessage, context: &ActorContext<A>) {
         self.on_system_stop(context);
@@ -53,7 +53,7 @@ where
 
 impl<M, A> Handler<BulkActorMessage<M>> for A
 where
-    Self: Actor + Sized,
+    Self: BaseActor + Sized,
     A: Handler<M>,
     M: ActorMessage
 {
@@ -66,7 +66,7 @@ where
 
 impl<A> Handler<SerializedMessage> for A
     where
-        A: Actor + Sized + ActorMessageDeserializer,
+        A: BaseActor + Sized + Actor,
 {
     fn handle(&mut self, msg: SerializedMessage, context: &ActorContext<A>) {
         self.handle_serialized_message(msg, context);
@@ -74,29 +74,29 @@ impl<A> Handler<SerializedMessage> for A
 }
 
 
-impl<A> Actor for A
+impl<A> BaseActor for A
     where
-        A: ActorMessageDeserializer {
-    fn on_actor_stop(&mut self, context: &ActorContext<Self>) where Self: Actor + Sized {
+        A: Actor {
+    fn on_actor_stop(&mut self, context: &ActorContext<Self>) where Self: BaseActor + Sized {
         self.on_actor_stop_int(context);
     }
 
-    fn on_system_stop(&mut self, context: &ActorContext<Self>) where Self: Actor + Sized {
+    fn on_system_stop(&mut self, context: &ActorContext<Self>) where Self: BaseActor + Sized {
         self.on_system_stop_int(context);
     }
 }
 
-pub trait ActorMessageDeserializer: Actor
+pub trait Actor: BaseActor
 {
 
     fn handle_serialized_message(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>)
-        where Self: Actor + Sized + 'static {
+        where Self: BaseActor + Sized + 'static {
         println!("ASDF")
     }
 
 
     fn handle_serialized_message_old<A>(&mut self, _msg: SerializedMessage, _context: &ActorContext<A>)
-    where A: Actor + Sized {
+    where A: BaseActor + Sized {
         println!("ASDF")
     }
 
@@ -105,14 +105,14 @@ pub trait ActorMessageDeserializer: Actor
     /// re-executed after actor restart before first message is handled
     fn pre_start(&mut self, _context: &ActorContext<Self>)
     where
-        Self: Actor + Sized
+        Self: BaseActor + Sized
     {
         println!("PRE_START")
     }
 
     fn post_stop(&mut self, _context: &ActorContext<Self>)
     where
-        Self: Actor + Sized
+        Self: BaseActor + Sized
     {
         println!("POST_STOP")
 
@@ -120,7 +120,7 @@ pub trait ActorMessageDeserializer: Actor
 
     fn on_actor_stop_int(&mut self, _context: &ActorContext<Self>)
         where
-            Self: Actor + Sized
+            Self: BaseActor + Sized
     {
         println!("ON_STOP ActorMessageDeserializer")
 
@@ -128,7 +128,7 @@ pub trait ActorMessageDeserializer: Actor
 
     fn on_system_stop_int(&mut self, context: &ActorContext<Self>)
         where
-            Self: Actor + Sized
+            Self: BaseActor + Sized
     {
         println!("ON_SYS_STOP ActorMessageDeserializer");
         context.actor_ref.send(ActorStopMessage{});

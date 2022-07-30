@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{ActorMessageDeserializer, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorWrapper};
+use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorWrapper};
 use tyra::router::{AddActorMessage, BulkRouterMessage, RoundRobinRouterFactory};
 
 struct MessageA {}
@@ -48,7 +48,7 @@ impl Benchmark {
     }
 }
 
-impl ActorMessageDeserializer for Benchmark {
+impl Actor for Benchmark {
 }
 
 impl Handler<MessageA> for Benchmark {
@@ -96,7 +96,7 @@ impl Aggregator {
     }
 }
 
-impl ActorMessageDeserializer for Aggregator {}
+impl Actor for Aggregator {}
 
 impl ActorFactory<Aggregator> for AggregatorFactory {
     fn new_actor(&self, context: ActorContext<Aggregator>) -> Aggregator {

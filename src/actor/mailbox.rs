@@ -1,5 +1,5 @@
 use std::any::Any;
-use crate::actor::actor::Actor;
+use crate::actor::base_actor::BaseActor;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
 use crate::message::envelope::MessageEnvelope;
@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use crate::prelude::SerializedMessage;
 
-pub trait MailTest: Send + Sync + UnwindSafe {
+pub trait BaseMailbox: Send + Sync + UnwindSafe {
     fn send_serialized(&self, _msg: SerializedMessage);
     fn as_any(&self) -> &dyn Any;
 }
@@ -21,7 +21,7 @@ pub struct Mailbox<A> {
     pub msg_in: Sender<MessageEnvelope<A>>,
 }
 
-impl<A> MailTest for Mailbox<A>
+impl<A> BaseMailbox for Mailbox<A>
     where
         A: Handler<SerializedMessage> + 'static,
 {
@@ -37,7 +37,7 @@ impl<A> MailTest for Mailbox<A>
 
 impl<A> Clone for Mailbox<A>
 where
-    A: Actor + UnwindSafe,
+    A: BaseActor + UnwindSafe,
 {
     fn clone(&self) -> Self {
         Self {
@@ -50,7 +50,7 @@ where
 
 impl<A> Mailbox<A>
 where
-    A: Actor,
+    A: BaseActor,
 {
     pub fn send<M>(&self, msg: M)
     where

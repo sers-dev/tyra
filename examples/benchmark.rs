@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorMessageDeserializer};
+use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, Actor};
 
 struct MessageA {}
 
@@ -36,7 +36,7 @@ impl Benchmark {
     }
 }
 
-impl ActorMessageDeserializer for Benchmark {}
+impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, _msg: MessageA, context: &ActorContext<Self>) {

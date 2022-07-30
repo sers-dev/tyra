@@ -18,11 +18,11 @@ use crate::prelude::ActorContext;
 /// Basic usage:
 ///
 /// ```rust
-/// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, Handler};
+/// use tyra::prelude::{TyraConfig, ActorSystem, BaseActor, ActorFactory, ActorContext, SerializedMessage, Handler};
 ///
 /// struct TestActor {}
 ///
-/// impl Actor for TestActor {}
+/// impl BaseActor for TestActor {}
 ///
 /// impl Handler<SerializedMessage> for TestActor {
 ///     fn handle(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>) {
@@ -79,7 +79,7 @@ use crate::prelude::ActorContext;
 ///                                 │                          │
 ///                                 └──────────────────────────┘
 /// ```
-pub trait Actor: Send + Sync + UnwindSafe {
+pub trait BaseActor: Send + Sync + UnwindSafe {
     ///// executed before the first message is handled
     /////
     ///// re-executed after actor restart before first message is handled
@@ -94,7 +94,7 @@ pub trait Actor: Send + Sync + UnwindSafe {
     //fn on_actor_stop(&mut self) {}
     fn on_actor_stop(&mut self, _context: &ActorContext<Self>)
         where
-            Self: Actor + Sized
+            Self: BaseActor + Sized
     {
         //println!("ON_STOP")
 
@@ -104,7 +104,7 @@ pub trait Actor: Send + Sync + UnwindSafe {
     /// Default behavior sends an `ActorStopMessage` to all actors which will trigger a clean shutdown
     fn on_system_stop(&mut self, _context: &ActorContext<Self>)
         where
-            Self: Actor + Sized
+            Self: BaseActor + Sized
     {}
     ///// // executed when [ActorSystem.send_to_address](../prelude/struct.ActorSystem.html#method.send_to_address) is called
     /////

@@ -1,4 +1,4 @@
-use crate::actor::actor::Actor;
+use crate::actor::base_actor::BaseActor;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::handler::Handler;
 use crate::actor::mailbox::Mailbox;
@@ -10,18 +10,18 @@ use std::panic::UnwindSafe;
 /// Wrapper used to interact with [Actor]
 pub struct ActorWrapper<A>
 where
-    A: Actor + 'static,
+    A: BaseActor + 'static,
 {
     mailbox: Mailbox<A>,
     address: ActorAddress,
     wakeup_manager: WakeupManager,
 }
 
-impl<A> UnwindSafe for ActorWrapper<A> where A: Actor + 'static {}
+impl<A> UnwindSafe for ActorWrapper<A> where A: BaseActor + 'static {}
 
 impl<A> ActorWrapper<A>
 where
-    A: Actor + UnwindSafe,
+    A: BaseActor + UnwindSafe,
 {
     /// Automatically called by the [ActorBuilder.build](../prelude/struct.ActorBuilder.html#method.build)
     pub fn new(mailbox: Mailbox<A>, address: ActorAddress, wakeup_manager: WakeupManager) -> Self {
@@ -67,7 +67,7 @@ where
 
 impl<A> Clone for ActorWrapper<A>
 where
-    A: Actor + UnwindSafe,
+    A: BaseActor + UnwindSafe,
 {
     fn clone(&self) -> Self {
         Self {

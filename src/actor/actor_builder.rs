@@ -1,4 +1,4 @@
-use crate::actor::actor::Actor;
+use crate::actor::base_actor::BaseActor;
 use crate::actor::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
@@ -14,7 +14,7 @@ use crate::actor::executor::{Executor, ExecutorTrait};
 use crate::system::wakeup_manager::WakeupManager;
 use crate::system::system_state::SystemState;
 use dashmap::DashMap;
-use crate::prelude::{ActorMessageDeserializer, Handler, SerializedMessage};
+use crate::prelude::{Actor, Handler, SerializedMessage};
 
 /// Used to create [Actor]s in the [ActorSystem]
 ///
@@ -25,7 +25,7 @@ use crate::prelude::{ActorMessageDeserializer, Handler, SerializedMessage};
 #[derive(Clone)]
 pub struct ActorBuilder<A>
 where
-    A: Actor + UnwindSafe + 'static + ActorMessageDeserializer,
+    A: BaseActor + UnwindSafe + 'static + Actor,
 {
     existing: Arc<DashMap<ActorAddress, ActorWrapper<A>>>,
     system: ActorSystem,
@@ -36,7 +36,7 @@ where
 
 impl<A> ActorBuilder<A>
     where
-        A: Actor + UnwindSafe + 'static + Handler<SerializedMessage> + ActorMessageDeserializer,
+        A: BaseActor + UnwindSafe + 'static + Handler<SerializedMessage> + Actor,
 {
     /// This is called through [ActorSystem.builder](../prelude/struct.ActorSystem.html#method.builder)
     pub fn new(system: ActorSystem, system_state: SystemState, wakeup_manager: WakeupManager) -> ActorBuilder<A> {

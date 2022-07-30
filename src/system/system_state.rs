@@ -5,13 +5,13 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use crate::actor::mailbox::{Mailbox, MailTest};
+use crate::actor::mailbox::{Mailbox, BaseMailbox};
 use crate::prelude::{ActorWrapper, Handler};
 use crate::system::wakeup_manager::WakeupManager;
 
 #[derive(Clone)]
 pub struct SystemState {
-    mailboxes: Arc<DashMap<ActorAddress, Arc<dyn MailTest>>>,
+    mailboxes: Arc<DashMap<ActorAddress, Arc<dyn BaseMailbox>>>,
     wakeup_manager: WakeupManager,
     total_actor_count: Arc<AtomicUsize>,
     is_stopped: Arc<AtomicBool>,

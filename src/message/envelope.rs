@@ -1,4 +1,4 @@
-use crate::actor::actor::Actor;
+use crate::actor::base_actor::BaseActor;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
@@ -9,7 +9,7 @@ use std::any::{Any, TypeId};
 
 pub trait MessageEnvelopeTrait<A>: Send + Sync
 where
-    A: Actor,
+    A: BaseActor,
 {
     fn handle(&mut self, actor: &mut A, context: &ActorContext<A>) -> MessageType;
 }
@@ -19,7 +19,7 @@ pub struct MessageEnvelope<A>(Box<dyn MessageEnvelopeTrait<A> + Send + Sync>);
 impl<A> MessageEnvelope<A> {
     pub fn new<M>(msg: M) -> Self
     where
-        A: Handler<M> + Actor,
+        A: Handler<M> + BaseActor,
         M: ActorMessage + Send + Sync + 'static,
     {
         MessageEnvelope(Box::new(SyncMessageEnvelope { msg: Some(msg) }))
@@ -28,7 +28,7 @@ impl<A> MessageEnvelope<A> {
 
 impl<A> MessageEnvelopeTrait<A> for MessageEnvelope<A>
 where
-    A: Actor,
+    A: BaseActor,
 {
     fn handle(&mut self, act: &mut A, context: &ActorContext<A>) -> MessageType {
         self.0.handle(act, context)
@@ -45,7 +45,7 @@ where
 impl<A, M> MessageEnvelopeTrait<A> for SyncMessageEnvelope<M>
 where
     M: ActorMessage + Send + 'static,
-    A: Handler<M> + Actor,
+    A: Handler<M> + BaseActor,
 {
     fn handle(&mut self, act: &mut A, context: &ActorContext<A>) -> MessageType {
         if let Some(msg) = self.msg.take() {
