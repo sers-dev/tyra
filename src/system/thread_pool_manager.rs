@@ -118,7 +118,6 @@ impl ThreadPoolManager {
                             if actor_state == ActorState::Sleeping {
                                 wakeup_manager.add_sleeping_actor(address, ar);
                             } else {
-                                println!("Actor has been stopped");
                                 system_state.remove_mailbox(&address);
                             }
                         }

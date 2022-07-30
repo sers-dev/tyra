@@ -28,7 +28,7 @@ pub trait ExecutorTrait: Send + Sync {
 
 pub struct Executor<A, P>
 where
-    A: 'static + Actor,
+    A: Actor + 'static,
     P: ActorFactory<A>,
 {
     actor: A,
@@ -69,7 +69,6 @@ where
         if self.is_startup {
             self.is_startup = false;
             self.actor.pre_start(&self.context);
-            //self.actor.pre_start();
         }
         let m = self.queue.try_recv();
 

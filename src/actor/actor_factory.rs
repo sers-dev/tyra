@@ -34,5 +34,5 @@ where
     /// `ActorContext<A>` is injected and can optionally be stored within the actor itself.
     /// It can then be used to define clean a behavior for a clean [ActorSystem.stop](../prelude/struct.ActorSystem.html#method.stop)
     /// through [Actor.on_system_stop]
-    fn new_actor(&self, context: ActorContext<A>) -> A;
+    fn new_actor(&self, _context: ActorContext<A>) -> A;
 }

@@ -33,14 +33,6 @@ where
         }
     }
 
-    //pub fn from_trait(mailbox: &dyn MailTest, address: ActorAddress, wakeup_manager: WakeupManager) -> Self {
-    //    Self {
-    //        mailbox,
-    //        address,
-    //        wakeup_manager
-    //    }
-    //}
-
     pub fn send<M>(&self, msg: M)
     where
         A: Handler<M>,

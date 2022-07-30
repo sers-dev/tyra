@@ -16,9 +16,8 @@ use std::sync::{Arc, RwLock};
 
 /// Used to create [Actor]s in the [ActorSystem]
 ///
-/// Each builder keeps a clone-safe storage of already created Actors.
+/// Each builder has access to all `Mailbox<A>` objects within the `ActorSystem` and is able to provide a copy to an existing `ActorRef<A>` if the address is already in use
 ///
-/// In case the same `ActorAddress` is used multiple times with the same builder for an already running actor, it will simply return the `ActorWrapper<A>` without creating the actor a second time.
 /// See [.spawn()](#method.spawn) for a detailed explanation
 #[derive(Clone)]
 pub struct ActorBuilder<A>
@@ -92,7 +91,7 @@ where
     ///
     /// `Some(ActorWrapper<A>)` if the actor is running on the system AND actor was created by the same builder or a clone of it
     ///
-    /// `None` if actor is running on the system AND actor was not created by the same builder or a clone of it
+    /// `None` if actor is running on the system AND it's type is not equal to the expected type of the ActorBuilder
     ///
     pub fn spawn<P>(&self, name: impl Into<String>, props: P) -> Option<ActorWrapper<A>>
     where

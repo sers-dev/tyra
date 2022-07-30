@@ -6,6 +6,14 @@
 - added `BulkActorMessage` and `BulkRouterMessage`
   - all implemented Messages `M` automatically support being sent through a `BulkActorMessage<M>` wrapper
 - env configuration now done with `TYRA` prefix instead of `TYRACTOSAUR`
+- fix serialized message handling
+  - SerializedMessages are now properly sent through the mailbox and will follow same rules as any other message
+  - serialized messages are now handled by the exact same object as any other message instead of a copy
+- reworked `spawn()` behavior of `ActorBuilder`
+  - will now return an `Option<ActorRef>` to the correct actor, even if it was not built by the same `ActorBuilder` beforehand, as long as the type matches
+  - returns None only if the type of the Actor does not match the expected Actor type of the ActorBuilder
+- added `getting_started` example
+- 
 
 # 0.3.0
 
