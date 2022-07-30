@@ -1,5 +1,4 @@
 use std::any::Any;
-use crate::actor::base_actor::BaseActor;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
 use crate::message::envelope::MessageEnvelope;
@@ -7,7 +6,7 @@ use crossbeam_channel::Sender;
 use std::panic::UnwindSafe;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use crate::prelude::SerializedMessage;
+use crate::prelude::{Actor, SerializedMessage};
 
 pub trait BaseMailbox: Send + Sync + UnwindSafe {
     fn send_serialized(&self, _msg: SerializedMessage);
@@ -37,7 +36,7 @@ impl<A> BaseMailbox for Mailbox<A>
 
 impl<A> Clone for Mailbox<A>
 where
-    A: BaseActor + UnwindSafe,
+    A: Actor + UnwindSafe,
 {
     fn clone(&self) -> Self {
         Self {
@@ -50,7 +49,7 @@ where
 
 impl<A> Mailbox<A>
 where
-    A: BaseActor,
+    A: Actor,
 {
     pub fn send<M>(&self, msg: M)
     where

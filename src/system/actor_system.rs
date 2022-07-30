@@ -9,7 +9,6 @@ use crate::system::wakeup_manager::WakeupManager;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use crate::actor::base_actor::BaseActor;
 use crate::prelude::{Actor, Handler};
 
 /// Manages thread pools and actors
@@ -184,7 +183,7 @@ impl ActorSystem {
     /// ```
     pub fn builder<A>(&self) -> ActorBuilder<A>
     where
-        A: BaseActor + Handler<SerializedMessage> + Actor
+        A: Handler<SerializedMessage> + Actor
     {
         ActorBuilder::new(self.clone(), self.state.clone(), self.wakeup_manager.clone())
     }

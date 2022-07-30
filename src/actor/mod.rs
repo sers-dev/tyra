@@ -1,4 +1,3 @@
-pub mod base_actor;
 pub mod actor_address;
 pub mod actor_builder;
 pub mod actor_config;

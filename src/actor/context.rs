@@ -1,7 +1,7 @@
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::system::actor_system::ActorSystem;
 use std::panic::UnwindSafe;
-use crate::actor::base_actor::BaseActor;
+use crate::prelude::Actor;
 
 /// Enables access to [ActorSystem] and [Actor] within [Handler](./trait.Handler.html) implementations
 ///
@@ -9,17 +9,17 @@ use crate::actor::base_actor::BaseActor;
 pub struct ActorContext<A>
 where
     Self: Send + Sync,
-    A: BaseActor + 'static,
+    A: Actor + 'static,
 {
     pub actor_ref: ActorWrapper<A>,
     pub system: ActorSystem,
 }
 
-impl<A> UnwindSafe for ActorContext<A> where A: BaseActor + 'static {}
+impl<A> UnwindSafe for ActorContext<A> where A: Actor + 'static {}
 
 impl<A> Clone for ActorContext<A>
 where
-    A: BaseActor + 'static,
+    A: Actor + 'static,
 {
     fn clone(&self) -> Self {
         Self {

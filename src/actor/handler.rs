@@ -1,5 +1,4 @@
 use crate::actor::actor::Actor;
-use crate::actor::base_actor::BaseActor;
 use crate::actor::context::ActorContext;
 use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
@@ -28,7 +27,7 @@ use crate::prelude::{BulkActorMessage, SerializedMessage};
 /// ```
 pub trait Handler<M: ?Sized>
 where
-    Self: BaseActor + Sized,
+    Self: Actor + Sized,
     M: ActorMessage,
 {
     fn handle(&mut self, msg: M, context: &ActorContext<Self>);
@@ -36,25 +35,25 @@ where
 
 impl<A> Handler<ActorStopMessage> for A
 where
-    A: BaseActor + Sized,
+    A: Actor + Sized,
 {
     fn handle(&mut self, _msg: ActorStopMessage, context: &ActorContext<A>) {
-        self.actor_stop(context);
+        self.on_actor_stop(context);
     }
 }
 
 impl<A> Handler<SystemStopMessage> for A
 where
-    A: BaseActor + Sized,
+    A: Actor + Sized,
 {
     fn handle(&mut self, _msg: SystemStopMessage, context: &ActorContext<A>) {
-        self.system_stop(context);
+        self.on_system_stop(context);
     }
 }
 
 impl<M, A> Handler<BulkActorMessage<M>> for A
 where
-    Self: BaseActor + Sized,
+    Self: Actor + Sized,
     A: Handler<M>,
     M: ActorMessage
 {
@@ -67,7 +66,7 @@ where
 
 impl<A> Handler<SerializedMessage> for A
     where
-        A: BaseActor + Sized + Actor,
+        A: Actor + Sized + Actor,
 {
     fn handle(&mut self, msg: SerializedMessage, context: &ActorContext<A>) {
         self.handle_serialized_message(msg, context);
