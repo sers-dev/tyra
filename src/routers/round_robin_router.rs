@@ -11,7 +11,7 @@ use crate::routers::router_message::RouterMessage;
 
 pub struct RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
     route_index: usize,
     route_to: Vec<ActorWrapper<A>>,
@@ -93,7 +93,7 @@ where
 
 impl<A> RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
     pub fn new() -> Self {
         Self {
@@ -104,11 +104,11 @@ where
     }
 }
 
-impl<A> Actor for RoundRobinRouter<A> where A: Actor + 'static {}
+impl<A> Actor for RoundRobinRouter<A> where A: Actor {}
 
 impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
     fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) {
         self.route_to.push(msg.actor);
@@ -118,7 +118,7 @@ where
 
 impl<A> Handler<RemoveActorMessage<A>> for RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
     fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) {
         if let Some(pos) = self

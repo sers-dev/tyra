@@ -5,18 +5,18 @@ use crate::prelude::Actor;
 /// Removes an Actor from the Router
 pub struct RemoveActorMessage<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
     pub actor: ActorWrapper<A>,
 }
 
 impl<A> RemoveActorMessage<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
     pub fn new(actor: ActorWrapper<A>) -> Self {
         Self { actor }
     }
 }
 
-impl<A> ActorMessage for RemoveActorMessage<A> where A: Actor + 'static {}
+impl<A> ActorMessage for RemoveActorMessage<A> where A: Actor {}

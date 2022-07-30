@@ -10,14 +10,14 @@ use std::panic::UnwindSafe;
 /// Wrapper used to interact with [Actor]
 pub struct ActorWrapper<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
     mailbox: Mailbox<A>,
     address: ActorAddress,
     wakeup_manager: WakeupManager,
 }
 
-impl<A> UnwindSafe for ActorWrapper<A> where A: Actor + 'static {}
+impl<A> UnwindSafe for ActorWrapper<A> where A: Actor {}
 
 impl<A> ActorWrapper<A>
 where
