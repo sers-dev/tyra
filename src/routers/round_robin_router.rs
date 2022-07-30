@@ -38,7 +38,7 @@ where
 ///
 /// // define actor
 /// struct HelloWorld {}
-/// impl Actor for HelloWorld {}
+/// impl ActorMessageDeserializer for HelloWorld {}
 ///
 /// // setup required Factory
 /// struct HelloWorldFactory {}
