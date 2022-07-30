@@ -17,6 +17,7 @@ where
     wakeup_manager: WakeupManager,
 }
 
+
 impl<A> UnwindSafe for ActorWrapper<A> where A: Actor {}
 
 impl<A> ActorWrapper<A>

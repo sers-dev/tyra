@@ -1,6 +1,5 @@
 use crate::actor::context::ActorContext;
 use crate::prelude::Actor;
-use std::panic::UnwindSafe;
 
 /// [Actor] can only be created from a Factory
 ///
@@ -28,7 +27,7 @@ use std::panic::UnwindSafe;
 /// ```
 pub trait ActorFactory<A>
 where
-    A: Actor + UnwindSafe + 'static,
+    A: Actor + 'static,
 {
     /// internally used to create the Actual Actor
     ///

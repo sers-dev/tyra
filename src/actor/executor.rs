@@ -13,7 +13,7 @@ use crate::message::system_stop_message::SystemStopMessage;
 use crate::prelude::Actor;
 use crate::system::actor_system::ActorSystem;
 use crossbeam_channel::Receiver;
-use std::panic::{catch_unwind, AssertUnwindSafe, UnwindSafe};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
@@ -45,20 +45,20 @@ where
 
 unsafe impl<A, P> Send for Executor<A, P>
 where
-    A: UnwindSafe + 'static + Actor,
+    A: Actor + 'static,
     P: ActorFactory<A>,
 {
 }
 unsafe impl<A, P> Sync for Executor<A, P>
 where
-    A: UnwindSafe + 'static + Actor,
+    A: Actor + 'static,
     P: ActorFactory<A>,
 {
 }
 
 impl<A, P> ExecutorTrait for Executor<A, P>
 where
-    A: UnwindSafe + 'static + Actor,
+    A: Actor + 'static,
     P: ActorFactory<A>,
 {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {

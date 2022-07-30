@@ -34,7 +34,7 @@ where
 
 impl<A> Clone for Mailbox<A>
 where
-    A: Actor + UnwindSafe,
+    A: Actor,
 {
     fn clone(&self) -> Self {
         Self {

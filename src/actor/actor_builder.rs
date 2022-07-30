@@ -11,7 +11,6 @@ use crate::system::system_state::SystemState;
 use crate::system::wakeup_manager::WakeupManager;
 use crossbeam_channel::{bounded, unbounded};
 use dashmap::DashMap;
-use std::panic::UnwindSafe;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, RwLock};
 
@@ -24,7 +23,7 @@ use std::sync::{Arc, RwLock};
 #[derive(Clone)]
 pub struct ActorBuilder<A>
 where
-    A: UnwindSafe + 'static + Actor,
+    A: Actor + 'static,
 {
     existing: Arc<DashMap<ActorAddress, ActorWrapper<A>>>,
     system: ActorSystem,
@@ -35,7 +34,7 @@ where
 
 impl<A> ActorBuilder<A>
 where
-    A: UnwindSafe + 'static + Handler<SerializedMessage> + Actor,
+    A: Actor + Handler<SerializedMessage> + 'static,
 {
     /// This is called through [ActorSystem.builder](../prelude/struct.ActorSystem.html#method.builder)
     pub fn new(
