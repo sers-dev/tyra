@@ -1,9 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyra::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig,
-};
+use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorMessageDeserializer};
 
 #[derive(Clone)]
 struct TestMsg {}
@@ -15,12 +13,9 @@ struct StopActor {
     ctx: ActorContext<Self>,
 }
 
-impl Actor for StopActor {
-    fn pre_start(&mut self) {
-        println!("PRE START")
-    }
-    fn post_stop(&mut self) {
-        self.ctx.system.stop(Duration::from_secs(1));
+impl ActorMessageDeserializer for StopActor {
+    fn post_stop(&mut self, context: &ActorContext<Self>) {
+        context.system.stop(Duration::from_secs(1));
         println!("POST STOP");
     }
 }

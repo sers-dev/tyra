@@ -1,8 +1,6 @@
 use std::process::exit;
 use std::time::Duration;
-use tyra::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig,
-};
+use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorMessageDeserializer};
 
 #[derive(Clone)]
 struct ErrMsg {
@@ -17,7 +15,7 @@ struct ErrActor {
     counter: usize,
 }
 
-impl Actor for ErrActor {}
+impl ActorMessageDeserializer for ErrActor {}
 
 impl Handler<ErrMsg> for ErrActor {
     fn handle(&mut self, msg: ErrMsg, _context: &ActorContext<Self>) {

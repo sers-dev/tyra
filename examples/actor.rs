@@ -1,8 +1,6 @@
 use std::process::exit;
 use std::time::Duration;
-use tyra::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig,
-};
+use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorMessageDeserializer};
 
 struct MessageA {
     text: String,
@@ -25,7 +23,7 @@ struct HelloWorld {
     count: usize,
 }
 
-impl Actor for HelloWorld {}
+impl ActorMessageDeserializer for HelloWorld {}
 
 struct HelloWorldFactory {
     text: String,

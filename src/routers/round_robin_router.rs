@@ -1,11 +1,10 @@
 use std::fmt::Debug;
-use crate::actor::actor::Actor;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
-use crate::prelude::BulkActorMessage;
+use crate::prelude::{ActorMessageDeserializer, BulkActorMessage};
 use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
 use crate::routers::router_message::RouterMessage;
@@ -14,7 +13,7 @@ use crate::routers::bulk_router_message::BulkRouterMessage;
 
 pub struct RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: ActorMessageDeserializer + 'static,
 {
     context: ActorContext<Self>,
     route_index: usize,
@@ -88,7 +87,7 @@ impl RoundRobinRouterFactory {
 
 impl<A> ActorFactory<RoundRobinRouter<A>> for RoundRobinRouterFactory
 where
-    A: Actor + 'static,
+    A: ActorMessageDeserializer + 'static,
 {
     fn new_actor(&self, context: ActorContext<RoundRobinRouter<A>>) -> RoundRobinRouter<A> {
         RoundRobinRouter::new(context)
@@ -97,7 +96,7 @@ where
 
 impl<A> RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: ActorMessageDeserializer + 'static,
 {
     pub fn new(context: ActorContext<Self>) -> Self {
         Self {
@@ -109,18 +108,15 @@ where
     }
 }
 
-impl<A> Actor for RoundRobinRouter<A>
+impl<A> ActorMessageDeserializer for RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: ActorMessageDeserializer + 'static,
 {
-    fn on_system_stop(&mut self, _context: &ActorContext<RoundRobinRouter<A>>) {
-        self.context.actor_ref.stop();
-    }
 }
 
 impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: ActorMessageDeserializer + 'static,
 {
     fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) {
         self.route_to.push(msg.actor);
@@ -130,7 +126,7 @@ where
 
 impl<A> Handler<RemoveActorMessage<A>> for RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: ActorMessageDeserializer + 'static,
 {
     fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) {
         if let Some(pos) = self
@@ -145,7 +141,7 @@ where
 
 impl<A, M> Handler<RouterMessage<M>> for RoundRobinRouter<A>
 where
-    A: Actor + Handler<M> + 'static,
+    A: ActorMessageDeserializer + Handler<M> + 'static,
     M: ActorMessage + 'static,
 {
     fn handle(&mut self, msg: RouterMessage<M>, _context: &ActorContext<Self>) {
@@ -165,8 +161,8 @@ where
 
 impl<A, M> Handler<BulkRouterMessage<M>> for RoundRobinRouter<A>
     where
-        A: Actor + Handler<BulkActorMessage<M>> + 'static,
-        M: ActorMessage + 'static + Debug,
+        A: ActorMessageDeserializer + Handler<BulkActorMessage<M>> + 'static,
+        M: ActorMessage + 'static,
 {
     fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) {
         if !self.can_route {

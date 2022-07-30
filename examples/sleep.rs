@@ -1,9 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyra::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig,
-};
+use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorMessageDeserializer};
 
 #[derive(Clone)]
 struct SleepMsg {
@@ -18,7 +16,7 @@ struct SleepActor {
     counter: usize,
 }
 
-impl Actor for SleepActor {}
+impl ActorMessageDeserializer for SleepActor {}
 
 impl Handler<SleepMsg> for SleepActor {
     fn handle(&mut self, _msg: SleepMsg, _context: &ActorContext<Self>) {
