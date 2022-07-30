@@ -19,7 +19,6 @@ struct RemoteActor {
 impl Actor for RemoteActor {
     fn handle_serialized_message(&mut self, msg: SerializedMessage, context: &ActorContext<Self>) {
         let decoded :TestMsg = bincode::deserialize(&msg.content).unwrap();
-        //let ctx :&ActorContext<Self> = context;
         context.actor_ref.send(decoded);
     }
     //fn pre_start(&mut self, _context: &ActorContext<Self>) {

@@ -11,7 +11,6 @@ pub mod handler;
 pub mod mailbox;
 
 pub mod prelude {
-    pub use crate::actor::base_actor::BaseActor;
     pub use crate::actor::actor_config::RestartPolicy;
     pub use crate::actor::actor_wrapper::ActorWrapper;
     pub use crate::actor::actor_builder::ActorBuilder;

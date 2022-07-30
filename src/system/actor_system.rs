@@ -118,16 +118,17 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyra::prelude::{TyraConfig, ActorSystem, BaseActor, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorMessage};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorMessage};
     ///
     /// struct TestActor {}
     ///
     /// struct HelloWorld {}
     /// impl ActorMessage for HelloWorld {}
     /// impl Actor for TestActor {
-    ///     fn handle_serialized_message(&mut self, _msg: SerializedMessage, context: &ActorContext<Self>) where Self: BaseActor + Sized + 'static {
+    ///     fn handle_serialized_message(&mut self, _msg: SerializedMessage, context: &ActorContext<Self>) {
     ///          context.actor_ref.send(HelloWorld{});
     ///     }
+    ///
     /// }
     ///
     /// impl Handler<HelloWorld> for TestActor {
@@ -161,7 +162,7 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyra::prelude::{TyraConfig, ActorSystem, BaseActor, ActorFactory, ActorContext, SerializedMessage, Handler, Actor};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor};
     ///
     /// struct TestActor {}
     ///

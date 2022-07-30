@@ -12,10 +12,10 @@ use crate::prelude::{BulkActorMessage, SerializedMessage};
 /// Basic usage:
 ///
 /// ```rust
-/// use tyra::prelude::{TyraConfig, ActorSystem, BaseActor, ActorFactory, ActorContext, SerializedMessage, ActorMessage, Handler};
+/// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, ActorMessage, Handler, Actor};
 ///
 /// struct TestActor {}
-/// impl BaseActor for TestActor {}
+/// impl Actor for TestActor {}
 ///
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
@@ -38,7 +38,7 @@ where
     A: BaseActor + Sized,
 {
     fn handle(&mut self, _msg: ActorStopMessage, context: &ActorContext<A>) {
-        self.on_actor_stop(context);
+        self.actor_stop(context);
     }
 }
 
@@ -47,7 +47,7 @@ where
     A: BaseActor + Sized,
 {
     fn handle(&mut self, _msg: SystemStopMessage, context: &ActorContext<A>) {
-        self.on_system_stop(context);
+        self.system_stop(context);
     }
 }
 
@@ -77,58 +77,45 @@ impl<A> Handler<SerializedMessage> for A
 impl<A> BaseActor for A
     where
         A: Actor {
-    fn on_actor_stop(&mut self, context: &ActorContext<Self>) where Self: BaseActor + Sized {
-        self.on_actor_stop_int(context);
+    fn actor_stop(&mut self, context: &ActorContext<Self>) where Self: BaseActor + Sized {
+        self.on_actor_stop(context);
     }
 
-    fn on_system_stop(&mut self, context: &ActorContext<Self>) where Self: BaseActor + Sized {
-        self.on_system_stop_int(context);
+    fn system_stop(&mut self, context: &ActorContext<Self>) where Self: BaseActor + Sized {
+        self.on_system_stop(context);
     }
 }
 
-pub trait Actor: BaseActor
+pub trait Actor: BaseActor + Sized
 {
 
     fn handle_serialized_message(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>)
-        where Self: BaseActor + Sized + 'static {
+    {
         println!("ASDF")
     }
 
-
-    fn handle_serialized_message_old<A>(&mut self, _msg: SerializedMessage, _context: &ActorContext<A>)
-    where A: BaseActor + Sized {
-        println!("ASDF")
-    }
 
     /// executed before the first message is handled
     ///
     /// re-executed after actor restart before first message is handled
     fn pre_start(&mut self, _context: &ActorContext<Self>)
-    where
-        Self: BaseActor + Sized
     {
         println!("PRE_START")
     }
 
     fn post_stop(&mut self, _context: &ActorContext<Self>)
-    where
-        Self: BaseActor + Sized
     {
         println!("POST_STOP")
 
     }
 
-    fn on_actor_stop_int(&mut self, _context: &ActorContext<Self>)
-        where
-            Self: BaseActor + Sized
+    fn on_actor_stop(&mut self, _context: &ActorContext<Self>)
     {
         println!("ON_STOP ActorMessageDeserializer")
 
     }
 
-    fn on_system_stop_int(&mut self, context: &ActorContext<Self>)
-        where
-            Self: BaseActor + Sized
+    fn on_system_stop(&mut self, context: &ActorContext<Self>)
     {
         println!("ON_SYS_STOP ActorMessageDeserializer");
         context.actor_ref.send(ActorStopMessage{});
@@ -136,13 +123,3 @@ pub trait Actor: BaseActor
     }
 
 }
-//impl<A> ActorMessageDeserializer for A
-//where
-//    A: Actor + Sized,
-//{
-//    fn handle_serialized_message<B>(&mut self, _msg: SerializedMessage, _context: &ActorContext<B>)
-//        where B: Actor + Sized {
-//        println!("NA SERS");
-//    }
-//
-//}

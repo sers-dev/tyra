@@ -18,16 +18,12 @@ use crate::prelude::ActorContext;
 /// Basic usage:
 ///
 /// ```rust
-/// use tyra::prelude::{TyraConfig, ActorSystem, BaseActor, ActorFactory, ActorContext, SerializedMessage, Handler};
+/// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor};
 ///
 /// struct TestActor {}
 ///
-/// impl BaseActor for TestActor {}
+/// impl Actor for TestActor {}
 ///
-/// impl Handler<SerializedMessage> for TestActor {
-///     fn handle(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>) {
-///     }
-/// }
 ///
 /// ```
 ///
@@ -92,7 +88,7 @@ pub trait BaseActor: Send + Sync + UnwindSafe {
     ///
     /// After this is called, the Actor will not accept any more messages, but messages within the mailbox will still be processed
     //fn on_actor_stop(&mut self) {}
-    fn on_actor_stop(&mut self, _context: &ActorContext<Self>)
+    fn actor_stop(&mut self, _context: &ActorContext<Self>)
         where
             Self: BaseActor + Sized
     {
@@ -102,7 +98,7 @@ pub trait BaseActor: Send + Sync + UnwindSafe {
     /// executed when Actor handles internal SystemStopMessage initiated by [ActorSystem.stop](../prelude/struct.ActorSystem.html#method.stop)
     ///
     /// Default behavior sends an `ActorStopMessage` to all actors which will trigger a clean shutdown
-    fn on_system_stop(&mut self, _context: &ActorContext<Self>)
+    fn system_stop(&mut self, _context: &ActorContext<Self>)
         where
             Self: BaseActor + Sized
     {}
