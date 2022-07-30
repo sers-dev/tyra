@@ -1,4 +1,3 @@
-use std::panic::UnwindSafe;
 use crate::actor::actor::Actor;
 use crate::actor::context::ActorContext;
 use crate::message::actor_message::ActorMessage;

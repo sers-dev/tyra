@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::time::{Duration, Instant};
 use serde::{Serialize, Deserialize};
-use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, SerializedMessage, ActorMessageDeserializer, ActorStopMessage};
+use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, SerializedMessage, ActorMessageDeserializer};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 struct TestMsg {
@@ -12,7 +12,6 @@ impl ActorMessage for TestMsg {}
 
 #[derive(Clone)]
 struct RemoteActor {
-    ctx: ActorContext<Self>,
 }
 
 //impl Actor for RemoteActor {}
@@ -41,8 +40,8 @@ impl Handler<TestMsg> for RemoteActor {
 struct RemoteActorFactory {}
 
 impl ActorFactory<RemoteActor> for RemoteActorFactory {
-    fn new_actor(&self, context: ActorContext<RemoteActor>) -> RemoteActor {
-        RemoteActor { ctx: context }
+    fn new_actor(&self, _context: ActorContext<RemoteActor>) -> RemoteActor {
+        RemoteActor { }
     }
 }
 

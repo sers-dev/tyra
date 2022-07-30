@@ -1,7 +1,7 @@
 use crate::actor::actor::Actor;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::handler::Handler;
-use crate::actor::mailbox::{Mailbox, MailTest};
+use crate::actor::mailbox::Mailbox;
 use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::system::wakeup_manager::WakeupManager;

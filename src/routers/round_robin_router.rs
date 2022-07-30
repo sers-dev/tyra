@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
@@ -15,7 +14,6 @@ pub struct RoundRobinRouter<A>
 where
     A: ActorMessageDeserializer + 'static,
 {
-    context: ActorContext<Self>,
     route_index: usize,
     route_to: Vec<ActorWrapper<A>>,
     can_route: bool,
@@ -50,7 +48,7 @@ where
 ///
 /// // setup Message Handler for Actor
 /// impl Handler<FooBar> for HelloWorld {
-///     fn handle(&mut self, msg: FooBar, context: &ActorContext<Self>) {
+///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) {
 ///
 ///     }
 ///
@@ -89,8 +87,8 @@ impl<A> ActorFactory<RoundRobinRouter<A>> for RoundRobinRouterFactory
 where
     A: ActorMessageDeserializer + 'static,
 {
-    fn new_actor(&self, context: ActorContext<RoundRobinRouter<A>>) -> RoundRobinRouter<A> {
-        RoundRobinRouter::new(context)
+    fn new_actor(&self, _context: ActorContext<RoundRobinRouter<A>>) -> RoundRobinRouter<A> {
+        RoundRobinRouter::new()
     }
 }
 
@@ -98,9 +96,8 @@ impl<A> RoundRobinRouter<A>
 where
     A: ActorMessageDeserializer + 'static,
 {
-    pub fn new(context: ActorContext<Self>) -> Self {
+    pub fn new() -> Self {
         Self {
-            context,
             route_index: 0,
             route_to: Vec::new(),
             can_route: false,

@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorWrapper, ActorMessageDeserializer};
+use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorWrapper, ActorMessageDeserializer};
 use tyra::router::{AddActorMessage, RoundRobinRouterFactory, RouterMessage};
 
 struct MessageA {}
@@ -17,7 +17,6 @@ struct Start {}
 impl ActorMessage for Start {}
 
 struct Benchmark {
-    ctx: ActorContext<Self>,
     aggregator: ActorWrapper<Aggregator>,
     total_msgs: usize,
     name: String,
@@ -32,15 +31,14 @@ struct BenchmarkFactory {
 }
 
 impl ActorFactory<Benchmark> for BenchmarkFactory {
-    fn new_actor(&self, context: ActorContext<Benchmark>) -> Benchmark {
-        Benchmark::new(self.total_msgs, self.name.clone(), context, self.aggregator.clone())
+    fn new_actor(&self, _context: ActorContext<Benchmark>) -> Benchmark {
+        Benchmark::new(self.total_msgs, self.name.clone(), self.aggregator.clone())
     }
 }
 
 impl Benchmark {
-    pub fn new(total_msgs: usize, name: String, context: ActorContext<Self>, aggregator: ActorWrapper<Aggregator>) -> Self {
+    pub fn new(total_msgs: usize, name: String, aggregator: ActorWrapper<Aggregator>) -> Self {
         Self {
-            ctx: context,
             aggregator,
             total_msgs,
             name,

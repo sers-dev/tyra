@@ -10,7 +10,6 @@ use crate::actor::mailbox::Mailbox;
 use std::sync::{Arc, RwLock};
 use std::sync::atomic::AtomicBool;
 use crate::actor::actor_address::ActorAddress;
-use crate::actor::context::ActorContext;
 use crate::actor::executor::{Executor, ExecutorTrait};
 use crate::system::wakeup_manager::WakeupManager;
 use crate::system::system_state::SystemState;
@@ -105,13 +104,7 @@ impl<A> ActorBuilder<A>
         };
 
         if self.system_state.is_mailbox_active(&actor_address) {
-            println!("YOU GET A COPY");
             return self.system_state.get_actor_ref(actor_address);
-            if !self.existing.contains_key(&actor_address) {
-                return None
-            }
-            let to_return = self.existing.get(&actor_address).unwrap().value().clone();
-            //return Some(to_return)
         }
 
         let (sender, receiver) = if self.actor_config.mailbox_size == 0 {

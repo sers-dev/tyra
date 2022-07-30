@@ -1,8 +1,8 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{ActorMessageDeserializer, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorWrapper, BulkActorMessage};
-use tyra::router::{AddActorMessage, BulkRouterMessage, RoundRobinRouterFactory, RouterMessage};
+use tyra::prelude::{ActorMessageDeserializer, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorWrapper};
+use tyra::router::{AddActorMessage, BulkRouterMessage, RoundRobinRouterFactory};
 
 struct MessageA {}
 
@@ -17,7 +17,6 @@ struct Start {}
 impl ActorMessage for Start {}
 
 struct Benchmark {
-    ctx: ActorContext<Self>,
     aggregator: ActorWrapper<Aggregator>,
     total_msgs: usize,
     name: String,
@@ -38,9 +37,8 @@ impl ActorFactory<Benchmark> for BenchmarkFactory {
 }
 
 impl Benchmark {
-    pub fn new(total_msgs: usize, name: String, context: ActorContext<Self>, aggregator: ActorWrapper<Aggregator>) -> Self {
+    pub fn new(total_msgs: usize, name: String, _context: ActorContext<Self>, aggregator: ActorWrapper<Aggregator>) -> Self {
         Self {
-            ctx: context,
             aggregator,
             total_msgs,
             name,

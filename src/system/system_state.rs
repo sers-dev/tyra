@@ -1,5 +1,3 @@
-use std::ops::Deref;
-use crate::actor::actor::Actor;
 use crate::actor::actor_address::ActorAddress;
 use crate::message::serialized_message::SerializedMessage;
 use dashmap::DashMap;

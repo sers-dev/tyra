@@ -1,6 +1,6 @@
 use std::process::exit;
 use std::time::Duration;
-use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorMessageDeserializer};
+use tyra::prelude::{ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorMessageDeserializer};
 
 #[derive(Clone)]
 struct ErrMsg {
@@ -11,7 +11,6 @@ impl ActorMessage for ErrMsg {}
 
 #[derive(Clone)]
 struct ErrActor {
-    text: String,
     counter: usize,
 }
 
@@ -28,14 +27,12 @@ impl Handler<ErrMsg> for ErrActor {
 }
 
 struct ErrActorFactory {
-    text: String,
     counter: usize,
 }
 
 impl ActorFactory<ErrActor> for ErrActorFactory {
     fn new_actor(&self, _context: ActorContext<ErrActor>) -> ErrActor {
         ErrActor {
-            text: self.text.clone(),
             counter: self.counter,
         }
     }
@@ -46,7 +43,6 @@ fn main() {
     let actor_system = ActorSystem::new(actor_config);
 
     let hw = ErrActorFactory {
-        text: String::from("sers"),
         counter: 0,
     };
     let x = actor_system
