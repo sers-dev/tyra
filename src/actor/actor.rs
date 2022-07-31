@@ -1,5 +1,6 @@
-use crate::prelude::{ActorContext, ActorStopMessage, SerializedMessage};
+use crate::prelude::{ActorContext, SerializedMessage};
 use std::panic::UnwindSafe;
+use crate::message::actor_stop_message::ActorStopMessage;
 
 /// Core trait to define Actors
 ///

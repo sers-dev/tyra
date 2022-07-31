@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
+use crate::system::internal_actor_manager::InternalActorManager;
 
 #[derive(Clone)]
 pub struct SystemState {
@@ -90,7 +91,7 @@ impl SystemState {
         self.mailboxes.insert(address, Arc::new(mailbox));
     }
 
-    pub fn get_actor_ref<A>(&self, address: ActorAddress) -> Option<ActorWrapper<A>>
+    pub fn get_actor_ref<A>(&self, address: ActorAddress, internal_actor_manager: InternalActorManager) -> Option<ActorWrapper<A>>
     where
         A: Handler<SerializedMessage> + 'static,
     {
@@ -100,6 +101,7 @@ impl SystemState {
                 m.clone(),
                 address,
                 self.wakeup_manager.clone(),
+                internal_actor_manager
             )),
             None => None,
         };

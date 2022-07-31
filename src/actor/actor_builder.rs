@@ -13,6 +13,7 @@ use crossbeam_channel::{bounded, unbounded};
 use dashmap::DashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, RwLock};
+use crate::system::internal_actor_manager::InternalActorManager;
 
 /// Used to create [Actor]s in the [ActorSystem]
 ///
@@ -28,6 +29,7 @@ where
     system: ActorSystem,
     system_state: SystemState,
     wakeup_manager: WakeupManager,
+    internal_actor_manager: InternalActorManager,
     actor_config: ActorConfig,
 }
 
@@ -40,6 +42,7 @@ where
         system: ActorSystem,
         system_state: SystemState,
         wakeup_manager: WakeupManager,
+        internal_actor_manager: InternalActorManager,
     ) -> ActorBuilder<A> {
         let config = system.get_config();
 
@@ -55,6 +58,7 @@ where
             system,
             system_state,
             wakeup_manager,
+            internal_actor_manager,
             actor_config,
         }
     }
@@ -105,7 +109,7 @@ where
         };
 
         if self.system_state.is_mailbox_active(&actor_address) {
-            return self.system_state.get_actor_ref(actor_address);
+            return self.system_state.get_actor_ref(actor_address, self.internal_actor_manager.clone());
         }
 
         let (sender, receiver) = if self.actor_config.mailbox_size == 0 {
@@ -124,6 +128,7 @@ where
             mailbox.clone(),
             actor_address.clone(),
             self.wakeup_manager.clone(),
+            self.internal_actor_manager.clone(),
         );
 
         let actor_handler = Executor::new(

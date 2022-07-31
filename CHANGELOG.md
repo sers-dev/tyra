@@ -1,3 +1,9 @@
+# WIP 0.5.0
+
+- added `send_after` to `ActorWrapper<A>` to allow sending of delayed messages
+  - delayed messages are handled through system internal DelayActor
+  - system internal Actors are running on the `tyra` Threadpool. It is not recommended to re-use or re-configure that thread pool in any way
+
 # 0.4.0
 
 - added `serialize` example

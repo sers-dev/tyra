@@ -10,6 +10,7 @@ use crate::system::wakeup_manager::WakeupManager;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
+use crate::system::internal_actor_manager::InternalActorManager;
 
 /// Manages thread pools and actors
 #[derive(Clone)]
@@ -19,6 +20,7 @@ pub struct ActorSystem {
     wakeup_manager: WakeupManager,
     name: String,
     config: Arc<TyraConfig>,
+    internal_actor_manager: InternalActorManager
 }
 
 impl ActorSystem {
@@ -54,13 +56,18 @@ impl ActorSystem {
         let w = wakeup_manager.clone();
         std::thread::spawn(move || w.manage(s, t));
 
-        ActorSystem {
+        let mut system = ActorSystem {
             state,
             thread_pool_manager,
             wakeup_manager,
             name: config.general.name.clone(),
             config: Arc::new(config.clone()),
-        }
+            internal_actor_manager: InternalActorManager::new(),
+        };
+
+        system.internal_actor_manager.init(system.clone());
+
+        system
     }
 
     /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyra/blob/master/src/config/default.toml)
@@ -185,10 +192,12 @@ impl ActorSystem {
     where
         A: Handler<SerializedMessage> + Actor,
     {
+
         ActorBuilder::new(
             self.clone(),
             self.state.clone(),
             self.wakeup_manager.clone(),
+            self.internal_actor_manager.clone(),
         )
     }
 
@@ -279,4 +288,5 @@ impl ActorSystem {
     pub fn get_name(&self) -> &str {
         &self.name
     }
+
 }
