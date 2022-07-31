@@ -1,4 +1,4 @@
-# WIP 0.5.0
+# 0.5.0
 
 - added `send_after` to `ActorWrapper<A>` to allow sending of delayed messages
   - delayed messages are handled through system internal DelayActor
