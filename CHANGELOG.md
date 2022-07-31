@@ -1,4 +1,4 @@
-# WIP 0.4.0
+# 0.4.0
 
 - added `serialize` example
 - added `router_benchmark` example
@@ -13,7 +13,6 @@
   - will now return an `Option<ActorRef>` to the correct actor, even if it was not built by the same `ActorBuilder` beforehand, as long as the type matches
   - returns None only if the type of the Actor does not match the expected Actor type of the ActorBuilder
 - added `getting_started` example
-- 
 
 # 0.3.0
 

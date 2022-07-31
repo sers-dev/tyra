@@ -110,7 +110,7 @@ impl ActorSystem {
     ///
     /// # Important Note
     ///
-    /// This function will call the [ActorTrait.handle_serialized_message](../prelude/trait.Actor.html#method.handle_serialized_message) on the same thread that this function is called
+    /// This function send a SerializedMessage to the Actor, which is implemented to call the [ActorTrait.handle_serialized_message](../prelude/trait.Actor.html#method.handle_serialized_message)
     ///
     /// # Examples
     ///
