@@ -1,6 +1,8 @@
-use crate::actor::actor::Actor;
 use crate::actor::actor_address::ActorAddress;
+use crate::actor::mailbox::{BaseMailbox, Mailbox};
 use crate::message::serialized_message::SerializedMessage;
+use crate::prelude::{ActorWrapper, Handler};
+use crate::system::wakeup_manager::WakeupManager;
 use dashmap::DashMap;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -9,7 +11,8 @@ use std::time::{Duration, Instant};
 
 #[derive(Clone)]
 pub struct SystemState {
-    actors: Arc<DashMap<ActorAddress, Arc<dyn Actor>>>,
+    mailboxes: Arc<DashMap<ActorAddress, Arc<dyn BaseMailbox>>>,
+    wakeup_manager: WakeupManager,
     total_actor_count: Arc<AtomicUsize>,
     is_stopped: Arc<AtomicBool>,
     is_stopping: Arc<AtomicBool>,
@@ -17,9 +20,10 @@ pub struct SystemState {
 }
 
 impl SystemState {
-    pub fn new() -> Self {
+    pub fn new(wakeup_manager: WakeupManager) -> Self {
         Self {
-            actors: Arc::new(DashMap::new()),
+            mailboxes: Arc::new(DashMap::new()),
+            wakeup_manager,
             total_actor_count: Arc::new(AtomicUsize::new(0)),
             is_stopped: Arc::new(AtomicBool::new(false)),
             is_stopping: Arc::new(AtomicBool::new(false)),
@@ -41,10 +45,10 @@ impl SystemState {
         while self.get_actor_count() != 0 {
             if now.elapsed() >= timeout {
                 self.is_force_stopped.store(true, Ordering::Relaxed);
-                self.actors.clear();
+                self.mailboxes.clear();
                 break;
             }
-            sleep(timeout / 10);
+            sleep(Duration::from_millis(1));
         }
         self.is_stopped.store(true, Ordering::Relaxed);
     }
@@ -66,24 +70,42 @@ impl SystemState {
     }
 
     pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
-        let target = self.actors.get(address);
+        let target = self.mailboxes.get(address);
         if target.is_some() {
             let target = target.unwrap();
-            target.handle_serialized_message(msg);
+            target.send_serialized(msg);
         }
     }
 
-    pub fn remove_actor(&self, address: &ActorAddress) {
+    pub fn remove_mailbox(&self, address: &ActorAddress) {
         self.total_actor_count.fetch_sub(1, Ordering::Relaxed);
-        self.actors.remove(address);
+        self.mailboxes.remove(address);
     }
 
-    pub fn add_actor(&self, address: ActorAddress, actor: Arc<dyn Actor>) {
+    pub fn add_mailbox<A>(&self, address: ActorAddress, mailbox: Mailbox<A>)
+    where
+        A: Handler<SerializedMessage> + 'static,
+    {
         self.total_actor_count.fetch_add(1, Ordering::Relaxed);
-        self.actors.insert(address, actor);
+        self.mailboxes.insert(address, Arc::new(mailbox));
     }
 
-    pub fn is_actor_active(&self, address: &ActorAddress) -> bool {
-        self.actors.contains_key(address)
+    pub fn get_actor_ref<A>(&self, address: ActorAddress) -> Option<ActorWrapper<A>>
+    where
+        A: Handler<SerializedMessage> + 'static,
+    {
+        let mb = self.mailboxes.get(&address).unwrap().value().clone();
+        return match mb.as_any().downcast_ref::<Mailbox<A>>() {
+            Some(m) => Some(ActorWrapper::new(
+                m.clone(),
+                address,
+                self.wakeup_manager.clone(),
+            )),
+            None => None,
+        };
+    }
+
+    pub fn is_mailbox_active(&self, address: &ActorAddress) -> bool {
+        self.mailboxes.contains_key(address)
     }
 }

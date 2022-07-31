@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::time::Duration;
 use tyra::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig,
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
 };
 
 struct MessageA {
@@ -71,7 +71,8 @@ fn main() {
         .builder()
         .set_mailbox_size(7)
         .set_pool_name("aye")
-        .spawn("hello-world", hw).unwrap();
+        .spawn("hello-world", hw)
+        .unwrap();
     x.send(MessageA {
         text: String::from("sers+1"),
     });

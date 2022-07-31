@@ -2,7 +2,7 @@ use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tyra::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig,
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
 };
 
 struct MessageA {}
@@ -10,7 +10,6 @@ struct MessageA {}
 impl ActorMessage for MessageA {}
 
 struct Benchmark {
-    ctx: ActorContext<Self>,
     total_msgs: usize,
     name: String,
     count: usize,
@@ -29,9 +28,8 @@ impl ActorFactory<Benchmark> for BenchmarkFactory {
 }
 
 impl Benchmark {
-    pub fn new(total_msgs: usize, name: String, context: ActorContext<Self>) -> Self {
+    pub fn new(total_msgs: usize, name: String, _context: ActorContext<Self>) -> Self {
         Self {
-            ctx: context,
             total_msgs,
             name,
             count: 0,
@@ -40,11 +38,7 @@ impl Benchmark {
     }
 }
 
-impl Actor for Benchmark {
-    fn on_system_stop(&mut self) {
-        self.ctx.actor_ref.stop();
-    }
-}
+impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, _msg: MessageA, context: &ActorContext<Self>) {
@@ -80,10 +74,14 @@ fn main() {
 
     let actor = actor_system
         .builder()
-        .spawn("benchmark-single-actor", BenchmarkFactory {
-            name: String::from("benchmark"),
-            total_msgs: message_count as usize,
-        }).unwrap();
+        .spawn(
+            "benchmark-single-actor",
+            BenchmarkFactory {
+                name: String::from("benchmark"),
+                total_msgs: message_count as usize,
+            },
+        )
+        .unwrap();
     println!("Actors have been created");
     let start = Instant::now();
 

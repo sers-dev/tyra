@@ -2,11 +2,9 @@ use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
 use tyra::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig,
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
 };
-use tyra::router::{
-    AddActorMessage, RemoveActorMessage, RoundRobinRouterFactory, RouterMessage,
-};
+use tyra::router::{AddActorMessage, RemoveActorMessage, RoundRobinRouterFactory, RouterMessage};
 
 struct MessageA {}
 impl ActorMessage for MessageA {}
@@ -39,15 +37,20 @@ fn main() {
     let x = actor_system
         .builder()
         .set_mailbox_size(7)
-        .spawn("hello-world-1", hw.clone()).unwrap();
+        .spawn("hello-world-1", hw.clone())
+        .unwrap();
 
     let y = actor_system
         .builder()
         .set_mailbox_size(7)
-        .spawn("hello-world-2", hw).unwrap();
+        .spawn("hello-world-2", hw)
+        .unwrap();
 
     let router_factory = RoundRobinRouterFactory::new();
-    let router = actor_system.builder().spawn("hello-router", router_factory).unwrap();
+    let router = actor_system
+        .builder()
+        .spawn("hello-router", router_factory)
+        .unwrap();
 
     router.send(AddActorMessage::new(x));
     router.send(AddActorMessage::new(y.clone()));

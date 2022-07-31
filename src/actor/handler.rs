@@ -3,7 +3,7 @@ use crate::actor::context::ActorContext;
 use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::message::system_stop_message::SystemStopMessage;
-use crate::prelude::BulkActorMessage;
+use crate::prelude::{BulkActorMessage, SerializedMessage};
 
 /// Defines which [ActorMessage] is supported per [Actor]
 ///
@@ -12,7 +12,7 @@ use crate::prelude::BulkActorMessage;
 /// Basic usage:
 ///
 /// ```rust
-/// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage, ActorMessage, Handler};
+/// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, ActorMessage, Handler, Actor};
 ///
 /// struct TestActor {}
 /// impl Actor for TestActor {}
@@ -37,8 +37,8 @@ impl<A> Handler<ActorStopMessage> for A
 where
     A: Actor + Sized,
 {
-    fn handle(&mut self, _msg: ActorStopMessage, _context: &ActorContext<A>) {
-        self.on_actor_stop();
+    fn handle(&mut self, _msg: ActorStopMessage, context: &ActorContext<A>) {
+        self.on_actor_stop(context);
     }
 }
 
@@ -46,8 +46,8 @@ impl<A> Handler<SystemStopMessage> for A
 where
     A: Actor + Sized,
 {
-    fn handle(&mut self, _msg: SystemStopMessage, _context: &ActorContext<A>) {
-        self.on_system_stop();
+    fn handle(&mut self, _msg: SystemStopMessage, context: &ActorContext<A>) {
+        self.on_system_stop(context);
     }
 }
 
@@ -55,11 +55,20 @@ impl<M, A> Handler<BulkActorMessage<M>> for A
 where
     Self: Actor + Sized,
     A: Handler<M>,
-    M: ActorMessage
+    M: ActorMessage,
 {
     fn handle(&mut self, msg: BulkActorMessage<M>, context: &ActorContext<Self>) {
         for i in msg.data.into_iter() {
             self.handle(i, context);
         }
+    }
+}
+
+impl<A> Handler<SerializedMessage> for A
+where
+    A: Actor + Sized + Actor,
+{
+    fn handle(&mut self, msg: SerializedMessage, context: &ActorContext<A>) {
+        self.handle_serialized_message(msg, context);
     }
 }

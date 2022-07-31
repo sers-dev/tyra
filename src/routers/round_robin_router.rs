@@ -1,22 +1,18 @@
-use std::fmt::Debug;
-use crate::actor::actor::Actor;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
-use crate::prelude::BulkActorMessage;
+use crate::prelude::{Actor, BulkActorMessage};
 use crate::routers::add_actor_message::AddActorMessage;
+use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
 use crate::routers::router_message::RouterMessage;
-use crate::routers::bulk_router_message::BulkRouterMessage;
-
 
 pub struct RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
-    context: ActorContext<Self>,
     route_index: usize,
     route_to: Vec<ActorWrapper<A>>,
     can_route: bool,
@@ -51,7 +47,7 @@ where
 ///
 /// // setup Message Handler for Actor
 /// impl Handler<FooBar> for HelloWorld {
-///     fn handle(&mut self, msg: FooBar, context: &ActorContext<Self>) {
+///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) {
 ///
 ///     }
 ///
@@ -90,18 +86,17 @@ impl<A> ActorFactory<RoundRobinRouter<A>> for RoundRobinRouterFactory
 where
     A: Actor + 'static,
 {
-    fn new_actor(&self, context: ActorContext<RoundRobinRouter<A>>) -> RoundRobinRouter<A> {
-        RoundRobinRouter::new(context)
+    fn new_actor(&self, _context: ActorContext<RoundRobinRouter<A>>) -> RoundRobinRouter<A> {
+        RoundRobinRouter::new()
     }
 }
 
 impl<A> RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
-    pub fn new(context: ActorContext<Self>) -> Self {
+    pub fn new() -> Self {
         Self {
-            context,
             route_index: 0,
             route_to: Vec::new(),
             can_route: false,
@@ -109,18 +104,11 @@ where
     }
 }
 
-impl<A> Actor for RoundRobinRouter<A>
-where
-    A: Actor + 'static,
-{
-    fn on_system_stop(&mut self) {
-        self.context.actor_ref.stop();
-    }
-}
+impl<A> Actor for RoundRobinRouter<A> where A: Actor {}
 
 impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
     fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) {
         self.route_to.push(msg.actor);
@@ -130,7 +118,7 @@ where
 
 impl<A> Handler<RemoveActorMessage<A>> for RoundRobinRouter<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
     fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) {
         if let Some(pos) = self
@@ -164,9 +152,9 @@ where
 }
 
 impl<A, M> Handler<BulkRouterMessage<M>> for RoundRobinRouter<A>
-    where
-        A: Actor + Handler<BulkActorMessage<M>> + 'static,
-        M: ActorMessage + 'static + Debug,
+where
+    A: Actor + Handler<BulkActorMessage<M>> + 'static,
+    M: ActorMessage + 'static,
 {
     fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) {
         if !self.can_route {
@@ -184,9 +172,8 @@ impl<A, M> Handler<BulkRouterMessage<M>> for RoundRobinRouter<A>
             }
 
             let forward_to = self.route_to.get(self.route_index).unwrap();
-            let chunk :Vec<M> = msg.data.drain(0..messages_per_routee).collect();
+            let chunk: Vec<M> = msg.data.drain(0..messages_per_routee).collect();
             forward_to.send(BulkActorMessage::new(chunk));
         }
-
     }
 }

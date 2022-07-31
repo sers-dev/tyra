@@ -1,7 +1,9 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, ActorWrapper};
+use tyra::prelude::{
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, ActorWrapper, Handler, TyraConfig,
+};
 use tyra::router::{AddActorMessage, RoundRobinRouterFactory, RouterMessage};
 
 struct MessageA {}
@@ -17,7 +19,6 @@ struct Start {}
 impl ActorMessage for Start {}
 
 struct Benchmark {
-    ctx: ActorContext<Self>,
     aggregator: ActorWrapper<Aggregator>,
     total_msgs: usize,
     name: String,
@@ -32,15 +33,14 @@ struct BenchmarkFactory {
 }
 
 impl ActorFactory<Benchmark> for BenchmarkFactory {
-    fn new_actor(&self, context: ActorContext<Benchmark>) -> Benchmark {
-        Benchmark::new(self.total_msgs, self.name.clone(), context, self.aggregator.clone())
+    fn new_actor(&self, _context: ActorContext<Benchmark>) -> Benchmark {
+        Benchmark::new(self.total_msgs, self.name.clone(), self.aggregator.clone())
     }
 }
 
 impl Benchmark {
-    pub fn new(total_msgs: usize, name: String, context: ActorContext<Self>, aggregator: ActorWrapper<Aggregator>) -> Self {
+    pub fn new(total_msgs: usize, name: String, aggregator: ActorWrapper<Aggregator>) -> Self {
         Self {
-            ctx: context,
             aggregator,
             total_msgs,
             name,
@@ -50,11 +50,7 @@ impl Benchmark {
     }
 }
 
-impl Actor for Benchmark {
-    fn on_system_stop(&mut self) {
-        self.ctx.actor_ref.stop();
-    }
-}
+impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) {
@@ -101,11 +97,7 @@ impl Aggregator {
     }
 }
 
-impl Actor for Aggregator {
-    fn on_system_stop(&mut self) {
-        self.ctx.actor_ref.stop();
-    }
-}
+impl Actor for Aggregator {}
 
 impl ActorFactory<Aggregator> for AggregatorFactory {
     fn new_actor(&self, context: ActorContext<Aggregator>) -> Aggregator {
@@ -143,7 +135,10 @@ fn main() {
     let actor_count = 7;
 
     let router_factory = RoundRobinRouterFactory::new();
-    let router = actor_system.builder().spawn("benchmark-router", router_factory).unwrap();
+    let router = actor_system
+        .builder()
+        .spawn("benchmark-router", router_factory)
+        .unwrap();
 
     let aggregator = actor_system
         .builder()
@@ -151,25 +146,30 @@ fn main() {
             "aggregator",
             AggregatorFactory {
                 total_actors: actor_count,
-                name: String::from("aggregator")
-            }).unwrap();
+                name: String::from("aggregator"),
+            },
+        )
+        .unwrap();
     for i in 0..actor_count {
         let actor = actor_system
             .builder()
-            .spawn(format!("benchmark-single-actor-{}", i), BenchmarkFactory {
-                name: String::from(format!("benchmark-{}", i)),
-                total_msgs: (message_count.clone() / actor_count.clone()) as usize,
-                aggregator: aggregator.clone(),
-            }).unwrap();
+            .spawn(
+                format!("benchmark-single-actor-{}", i),
+                BenchmarkFactory {
+                    name: String::from(format!("benchmark-{}", i)),
+                    total_msgs: (message_count.clone() / actor_count.clone()) as usize,
+                    aggregator: aggregator.clone(),
+                },
+            )
+            .unwrap();
 
         router.send(AddActorMessage::new(actor));
     }
 
-
     println!("Actors have been created");
     let start = Instant::now();
 
-    aggregator.send(Start{});
+    aggregator.send(Start {});
     for _i in 0..message_count {
         let msg = MessageA {};
         router.send(RouterMessage::new(msg));

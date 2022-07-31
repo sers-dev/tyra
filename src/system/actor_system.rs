@@ -3,13 +3,13 @@ use crate::actor::actor_builder::ActorBuilder;
 use crate::config::pool_config::ThreadPoolConfig;
 use crate::config::tyra_config::{TyraConfig, DEFAULT_POOL};
 use crate::message::serialized_message::SerializedMessage;
+use crate::prelude::{Actor, Handler};
 use crate::system::system_state::SystemState;
 use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use crate::actor::actor::Actor;
 
 /// Manages thread pools and actors
 #[derive(Clone)]
@@ -37,9 +37,9 @@ impl ActorSystem {
     pub fn new(config: TyraConfig) -> Self {
         let thread_pool_config = config.thread_pool.clone();
 
-        let state = SystemState::new();
         let thread_pool_manager = ThreadPoolManager::new();
         let wakeup_manager = WakeupManager::new();
+        let state = SystemState::new(wakeup_manager.clone());
 
         for (key, value) in thread_pool_config.config.iter() {
             thread_pool_manager.add_pool_with_config(key, value.clone());
@@ -117,13 +117,21 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorMessage};
     ///
     /// struct TestActor {}
     ///
+    /// struct HelloWorld {}
+    /// impl ActorMessage for HelloWorld {}
     /// impl Actor for TestActor {
-    ///     fn handle_serialized_message(&self, msg: SerializedMessage) {
-    ///         assert_eq!(0, msg.content.len());
+    ///     fn handle_serialized_message(&mut self, _msg: SerializedMessage, context: &ActorContext<Self>) {
+    ///          context.actor_ref.send(HelloWorld{});
+    ///     }
+    ///
+    /// }
+    ///
+    /// impl Handler<HelloWorld> for TestActor {
+    ///     fn handle(&mut self, _msg: HelloWorld, _context: &ActorContext<Self>) {
     ///     }
     /// }
     ///
@@ -153,15 +161,11 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyra::prelude::{TyraConfig, ActorSystem, Actor, ActorFactory, ActorContext, SerializedMessage};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor};
     ///
     /// struct TestActor {}
     ///
-    /// impl Actor for TestActor {
-    ///     fn handle_serialized_message(&self, msg: SerializedMessage) {
-    ///         assert_eq!(0, msg.content.len());
-    ///     }
-    /// }
+    /// impl Actor for TestActor {}
     ///
     /// struct TestFactory {}
     ///
@@ -179,9 +183,13 @@ impl ActorSystem {
     /// ```
     pub fn builder<A>(&self) -> ActorBuilder<A>
     where
-        A: Actor
+        A: Handler<SerializedMessage> + Actor,
     {
-        ActorBuilder::new(self.clone(), self.state.clone(), self.wakeup_manager.clone())
+        ActorBuilder::new(
+            self.clone(),
+            self.state.clone(),
+            self.wakeup_manager.clone(),
+        )
     }
 
     /// Sends a SystemStopMessage to all running Actors, and wakes them up if necessary.
@@ -229,7 +237,7 @@ impl ActorSystem {
     /// ```
     pub fn await_shutdown(&self) -> i32 {
         while !self.state.is_stopped() {
-            sleep(Duration::from_secs(1));
+            sleep(Duration::from_millis(1));
         }
         self.state.is_force_stopped() as i32
     }

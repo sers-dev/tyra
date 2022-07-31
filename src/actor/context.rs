@@ -9,17 +9,17 @@ use std::panic::UnwindSafe;
 pub struct ActorContext<A>
 where
     Self: Send + Sync,
-    A: Actor + 'static,
+    A: Actor,
 {
     pub actor_ref: ActorWrapper<A>,
     pub system: ActorSystem,
 }
 
-impl<A> UnwindSafe for ActorContext<A> where A: Actor + 'static {}
+impl<A> UnwindSafe for ActorContext<A> where A: Actor {}
 
 impl<A> Clone for ActorContext<A>
 where
-    A: Actor + 'static,
+    A: Actor,
 {
     fn clone(&self) -> Self {
         Self {

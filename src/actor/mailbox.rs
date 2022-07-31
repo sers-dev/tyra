@@ -1,11 +1,17 @@
-use crate::actor::actor::Actor;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
 use crate::message::envelope::MessageEnvelope;
+use crate::prelude::{Actor, SerializedMessage};
 use crossbeam_channel::Sender;
+use std::any::Any;
 use std::panic::UnwindSafe;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+
+pub trait BaseMailbox: Send + Sync + UnwindSafe {
+    fn send_serialized(&self, _msg: SerializedMessage);
+    fn as_any(&self) -> &dyn Any;
+}
 
 pub struct Mailbox<A> {
     pub is_stopped: Arc<AtomicBool>,
@@ -13,9 +19,22 @@ pub struct Mailbox<A> {
     pub msg_in: Sender<MessageEnvelope<A>>,
 }
 
+impl<A> BaseMailbox for Mailbox<A>
+where
+    A: Handler<SerializedMessage> + 'static,
+{
+    fn send_serialized(&self, msg: SerializedMessage) {
+        self.msg_in.send(MessageEnvelope::new(msg)).unwrap();
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 impl<A> Clone for Mailbox<A>
 where
-    A: Actor + UnwindSafe,
+    A: Actor,
 {
     fn clone(&self) -> Self {
         Self {

@@ -2,7 +2,7 @@ use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
 use tyra::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig,
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
 };
 
 #[derive(Clone)]
@@ -11,16 +11,11 @@ struct TestMsg {}
 impl ActorMessage for TestMsg {}
 
 #[derive(Clone)]
-struct StopActor {
-    ctx: ActorContext<Self>,
-}
+struct StopActor {}
 
 impl Actor for StopActor {
-    fn pre_start(&mut self) {
-        println!("PRE START")
-    }
-    fn post_stop(&mut self) {
-        self.ctx.system.stop(Duration::from_secs(1));
+    fn post_stop(&mut self, context: &ActorContext<Self>) {
+        context.system.stop(Duration::from_secs(1));
         println!("POST STOP");
     }
 }
@@ -36,8 +31,8 @@ impl Handler<TestMsg> for StopActor {
 struct StopActorFactory {}
 
 impl ActorFactory<StopActor> for StopActorFactory {
-    fn new_actor(&self, context: ActorContext<StopActor>) -> StopActor {
-        StopActor { ctx: context }
+    fn new_actor(&self, _context: ActorContext<StopActor>) -> StopActor {
+        StopActor {}
     }
 }
 
@@ -49,7 +44,8 @@ fn main() {
     let x = actor_system
         .builder()
         .set_mailbox_size(7)
-        .spawn("hello-world", hw).unwrap();
+        .spawn("hello-world", hw)
+        .unwrap();
     // this is obviously handled, because it's the actor is still running
     x.send(TestMsg {});
     sleep(Duration::from_millis(700));

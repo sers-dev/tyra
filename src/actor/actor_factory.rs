@@ -1,6 +1,5 @@
-use crate::actor::actor::Actor;
 use crate::actor::context::ActorContext;
-use std::panic::UnwindSafe;
+use crate::prelude::Actor;
 
 /// [Actor] can only be created from a Factory
 ///
@@ -12,15 +11,11 @@ use std::panic::UnwindSafe;
 /// Basic usage:
 ///
 /// ```rust
-/// use tyra::prelude::{Actor, SerializedMessage, ActorFactory, ActorContext};
+/// use tyra::prelude::{SerializedMessage, ActorFactory, ActorContext, Handler, Actor};
 ///
 /// struct TestActor {}
 ///
-/// impl Actor for TestActor {
-///     fn handle_serialized_message(&self, msg: SerializedMessage) {
-///         assert_eq!(0, msg.content.len());
-///     }
-/// }
+/// impl Actor for TestActor {}
 ///
 /// struct TestFactory {}
 ///
@@ -32,12 +27,12 @@ use std::panic::UnwindSafe;
 /// ```
 pub trait ActorFactory<A>
 where
-    A: Actor + UnwindSafe + 'static,
+    A: Actor + 'static,
 {
     /// internally used to create the Actual Actor
     ///
     /// `ActorContext<A>` is injected and can optionally be stored within the actor itself.
     /// It can then be used to define clean a behavior for a clean [ActorSystem.stop](../prelude/struct.ActorSystem.html#method.stop)
     /// through [Actor.on_system_stop]
-    fn new_actor(&self, context: ActorContext<A>) -> A;
+    fn new_actor(&self, _context: ActorContext<A>) -> A;
 }

@@ -1,4 +1,3 @@
-use crate::actor::actor::Actor;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_config::{ActorConfig, RestartPolicy};
 use crate::actor::actor_factory::ActorFactory;
@@ -11,9 +10,10 @@ use crate::message::actor_message::ActorMessage;
 use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
 use crate::message::message_type::MessageType;
 use crate::message::system_stop_message::SystemStopMessage;
+use crate::prelude::Actor;
 use crate::system::actor_system::ActorSystem;
 use crossbeam_channel::Receiver;
-use std::panic::{catch_unwind, AssertUnwindSafe, UnwindSafe};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
@@ -45,20 +45,20 @@ where
 
 unsafe impl<A, P> Send for Executor<A, P>
 where
-    A: Actor + UnwindSafe + 'static,
+    A: Actor + 'static,
     P: ActorFactory<A>,
 {
 }
 unsafe impl<A, P> Sync for Executor<A, P>
 where
-    A: Actor + UnwindSafe + 'static,
+    A: Actor + 'static,
     P: ActorFactory<A>,
 {
 }
 
 impl<A, P> ExecutorTrait for Executor<A, P>
 where
-    A: Actor + UnwindSafe + 'static,
+    A: Actor + 'static,
     P: ActorFactory<A>,
 {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {
@@ -68,13 +68,13 @@ where
         }
         if self.is_startup {
             self.is_startup = false;
-            self.actor.pre_start();
+            self.actor.pre_start(&self.context);
         }
         let m = self.queue.try_recv();
 
         if m.is_err() {
             if self.is_stopped() {
-                self.actor.post_stop();
+                self.actor.post_stop(&self.context);
                 return ActorState::Stopped;
             }
             self.mailbox.is_sleeping.store(true, Ordering::Relaxed);
@@ -92,7 +92,7 @@ where
         }));
         if result.is_err() {
             println!("ACTOR PANIC");
-            self.actor.post_stop();
+            self.actor.post_stop(&self.context);
 
             if self.actor_config.restart_policy == RestartPolicy::Never || self.is_stopped() {
                 self.mailbox.is_stopped.store(true, Ordering::Relaxed);
@@ -147,7 +147,6 @@ where
         system: ActorSystem,
         actor_ref: ActorWrapper<A>,
     ) -> Self {
-
         let context = ActorContext {
             actor_ref,
             system: system.clone(),

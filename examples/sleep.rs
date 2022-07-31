@@ -2,19 +2,16 @@ use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
 use tyra::prelude::{
-    Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig,
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
 };
 
 #[derive(Clone)]
-struct SleepMsg {
-    text: String,
-}
+struct SleepMsg {}
 
 impl ActorMessage for SleepMsg {}
 
 #[derive(Clone)]
 struct SleepActor {
-    text: String,
     counter: usize,
 }
 
@@ -33,7 +30,6 @@ impl Handler<SleepMsg> for SleepActor {
 }
 
 struct SleepActorFactory {
-    text: String,
     counter: usize,
 }
 
@@ -41,7 +37,6 @@ impl ActorFactory<SleepActor> for SleepActorFactory {
     fn new_actor(&self, _context: ActorContext<SleepActor>) -> SleepActor {
         SleepActor {
             counter: self.counter,
-            text: self.text.clone(),
         }
     }
 }
@@ -50,29 +45,21 @@ fn main() {
     let actor_config = TyraConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    let hw = SleepActorFactory {
-        text: String::from("sers"),
-        counter: 0,
-    };
+    let hw = SleepActorFactory { counter: 0 };
     let x = actor_system
         .builder()
         .set_mailbox_unbounded()
-        .spawn("hello-world", hw).unwrap();
-    x.send(SleepMsg {
-        text: String::from("sers+1"),
-    });
+        .spawn("hello-world", hw)
+        .unwrap();
+    x.send(SleepMsg {});
 
     sleep(Duration::from_secs(1));
 
-    x.send(SleepMsg {
-        text: String::from("sers+2"),
-    });
+    x.send(SleepMsg {});
 
     sleep(Duration::from_secs(1));
 
-    x.send(SleepMsg {
-        text: String::from("sers+2"),
-    });
+    x.send(SleepMsg {});
     //loop {
     //    //sleep(Duration::from_micros(1));
     //    x.send(SleepMsg {

@@ -22,7 +22,12 @@ impl ThreadPoolConfig {
     ///
     /// let config = ThreadPoolConfig::new(0, 1, 2, 1.0);
     /// ```
-    pub fn new(actor_limit: usize, threads_min: usize, threads_max: usize, threads_factor: f32) -> Self {
+    pub fn new(
+        actor_limit: usize,
+        threads_min: usize,
+        threads_max: usize,
+        threads_factor: f32,
+    ) -> Self {
         Self {
             actor_limit,
             threads_min,

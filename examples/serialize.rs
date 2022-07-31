@@ -1,25 +1,35 @@
+use serde::{Deserialize, Serialize};
 use std::process::exit;
-use std::time::Duration;
-use serde::{Serialize, Deserialize};
-use tyra::prelude::{Actor, ActorFactory, ActorMessage, ActorSystem, ActorContext, Handler, TyraConfig, SerializedMessage};
+use std::time::{Duration, Instant};
+use tyra::prelude::{
+    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, SerializedMessage,
+    TyraConfig,
+};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 struct TestMsg {
-    content: String
+    content: String,
 }
 
 impl ActorMessage for TestMsg {}
 
 #[derive(Clone)]
-struct RemoteActor {
-    ctx: ActorContext<Self>,
-}
+struct RemoteActor {}
+
+//impl Actor for RemoteActor {}
 
 impl Actor for RemoteActor {
-    fn handle_serialized_message(&self, msg: SerializedMessage) {
-        let decoded :TestMsg = bincode::deserialize(&msg.content).unwrap();
-        self.ctx.actor_ref.send(decoded)
+    fn handle_serialized_message(&mut self, msg: SerializedMessage, context: &ActorContext<Self>) {
+        let decoded: TestMsg = bincode::deserialize(&msg.content).unwrap();
+        context.actor_ref.send(decoded);
     }
+    //fn pre_start(&mut self, _context: &ActorContext<Self>) {
+    //    println!("WOOOT");
+    //    _context.actor_ref.send(TestMsg{content: String::from("sers")})
+    //}
+    //fn post_stop(&mut self, _context: &ActorContext<Self>) where Self: Actor + Sized {
+    //    println!("NICE");
+    //}
 }
 
 impl Handler<TestMsg> for RemoteActor {
@@ -31,8 +41,8 @@ impl Handler<TestMsg> for RemoteActor {
 struct RemoteActorFactory {}
 
 impl ActorFactory<RemoteActor> for RemoteActorFactory {
-    fn new_actor(&self, context: ActorContext<RemoteActor>) -> RemoteActor {
-        RemoteActor { ctx: context }
+    fn new_actor(&self, _context: ActorContext<RemoteActor>) -> RemoteActor {
+        RemoteActor {}
     }
 }
 
@@ -44,15 +54,20 @@ fn main() {
     let x = actor_system
         .builder()
         .set_mailbox_size(7)
-        .spawn("hello-world", hw).unwrap();
+        .spawn("hello-world", hw)
+        .unwrap();
     let msg = TestMsg {
-        content: String::from("Hello World!")
+        content: String::from("Hello World!"),
     };
-    let serialized  = bincode::serialize(&msg).unwrap();
+    let serialized = bincode::serialize(&msg).unwrap();
     actor_system.send_to_address(x.get_address(), SerializedMessage::new(serialized));
+    let start = Instant::now();
 
-    actor_system.stop(Duration::from_secs(1));
+    actor_system.stop(Duration::from_secs(10));
     let result = actor_system.await_shutdown();
+
+    let duration = start.elapsed();
+    println!("It took {:?} to send stop", duration);
 
     exit(result);
 }
