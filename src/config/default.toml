@@ -9,9 +9,8 @@ name = "$HOSTNAME"
 default_mailbox_size = 0
 # default maximum amount of consecutive messages that will be handled per actor before thread pool switches the Actor
 default_message_throughput = 15
-# default behavior in case of a panic when handling messages
-# valid values: "Always", "Never"
-default_restart_policy = "Always"
+# defines if the rust panic hook should be overwritten by the actor system on startup
+override_panic_hook = true
 
 # default pool settings
 [thread_pool.config.default]

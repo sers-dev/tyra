@@ -11,6 +11,7 @@ use std::sync::Arc;
 pub trait BaseMailbox: Send + Sync + UnwindSafe {
     fn send_serialized(&self, _msg: SerializedMessage);
     fn as_any(&self) -> &dyn Any;
+    fn is_sleeping(&self) -> bool;
 }
 
 pub struct Mailbox<A> {
@@ -29,6 +30,10 @@ where
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn is_sleeping(&self) -> bool {
+        self.is_sleeping.load(Ordering::Relaxed)
     }
 }
 

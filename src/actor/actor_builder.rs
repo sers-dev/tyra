@@ -1,5 +1,5 @@
 use crate::actor::actor_address::ActorAddress;
-use crate::actor::actor_config::{ActorConfig, RestartPolicy};
+use crate::actor::actor_config::ActorConfig;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::executor::{Executor, ExecutorTrait};
@@ -13,6 +13,7 @@ use crossbeam_channel::{bounded, unbounded};
 use dashmap::DashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, RwLock};
+use crate::system::actor_error::ActorError;
 use crate::system::internal_actor_manager::InternalActorManager;
 
 /// Used to create [Actor]s in the [ActorSystem]
@@ -50,7 +51,6 @@ where
             pool_name: String::from(DEFAULT_POOL),
             mailbox_size: config.general.default_mailbox_size,
             message_throughput: config.general.default_message_throughput,
-            restart_policy: config.general.default_restart_policy,
         };
 
         ActorBuilder {
@@ -61,11 +61,6 @@ where
             internal_actor_manager,
             actor_config,
         }
-    }
-
-    pub fn set_restart_policy(mut self, restart_policy: RestartPolicy) -> ActorBuilder<A> {
-        self.actor_config.restart_policy = restart_policy;
-        self
     }
 
     pub fn set_pool_name(mut self, pool_name: impl Into<String>) -> ActorBuilder<A> {
@@ -91,13 +86,13 @@ where
     ///
     /// # Returns
     ///
-    /// `Some(ActorWrapper<A>)` if actor is not running in the system
+    /// `Ok(ActorWrapper<A>)` if actor was created successfully
     ///
-    /// `Some(ActorWrapper<A>)` if the actor is running on the system AND actor was created by the same builder or a clone of it
+    /// `Ok(ActorWrapper<A>)` if the actor is already running on the system
     ///
-    /// `None` if actor is running on the system AND it's type is not equal to the expected type of the ActorBuilder
+    /// `Err(ActorError)` see
     ///
-    pub fn spawn<P>(&self, name: impl Into<String>, props: P) -> Option<ActorWrapper<A>>
+    pub fn spawn<P>(&self, name: impl Into<String>, props: P) -> Result<ActorWrapper<A>, ActorError>
     where
         P: ActorFactory<A> + 'static,
     {
@@ -141,14 +136,22 @@ where
             actor_ref.clone(),
         );
 
-        self.system_state
-            .add_mailbox(actor_address.clone(), mailbox);
-        self.wakeup_manager.add_sleeping_actor(
-            actor_handler.get_address(),
-            Arc::new(RwLock::new(actor_handler)),
-        );
+        match actor_handler {
+            Ok(a) => {
+                self.system_state
+                    .add_mailbox(actor_address.clone(), mailbox);
+                self.wakeup_manager.add_sleeping_actor(
+                    a.get_address(),
+                    Arc::new(RwLock::new(a)),
+                );
 
-        self.existing.insert(actor_address, actor_ref.clone());
-        Some(actor_ref)
+                self.existing.insert(actor_address, actor_ref.clone());
+                Ok(actor_ref)
+            },
+            Err(e) => {
+                return Err(e)
+            }
+        }
+
     }
 }

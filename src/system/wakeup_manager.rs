@@ -83,7 +83,7 @@ impl WakeupManager {
                     .get(&wakeup_message.actor_address)
                     .unwrap();
                 let duration = last_wakeup.elapsed();
-                if duration >= Duration::from_secs(4) {
+                if duration >= Duration::from_millis(4000) {
                     wake_deduplication.remove(&wakeup_message.actor_address);
                 } else {
                     continue;

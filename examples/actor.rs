@@ -1,8 +1,6 @@
 use std::process::exit;
 use std::time::Duration;
-use tyra::prelude::{
-    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
-};
+use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, Handler, TyraConfig};
 
 struct MessageA {
     text: String,
@@ -41,18 +39,20 @@ impl ActorFactory<HelloWorld> for HelloWorldFactory {
     }
 }
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&mut self, msg: MessageA, _context: &ActorContext<Self>) {
+    fn handle(&mut self, msg: MessageA, _context: &ActorContext<Self>) -> ActorResult {
         let text: String = [self.text.clone(), String::from(msg.text)].join(" -> ");
         self.count += 1;
-        println!("AAAA: {} Count: {}", text, self.count)
+        println!("AAAA: {} Count: {}", text, self.count);
+        ActorResult::Ok
     }
 }
 
 impl Handler<MessageB> for HelloWorld {
-    fn handle(&mut self, msg: MessageB, _context: &ActorContext<Self>) {
+    fn handle(&mut self, msg: MessageB, _context: &ActorContext<Self>) -> ActorResult {
         let text: String = [self.text.clone(), String::from(msg.text)].join(" -> ");
         self.count -= 1;
-        println!("BBBB: {} Count: {}", text, self.count)
+        println!("BBBB: {} Count: {}", text, self.count);
+        ActorResult::Ok
     }
 }
 

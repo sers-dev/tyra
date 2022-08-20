@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::handler::Handler;
 use crate::actor::mailbox::Mailbox;
@@ -20,6 +21,11 @@ where
     internal_actor_manager: Box<InternalActorManager>,
 }
 
+impl<A> Debug for ActorWrapper<A> where A: Actor{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "")
+    }
+}
 
 impl<A> UnwindSafe for ActorWrapper<A> where A: Actor {}
 

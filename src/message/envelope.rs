@@ -1,17 +1,13 @@
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
-use crate::message::actor_stop_message::ActorStopMessage;
-use crate::message::message_type::MessageType;
-use crate::message::system_stop_message::SystemStopMessage;
-use crate::prelude::Actor;
-use std::any::{Any, TypeId};
+use crate::prelude::{Actor, ActorResult};
 
 pub trait MessageEnvelopeTrait<A>: Send + Sync
 where
     A: Actor,
 {
-    fn handle(&mut self, actor: &mut A, context: &ActorContext<A>) -> MessageType;
+    fn handle(&mut self, actor: &mut A, context: &ActorContext<A>) -> ActorResult;
 }
 
 pub struct MessageEnvelope<A>(Box<dyn MessageEnvelopeTrait<A> + Send + Sync>);
@@ -30,8 +26,8 @@ impl<A> MessageEnvelopeTrait<A> for MessageEnvelope<A>
 where
     A: Actor,
 {
-    fn handle(&mut self, act: &mut A, context: &ActorContext<A>) -> MessageType {
-        self.0.handle(act, context)
+    fn handle(&mut self, act: &mut A, context: &ActorContext<A>) -> ActorResult {
+        return self.0.handle(act, context);
     }
 }
 
@@ -47,16 +43,10 @@ where
     M: ActorMessage + Send + 'static,
     A: Handler<M> + Actor,
 {
-    fn handle(&mut self, act: &mut A, context: &ActorContext<A>) -> MessageType {
+    fn handle(&mut self, act: &mut A, context: &ActorContext<A>) -> ActorResult {
         if let Some(msg) = self.msg.take() {
-            let msg_type_id = msg.type_id();
-            act.handle(msg, context);
-            if msg_type_id == TypeId::of::<ActorStopMessage>() {
-                return MessageType::ActorStopMessage;
-            } else if msg_type_id == TypeId::of::<SystemStopMessage>() {
-                return MessageType::SystemStopMessage;
-            }
+            return act.handle(msg, context);
         }
-        MessageType::Other
+        return ActorResult::Ok;
     }
 }

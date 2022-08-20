@@ -1,9 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyra::prelude::{
-    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
-};
+use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, Handler, TyraConfig};
 use tyra::router::{AddActorMessage, RemoveActorMessage, RoundRobinRouterFactory, RouterMessage};
 
 struct MessageA {}
@@ -23,9 +21,10 @@ impl ActorFactory<HelloWorld> for HelloWorldFactory {
     }
 }
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) {
+    fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) -> ActorResult {
         self.counter += 1;
         println!("Received MSG {}", self.counter);
+        ActorResult::Ok
     }
 }
 

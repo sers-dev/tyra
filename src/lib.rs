@@ -34,8 +34,9 @@
 //! // each supported message has its own Handler implementation
 //! // this is where the actual work is done
 //! impl Handler<FooBar> for HelloWorld {
-//!     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) {
+//!     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) -> ActorResult {
 //!         println!("Message Received!");
+//!         ActorResult::Ok
 //!     }
 //! }
 //!

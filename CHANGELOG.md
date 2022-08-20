@@ -1,3 +1,15 @@
+# 0.6.0
+
+ - add error handling
+   - `ActorBuilder.spawn()` now returns a Result, containing either the `ActorWrapper<A>` or an `ActorError`
+   - added `ActorResult` that is returned by all relevant `Actor` functions
+     - configures how the Actor should proceed
+   - Proper panic handling now in all parts of the `Actor` and `Handler<M>` and `ActorFactory<A>`
+     - panic now triggers `Actor.on_panic` providing the source of panic and allows User to determine how to proceed
+       - `Actor.on_panic` is allowed to panic once and will be re-triggered in that case. If another panic happens in the retry, the Actor will be stopped
+     - handling a panic within `ActorFactory<A>.new_actor()` by returning `ActorResult::Restart()` in `Actor.on_panic` can trigger a restart loop that will block the thread until `ActorFactory<A>.new_actor()` was successful
+ - replaced `RestartPolicy` with `ActorResult`
+
 # 0.5.0
 
 - added `send_after` to `ActorWrapper<A>` to allow sending of delayed messages

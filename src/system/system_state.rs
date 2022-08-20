@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
+use crate::system::actor_error::ActorError;
 use crate::system::internal_actor_manager::InternalActorManager;
 
 #[derive(Clone)]
@@ -75,6 +76,9 @@ impl SystemState {
         if target.is_some() {
             let target = target.unwrap();
             target.send_serialized(msg);
+            if target.is_sleeping() {
+                self.wakeup_manager.wakeup(target.key().clone());
+            }
         }
     }
 
@@ -91,19 +95,19 @@ impl SystemState {
         self.mailboxes.insert(address, Arc::new(mailbox));
     }
 
-    pub fn get_actor_ref<A>(&self, address: ActorAddress, internal_actor_manager: InternalActorManager) -> Option<ActorWrapper<A>>
+    pub fn get_actor_ref<A>(&self, address: ActorAddress, internal_actor_manager: InternalActorManager) -> Result<ActorWrapper<A>, ActorError>
     where
         A: Handler<SerializedMessage> + 'static,
     {
         let mb = self.mailboxes.get(&address).unwrap().value().clone();
         return match mb.as_any().downcast_ref::<Mailbox<A>>() {
-            Some(m) => Some(ActorWrapper::new(
+            Some(m) => Ok(ActorWrapper::new(
                 m.clone(),
                 address,
                 self.wakeup_manager.clone(),
                 internal_actor_manager
             )),
-            None => None,
+            None => Err(ActorError::InvalidActorTypeError),
         };
     }
 

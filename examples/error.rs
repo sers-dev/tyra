@@ -1,8 +1,6 @@
 use std::process::exit;
 use std::time::Duration;
-use tyra::prelude::{
-    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
-};
+use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, Handler, TyraConfig};
 
 #[derive(Clone)]
 struct ErrMsg {
@@ -19,12 +17,13 @@ struct ErrActor {
 impl Actor for ErrActor {}
 
 impl Handler<ErrMsg> for ErrActor {
-    fn handle(&mut self, msg: ErrMsg, _context: &ActorContext<Self>) {
+    fn handle(&mut self, msg: ErrMsg, _context: &ActorContext<Self>) -> ActorResult {
         self.counter += 1;
         if msg.text == "sers+1" {
             panic!("ficl");
         }
         println!("Received SERS: {}", self.counter);
+        ActorResult::Ok
     }
 }
 

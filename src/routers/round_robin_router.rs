@@ -3,7 +3,7 @@ use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
-use crate::prelude::{Actor, BulkActorMessage};
+use crate::prelude::{Actor, ActorResult, BulkActorMessage};
 use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
@@ -47,8 +47,8 @@ where
 ///
 /// // setup Message Handler for Actor
 /// impl Handler<FooBar> for HelloWorld {
-///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) {
-///
+///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) -> ActorResult {
+///         ActorResult::Ok
 ///     }
 ///
 /// }
@@ -110,9 +110,10 @@ impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
 where
     A: Actor,
 {
-    fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) {
+    fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) -> ActorResult {
         self.route_to.push(msg.actor);
         self.can_route = true;
+        return ActorResult::Ok;
     }
 }
 
@@ -120,7 +121,7 @@ impl<A> Handler<RemoveActorMessage<A>> for RoundRobinRouter<A>
 where
     A: Actor,
 {
-    fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) {
+    fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) -> ActorResult {
         if let Some(pos) = self
             .route_to
             .iter()
@@ -128,6 +129,7 @@ where
         {
             self.route_to.remove(pos);
         }
+        return ActorResult::Ok;
     }
 }
 
@@ -136,9 +138,9 @@ where
     A: Actor + Handler<M> + 'static,
     M: ActorMessage + 'static,
 {
-    fn handle(&mut self, msg: RouterMessage<M>, _context: &ActorContext<Self>) {
+    fn handle(&mut self, msg: RouterMessage<M>, _context: &ActorContext<Self>) -> ActorResult {
         if !self.can_route {
-            return;
+            return ActorResult::Ok;
         }
 
         self.route_index += 1;
@@ -148,6 +150,7 @@ where
 
         let forward_to = self.route_to.get(self.route_index).unwrap();
         forward_to.send(msg.msg);
+        return ActorResult::Ok;
     }
 }
 
@@ -156,9 +159,9 @@ where
     A: Actor + Handler<BulkActorMessage<M>> + 'static,
     M: ActorMessage + 'static,
 {
-    fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) {
+    fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) -> ActorResult {
         if !self.can_route {
-            return;
+            return ActorResult::Ok;
         }
 
         let total_messages = msg.data.len();
@@ -175,5 +178,6 @@ where
             let chunk: Vec<M> = msg.data.drain(0..messages_per_routee).collect();
             forward_to.send(BulkActorMessage::new(chunk));
         }
+        return ActorResult::Ok;
     }
 }

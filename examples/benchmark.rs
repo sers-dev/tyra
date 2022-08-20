@@ -1,9 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{
-    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
-};
+use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, Handler, TyraConfig};
 
 struct MessageA {}
 
@@ -41,7 +39,7 @@ impl Benchmark {
 impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
-    fn handle(&mut self, _msg: MessageA, context: &ActorContext<Self>) {
+    fn handle(&mut self, _msg: MessageA, context: &ActorContext<Self>) -> ActorResult {
         if self.count == 0 {
             println!("Sleep 3 now");
             sleep(Duration::from_secs((3) as u64));
@@ -63,6 +61,7 @@ impl Handler<MessageA> for Benchmark {
         if self.count == self.total_msgs {
             context.system.stop(Duration::from_secs(60));
         }
+        ActorResult::Ok
     }
 }
 

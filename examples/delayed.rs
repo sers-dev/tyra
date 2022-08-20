@@ -54,8 +54,9 @@ impl ActorFactory<TemplateActor> for TemplateActorFactory {
 //Handler//
 ///////////
 impl Handler<TemplateMessage> for TemplateActor {
-    fn handle(&mut self, _msg: TemplateMessage, _context: &ActorContext<Self>) {
-        println!("{}", _msg.id)
+    fn handle(&mut self, _msg: TemplateMessage, _context: &ActorContext<Self>) -> ActorResult {
+        println!("{}", _msg.id);
+        ActorResult::Ok
     }
 }
 

@@ -1,9 +1,6 @@
 use std::process::exit;
-use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{
-    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, ActorWrapper, Handler, TyraConfig,
-};
+use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, ActorWrapper, Handler, TyraConfig};
 use tyra::router::{AddActorMessage, RoundRobinRouterFactory, RouterMessage};
 
 struct MessageA {}
@@ -53,9 +50,9 @@ impl Benchmark {
 impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
-    fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) {
+    fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) -> ActorResult {
         if self.count == 0 {
-            sleep(Duration::from_secs((3) as u64));
+            //sleep(Duration::from_secs((3) as u64));
             self.start = Instant::now();
         }
         self.count += 1;
@@ -69,6 +66,7 @@ impl Handler<MessageA> for Benchmark {
         if self.count == self.total_msgs {
             self.aggregator.send(Finish {});
         }
+        ActorResult::Ok
     }
 }
 
@@ -106,7 +104,7 @@ impl ActorFactory<Aggregator> for AggregatorFactory {
 }
 
 impl Handler<Finish> for Aggregator {
-    fn handle(&mut self, _msg: Finish, _context: &ActorContext<Self>) {
+    fn handle(&mut self, _msg: Finish, _context: &ActorContext<Self>) -> ActorResult {
         self.actors_finished += 1;
         if self.actors_finished == self.total_actors {
             let duration = self.start.elapsed();
@@ -116,13 +114,15 @@ impl Handler<Finish> for Aggregator {
             );
             self.ctx.system.stop(Duration::from_secs(60));
         }
+        ActorResult::Ok
     }
 }
 
 impl Handler<Start> for Aggregator {
-    fn handle(&mut self, _msg: Start, _context: &ActorContext<Self>) {
-        sleep(Duration::from_secs((3) as u64));
+    fn handle(&mut self, _msg: Start, _context: &ActorContext<Self>) -> ActorResult {
+        //sleep(Duration::from_secs((3) as u64));
         self.start = Instant::now();
+        ActorResult::Ok
     }
 }
 
@@ -132,7 +132,7 @@ fn main() {
 
     let message_count = 10000000;
     // ideal number is "amount of threads - 3"
-    let actor_count = 7;
+    let actor_count = 10;
 
     let router_factory = RoundRobinRouterFactory::new();
     let router = actor_system

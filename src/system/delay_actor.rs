@@ -1,7 +1,7 @@
 use std::thread::sleep;
 use std::time::Duration;
 use crate::message::delayed_message::DelayedMessage;
-use crate::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, Handler};
+use crate::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, Handler};
 
 pub struct DelayActor {}
 impl Actor for DelayActor {}
@@ -28,7 +28,7 @@ impl<A, M> Handler<DelayedMessage<A, M>> for DelayActor
         M: ActorMessage + 'static,
         A: Actor + Handler<M> + 'static,
 {
-    fn handle(&mut self, msg: DelayedMessage<A, M>, context: &ActorContext<Self>) {
+    fn handle(&mut self, msg: DelayedMessage<A, M>, context: &ActorContext<Self>) -> ActorResult {
         let duration = msg.started.elapsed();
         if duration >= msg.delay {
             msg.destination.send(msg.msg);
@@ -38,5 +38,6 @@ impl<A, M> Handler<DelayedMessage<A, M>> for DelayActor
             context.actor_ref.send(msg);
         }
 
+        return ActorResult::Ok;
     }
 }

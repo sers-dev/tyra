@@ -1,10 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::process::exit;
 use std::time::{Duration, Instant};
-use tyra::prelude::{
-    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, SerializedMessage,
-    TyraConfig,
-};
+use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, SerializedMessage, TyraConfig, ActorResult};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 struct TestMsg {
@@ -16,25 +13,22 @@ impl ActorMessage for TestMsg {}
 #[derive(Clone)]
 struct RemoteActor {}
 
-//impl Actor for RemoteActor {}
-
 impl Actor for RemoteActor {
-    fn handle_serialized_message(&mut self, msg: SerializedMessage, context: &ActorContext<Self>) {
-        let decoded: TestMsg = bincode::deserialize(&msg.content).unwrap();
+    fn handle_serialized_message(&mut self, msg: SerializedMessage, context: &ActorContext<Self>) -> ActorResult {
+        let result = bincode::deserialize(&msg.content);
+        if result.is_err() {
+            return ActorResult::Ok
+        }
+        let decoded: TestMsg = result.unwrap();
         context.actor_ref.send(decoded);
+        ActorResult::Ok
     }
-    //fn pre_start(&mut self, _context: &ActorContext<Self>) {
-    //    println!("WOOOT");
-    //    _context.actor_ref.send(TestMsg{content: String::from("sers")})
-    //}
-    //fn post_stop(&mut self, _context: &ActorContext<Self>) where Self: Actor + Sized {
-    //    println!("NICE");
-    //}
 }
 
 impl Handler<TestMsg> for RemoteActor {
-    fn handle(&mut self, msg: TestMsg, _context: &ActorContext<Self>) {
+    fn handle(&mut self, msg: TestMsg, _context: &ActorContext<Self>) -> ActorResult {
         println!("{}", msg.content);
+        ActorResult::Ok
     }
 }
 

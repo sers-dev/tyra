@@ -1,3 +1,4 @@
+use std::panic::UnwindSafe;
 use crate::actor::context::ActorContext;
 use crate::prelude::Actor;
 
@@ -25,7 +26,7 @@ use crate::prelude::Actor;
 ///     }
 /// }
 /// ```
-pub trait ActorFactory<A>
+pub trait ActorFactory<A>: UnwindSafe
 where
     A: Actor + 'static,
 {

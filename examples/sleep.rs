@@ -1,9 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyra::prelude::{
-    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
-};
+use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, Handler, TyraConfig};
 
 #[derive(Clone)]
 struct SleepMsg {}
@@ -18,7 +16,7 @@ struct SleepActor {
 impl Actor for SleepActor {}
 
 impl Handler<SleepMsg> for SleepActor {
-    fn handle(&mut self, _msg: SleepMsg, _context: &ActorContext<Self>) {
+    fn handle(&mut self, _msg: SleepMsg, _context: &ActorContext<Self>) -> ActorResult {
         self.counter += 1;
         //if self.counter == 1 {
         sleep(Duration::from_secs(3));
@@ -26,6 +24,7 @@ impl Handler<SleepMsg> for SleepActor {
         //if self.counter % 1000000 == 0 {
         println!("Received SERS: {}", self.counter);
         //}
+        ActorResult::Ok
     }
 }
 

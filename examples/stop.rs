@@ -1,9 +1,7 @@
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use tyra::prelude::{
-    Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, TyraConfig,
-};
+use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, Handler, TyraConfig};
 
 #[derive(Clone)]
 struct TestMsg {}
@@ -21,10 +19,11 @@ impl Actor for StopActor {
 }
 
 impl Handler<TestMsg> for StopActor {
-    fn handle(&mut self, _msg: TestMsg, context: &ActorContext<Self>) {
+    fn handle(&mut self, _msg: TestMsg, context: &ActorContext<Self>) -> ActorResult {
         context.actor_ref.send(TestMsg {});
         println!("Message received!");
         sleep(Duration::from_millis(100));
+        ActorResult::Ok
     }
 }
 

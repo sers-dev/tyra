@@ -37,6 +37,11 @@ impl ActorSystem {
     /// let actor_system = ActorSystem::new(actor_config);
     /// ```
     pub fn new(config: TyraConfig) -> Self {
+
+        if config.general.override_panic_hook {
+            std::panic::set_hook(Box::new(|_| {}));
+        }
+
         let thread_pool_config = config.thread_pool.clone();
 
         let thread_pool_manager = ThreadPoolManager::new();
@@ -124,21 +129,23 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
-    /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorMessage};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorMessage, ActorResult};
     ///
     /// struct TestActor {}
     ///
     /// struct HelloWorld {}
     /// impl ActorMessage for HelloWorld {}
     /// impl Actor for TestActor {
-    ///     fn handle_serialized_message(&mut self, _msg: SerializedMessage, context: &ActorContext<Self>) {
-    ///          context.actor_ref.send(HelloWorld{});
+    ///     fn handle_serialized_message(&mut self, _msg: SerializedMessage, context: &ActorContext<Self>) -> ActorResult {
+    ///         context.actor_ref.send(HelloWorld{});
+    ///         ActorResult::Ok
     ///     }
     ///
     /// }
     ///
     /// impl Handler<HelloWorld> for TestActor {
-    ///     fn handle(&mut self, _msg: HelloWorld, _context: &ActorContext<Self>) {
+    ///     fn handle(&mut self, _msg: HelloWorld, _context: &ActorContext<Self>) -> ActorResult {
+    ///         ActorResult::Ok
     ///     }
     /// }
     ///
