@@ -8,6 +8,7 @@ use crate::prelude::Actor;
 use crate::system::wakeup_manager::WakeupManager;
 use std::panic::UnwindSafe;
 use std::time::Duration;
+use crate::message::sleep_message::SleepMessage;
 use crate::system::internal_actor_manager::InternalActorManager;
 
 /// Wrapper used to interact with [Actor]
@@ -43,6 +44,7 @@ where
         }
     }
 
+    /// Sends a message to the actor that is then processed through the corresponding Handler<M> implementation
     pub fn send<M>(&self, msg: M)
     where
         A: Handler<M>,
@@ -59,6 +61,7 @@ where
         }
     }
 
+    /// Sends a message to the actor after a specified delay
     pub fn send_after<M>(&self, msg: M, delay: Duration)
         where
             A: Handler<M> + 'static,
@@ -72,10 +75,19 @@ where
 
     }
 
+    /// Tells the actor to stop accepting message and to shutdown after all existing messages have been processed
     pub fn stop(&self) {
         self.send(ActorStopMessage {});
     }
 
+    /// Tells the actor to sleep for the specified duration
+    pub fn sleep(&self, duration: Duration) {
+        self.send(SleepMessage{
+            duration
+        });
+    }
+
+    /// Returns a reference to the address of the actor
     pub fn get_address(&self) -> &ActorAddress {
         &self.address
     }

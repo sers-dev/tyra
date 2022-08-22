@@ -1,5 +1,4 @@
 use std::process::exit;
-use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, Handler, TyraConfig};
 
@@ -41,9 +40,7 @@ impl Actor for Benchmark {}
 impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, _msg: MessageA, context: &ActorContext<Self>) -> ActorResult {
         if self.count == 0 {
-            println!("Sleep 3 now");
-            sleep(Duration::from_secs((3) as u64));
-            println!("Sleep 3 end");
+            println!("START PROCESSING!");
             self.start = Instant::now();
         }
         self.count += 1;
@@ -84,6 +81,7 @@ fn main() {
     println!("Actors have been created");
     let start = Instant::now();
 
+    actor.sleep(Duration::from_secs(3));
     for _i in 0..message_count {
         let msg = MessageA {};
         actor.send(msg);

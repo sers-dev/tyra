@@ -140,7 +140,7 @@ where
             Ok(a) => {
                 self.system_state
                     .add_mailbox(actor_address.clone(), mailbox);
-                self.wakeup_manager.add_sleeping_actor(
+                self.wakeup_manager.add_inactive_actor(
                     a.get_address(),
                     Arc::new(RwLock::new(a)),
                 );

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 #[derive(PartialEq)]
 /// ActorResults that determine how the actor should proceed
 pub enum ActorResult {
@@ -9,4 +11,6 @@ pub enum ActorResult {
     Restart,
     /// stop immediately and ignore any remaining messages in the mailbox
     Kill,
+    /// pauses message processing for the specified duration
+    Sleep(Duration),
 }

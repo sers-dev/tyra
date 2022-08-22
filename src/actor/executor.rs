@@ -12,7 +12,7 @@ use crate::message::system_stop_message::SystemStopMessage;
 use crate::prelude::{Actor, ActorPanicSource, ActorResult};
 use crate::system::actor_system::ActorSystem;
 use crossbeam_channel::Receiver;
-use std::panic::{catch_unwind, AssertUnwindSafe, UnwindSafe, take_hook, set_hook};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 use crate::system::actor_error::ActorError;
@@ -74,23 +74,29 @@ where
         if self.is_startup {
             self.is_startup = false;
             let result = catch_unwind(AssertUnwindSafe(|| {
-                let actor_result = self.actor.pre_start(&self.context);
-                match actor_result {
-                    ActorResult::Ok => {}
-                    ActorResult::Restart => {
-                        self.restart_actor();
-                    }
-                    ActorResult::Stop => {
-                        self.stop_actor(false);
-                    }
-                    ActorResult::Kill => {
-                        self.stop_actor(true);
-                    }
-                }
+                return self.actor.pre_start(&self.context);
             }));
            if result.is_err() {
                return self.on_actor_panic(ActorPanicSource::PreStart);
            }
+            else {
+                let actor_result = result.unwrap();
+                match actor_result {
+                    ActorResult::Ok => {}
+                    ActorResult::Restart => {
+                        return self.restart_actor();
+                    }
+                    ActorResult::Stop => {
+                        return self.stop_actor(false);
+                    }
+                    ActorResult::Kill => {
+                        return self.stop_actor(true);
+                    }
+                    ActorResult::Sleep(duration) => {
+                        return ActorState::Sleeping(duration);
+                    }
+                }
+            }
         }
         let m = self.queue.try_recv();
 
@@ -102,7 +108,7 @@ where
             self.mailbox.is_sleeping.store(true, Ordering::Relaxed);
             let duration = self.last_wakeup.elapsed();
             if duration >= Duration::from_millis(5000) {
-                return ActorState::Sleeping;
+                return ActorState::Inactive;
             }
             self.mailbox.is_sleeping.store(false, Ordering::Relaxed);
             return ActorState::Running;
@@ -115,9 +121,8 @@ where
         }));
         if result.is_err() {
             return self.on_actor_panic(ActorPanicSource::Message);
-
         }
-        ActorState::Running
+        return result.unwrap();
     }
 
     fn stop_actor(&mut self, immediately: bool) -> ActorState {
@@ -130,14 +135,16 @@ where
     }
 
     fn restart_actor(&mut self) -> ActorState {
-        let _ = catch_unwind(AssertUnwindSafe(|| {
+        let result = catch_unwind(AssertUnwindSafe(|| {
             let actor = self.actor_props.new_actor(self.context.clone());
             self.actor = actor;
             self.is_startup = true;
-            return ActorState::Running
         }));
-        let actor_result = self.actor.on_panic(&self.context, ActorPanicSource::Restart);
-        return self.handle_actor_result(actor_result);
+        if result.is_err() {
+            let actor_result = self.actor.on_panic(&self.context, ActorPanicSource::Restart);
+            return self.handle_actor_result(actor_result);
+        }
+        return ActorState::Running;
     }
 
     fn on_actor_panic(&mut self, source: ActorPanicSource) -> ActorState {
@@ -153,9 +160,9 @@ where
             if result.is_err() {
                 self.stop_actor(true);
             }
+            return result.unwrap()
         }
-
-        ActorState::Running
+        return result.unwrap();
     }
 
     fn get_config(&self) -> &ActorConfig {
@@ -193,6 +200,9 @@ where
             ActorResult::Kill => {
                 self.stop_actor(true)
             }
+            ActorResult::Sleep(duration) => {
+                ActorState::Sleeping(duration)
+            }
         }
     }
 }
@@ -216,7 +226,7 @@ where
             system: system.clone(),
         };
 
-        let actor = Self::catch_unwind_silent(AssertUnwindSafe(|| {
+        let actor = catch_unwind(AssertUnwindSafe(|| {
             return actor_props.new_actor(context.clone());
         }));
         if actor.is_err() {
@@ -244,11 +254,4 @@ where
         self.mailbox.msg_in.send(MessageEnvelope::new(msg)).unwrap();
     }
 
-    fn catch_unwind_silent<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> std::thread::Result<R> {
-        let prev_hook = take_hook();
-        set_hook(Box::new(|_| {}));
-        let result = catch_unwind(f);
-        set_hook(prev_hook);
-        result
-    }
 }

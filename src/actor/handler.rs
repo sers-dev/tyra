@@ -2,6 +2,7 @@ use crate::actor::actor::Actor;
 use crate::actor::context::ActorContext;
 use crate::message::actor_message::ActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
+use crate::message::sleep_message::SleepMessage;
 use crate::message::system_stop_message::SystemStopMessage;
 use crate::prelude::{ActorResult, BulkActorMessage, SerializedMessage};
 
@@ -76,5 +77,15 @@ where
 {
     fn handle(&mut self, msg: SerializedMessage, context: &ActorContext<A>) -> ActorResult {
         return self.handle_serialized_message(msg, context);
+    }
+}
+
+
+impl<A> Handler<SleepMessage> for A
+    where
+        A: Actor + Sized + Actor,
+{
+    fn handle(&mut self, msg: SleepMessage, _context: &ActorContext<A>) -> ActorResult {
+        return ActorResult::Sleep(msg.duration)
     }
 }

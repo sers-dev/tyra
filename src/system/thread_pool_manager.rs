@@ -115,10 +115,16 @@ impl ThreadPoolManager {
                                 let actor_ref = ar.write().unwrap();
                                 address = actor_ref.get_address();
                             }
-                            if actor_state == ActorState::Sleeping {
-                                wakeup_manager.add_sleeping_actor(address, ar);
-                            } else {
-                                system_state.remove_mailbox(&address);
+                            match actor_state {
+                                ActorState::Inactive => {
+                                    wakeup_manager.add_inactive_actor(address, ar);
+                                }
+                                ActorState::Sleeping(duration) => {
+                                    wakeup_manager.add_sleeping_actor(address, ar, duration)
+                                }
+                                _ => {
+                                    system_state.remove_mailbox(&address);
+                                }
                             }
                         }
                     });

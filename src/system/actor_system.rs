@@ -59,7 +59,11 @@ impl ActorSystem {
         let s = state.clone();
         let t = thread_pool_manager.clone();
         let w = wakeup_manager.clone();
-        std::thread::spawn(move || w.manage(s, t));
+        std::thread::spawn(move || w.manage_inactive(s, t));
+        let w = wakeup_manager.clone();
+        let s = state.clone();
+        std::thread::spawn(move || w.clone().manage_sleeping(s));
+
 
         let mut system = ActorSystem {
             state,

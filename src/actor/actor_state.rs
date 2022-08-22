@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum ActorState {
     Running,
-    Sleeping,
+    Inactive,
     Stopped,
+    Sleeping(Duration),
 }
