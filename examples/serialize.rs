@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::process::exit;
+use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, SerializedMessage, TyraConfig, ActorResult};
 
@@ -20,7 +21,7 @@ impl Actor for RemoteActor {
             return ActorResult::Ok
         }
         let decoded: TestMsg = result.unwrap();
-        context.actor_ref.send(decoded);
+        context.actor_ref.send_after(decoded, Duration::from_millis(50));
         ActorResult::Ok
     }
 }

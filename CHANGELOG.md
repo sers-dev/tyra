@@ -1,7 +1,8 @@
 # WIP 0.7.0
  
  - actors can now delay message processing by going into a sleep state
-   - can be achieved through `actor.sleep(duration)` on the `ActorWrapper` or by returning `ActorState::Sleep(duration)` from within the actor 
+   - can be achieved through `actor.sleep(duration)` on the `ActorWrapper` or by returning `ActorState::Sleep(duration)` from within the actor
+ - fixed a bug where an actor with a limited mailbox can get stuck on shutdown
 
 # 0.6.0
 

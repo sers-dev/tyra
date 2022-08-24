@@ -11,7 +11,7 @@ use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
 use crate::message::system_stop_message::SystemStopMessage;
 use crate::prelude::{Actor, ActorPanicSource, ActorResult};
 use crate::system::actor_system::ActorSystem;
-use crossbeam_channel::Receiver;
+use crossbeam_channel::{Receiver, SendTimeoutError};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
@@ -68,8 +68,10 @@ where
 {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {
         if system_is_stopping && !self.system_triggered_stop {
-            self.system_triggered_stop = true;
-            self.send(SystemStopMessage {});
+            let result = self.send(SystemStopMessage {});
+            if result.is_ok() {
+                self.system_triggered_stop = true;
+            }
         }
         if self.is_startup {
             self.is_startup = false;
@@ -246,12 +248,12 @@ where
             context,
         });
     }
-    pub fn send<M>(&self, msg: M)
+    pub fn send<M>(&self, msg: M) -> Result<(), SendTimeoutError<MessageEnvelope<A>>>
     where
         A: Handler<M>,
         M: ActorMessage + 'static,
     {
-        self.mailbox.msg_in.send(MessageEnvelope::new(msg)).unwrap();
+        return self.mailbox.msg_in.send_timeout(MessageEnvelope::new(msg), Duration::from_millis(10))
     }
 
 }
