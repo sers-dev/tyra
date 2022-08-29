@@ -1,5 +1,6 @@
 use crate::prelude::{ActorContext, ActorPanicSource, ActorResult, SerializedMessage};
 use std::panic::UnwindSafe;
+use log::debug;
 use crate::message::actor_stop_message::ActorStopMessage;
 
 /// Core trait to define Actors
@@ -132,9 +133,12 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
         return ActorResult::Ok;
     }
 
-    /// executed after the last message is handled
+    /// executed before the actor is restarted
     ///
-    /// also executed in case the actor panics while it handles a message
+    /// panic triggers `self.on_panic()` with `source = ActorPanicSource::Restart`
+    fn pre_restart(&mut self, _context: &ActorContext<Self>) {}
+
+    /// executed after the last message is handled
     fn post_stop(&mut self, _context: &ActorContext<Self>) {}
 
     /// executed when Actor handles internal ActorStopMessage
@@ -150,7 +154,10 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// Default behavior sends an `ActorStopMessage` to all actors which will trigger a clean shutdown
     /// panic triggers `self.on_panic()` with `source = ActorPanicSource::Message`
     fn on_system_stop(&mut self, context: &ActorContext<Self>) -> ActorResult {
-        context.actor_ref.send(ActorStopMessage {});
+        let result = context.actor_ref.send(ActorStopMessage {});
+        if result.is_err() {
+            debug!("")
+        }
         return ActorResult::Ok;
     }
 }

@@ -81,10 +81,10 @@ fn main() {
     println!("Actors have been created");
     let start = Instant::now();
 
-    actor.sleep(Duration::from_secs(3));
+    actor.sleep(Duration::from_secs(3)).unwrap();
     for _i in 0..message_count {
         let msg = MessageA {};
-        actor.send(msg);
+        actor.send(msg).unwrap();
     }
     let duration = start.elapsed();
     println!("It took {:?} to send {} messages", duration, message_count);

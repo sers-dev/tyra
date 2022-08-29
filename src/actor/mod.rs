@@ -11,6 +11,7 @@ pub mod handler;
 pub mod mailbox;
 pub mod actor_result;
 pub mod actor_panic_source;
+pub mod actor_send_error;
 
 pub mod prelude {
     pub use crate::actor::actor::Actor;
@@ -21,4 +22,5 @@ pub mod prelude {
     pub use crate::actor::handler::Handler;
     pub use crate::actor::actor_result::ActorResult;
     pub use crate::actor::actor_panic_source::ActorPanicSource;
+    pub use crate::actor::actor_send_error::ActorSendError;
 }

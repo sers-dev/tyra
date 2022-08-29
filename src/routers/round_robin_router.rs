@@ -1,3 +1,4 @@
+use log::debug;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
@@ -149,7 +150,10 @@ where
         }
 
         let forward_to = self.route_to.get(self.route_index).unwrap();
-        forward_to.send(msg.msg);
+        let result = forward_to.send(msg.msg);
+        if result.is_err() {
+            debug!("");
+        }
         return ActorResult::Ok;
     }
 }
@@ -176,7 +180,10 @@ where
 
             let forward_to = self.route_to.get(self.route_index).unwrap();
             let chunk: Vec<M> = msg.data.drain(0..messages_per_routee).collect();
-            forward_to.send(BulkActorMessage::new(chunk));
+            let result = forward_to.send(BulkActorMessage::new(chunk));
+            if result.is_err() {
+                debug!("ASDF");
+            }
         }
         return ActorResult::Ok;
     }

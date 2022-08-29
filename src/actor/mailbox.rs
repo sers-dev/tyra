@@ -2,11 +2,13 @@ use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
 use crate::message::envelope::MessageEnvelope;
 use crate::prelude::{Actor, SerializedMessage};
-use crossbeam_channel::Sender;
 use std::any::Any;
 use std::panic::UnwindSafe;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
+use crossbeam_channel::Sender;
+use crate::actor::actor_send_error::ActorSendError;
 
 pub trait BaseMailbox: Send + Sync + UnwindSafe {
     fn send_serialized(&self, _msg: SerializedMessage);
@@ -54,12 +56,30 @@ impl<A> Mailbox<A>
 where
     A: Actor,
 {
-    pub fn send<M>(&self, msg: M)
+    pub fn send<M>(&self, msg: M) -> Result<(), ActorSendError>
     where
         A: Handler<M>,
         M: ActorMessage + 'static,
     {
-        self.msg_in.send(MessageEnvelope::new(msg)).unwrap();
+        let result = self.msg_in.send(MessageEnvelope::new(msg));
+        if result.is_ok() {
+            return Ok(());
+        }
+
+        return Err(ActorSendError::AlreadyStoppedError);
+
+    }
+
+    pub fn send_timeout<M>(&self, msg: M, timeout: Duration) -> Result<(), ActorSendError>
+        where
+            A: Handler<M>,
+            M: ActorMessage + 'static,
+    {
+        let result = self.msg_in.send_timeout(MessageEnvelope::new(msg), timeout);
+        if result.is_ok() {
+            return Ok(());
+        }
+        return Err(ActorSendError::TimeoutError);
     }
 
     pub fn is_sleeping(&self) -> bool {

@@ -8,6 +8,7 @@ use crate::prelude::Actor;
 use crate::system::wakeup_manager::WakeupManager;
 use std::panic::UnwindSafe;
 use std::time::Duration;
+use crate::actor::actor_send_error::ActorSendError;
 use crate::message::sleep_message::SleepMessage;
 use crate::system::internal_actor_manager::InternalActorManager;
 
@@ -45,20 +46,51 @@ where
     }
 
     /// Sends a message to the actor that is then processed through the corresponding Handler<M> implementation
-    pub fn send<M>(&self, msg: M)
+    /// Blocks until message has been sent, or fails if the target has been stopped
+    /// It is NOT recommended to use this to send messages to Actors with a limited mailbox. Use send_timeout() or send_after() for these cases
+    pub fn send<M>(&self, msg: M) -> Result<(), ActorSendError>
     where
         A: Handler<M>,
         M: ActorMessage + 'static,
     {
         if self.mailbox.is_stopped() {
-            return;
+            return Err(ActorSendError::AlreadyStoppedError);
         }
 
-        self.mailbox.send(msg);
+        let result = self.mailbox.send(msg);
+
+        if result.is_err() {
+            return result;
+        }
 
         if self.mailbox.is_sleeping() {
             self.wakeup_manager.wakeup(self.address.clone());
         }
+
+        return Ok(());
+    }
+
+    /// Same as send, but with a user defined timeout
+    pub fn send_timeout<M>(&self, msg: M, timeout: Duration) -> Result<(), ActorSendError>
+        where
+            A: Handler<M>,
+            M: ActorMessage + 'static,
+    {
+        if self.mailbox.is_stopped() {
+            return Err(ActorSendError::AlreadyStoppedError);
+        }
+
+        let result = self.mailbox.send_timeout(msg, timeout);
+
+        if result.is_err() {
+            return result;
+        }
+
+        if self.mailbox.is_sleeping() {
+            self.wakeup_manager.wakeup(self.address.clone());
+        }
+
+        return Ok(());
     }
 
     /// Sends a message to the actor after a specified delay
@@ -76,13 +108,13 @@ where
     }
 
     /// Tells the actor to stop accepting message and to shutdown after all existing messages have been processed
-    pub fn stop(&self) {
-        self.send(ActorStopMessage {});
+    pub fn stop(&self) -> Result<(), ActorSendError> {
+        return self.send(ActorStopMessage {});
     }
 
     /// Tells the actor to sleep for the specified duration
-    pub fn sleep(&self, duration: Duration) {
-        self.send(SleepMessage{
+    pub fn sleep(&self, duration: Duration) -> Result<(), ActorSendError> {
+        return self.send(SleepMessage{
             duration
         });
     }

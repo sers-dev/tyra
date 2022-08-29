@@ -138,6 +138,7 @@ where
 
     fn restart_actor(&mut self) -> ActorState {
         let result = catch_unwind(AssertUnwindSafe(|| {
+            self.actor.pre_restart(&self.context);
             let actor = self.actor_props.new_actor(self.context.clone());
             self.actor = actor;
             self.is_startup = true;

@@ -1,4 +1,5 @@
 use std::time::Duration;
+use log::debug;
 use crate::message::delayed_message::DelayedMessage;
 use crate::prelude::{ActorMessage, ActorSystem, ActorWrapper, Handler};
 use crate::router::{AddActorMessage, RoundRobinRouter, RoundRobinRouterFactory, RouterMessage};
@@ -20,9 +21,11 @@ impl InternalActorManager {
         let delay_router = system.builder().set_pool_name("tyra").set_mailbox_unbounded().spawn("delay-router", RoundRobinRouterFactory::new()).unwrap();
         for i in 0..3 {
             let delay_actor = delay_builder.spawn(format!("delay-{}", i), DelayActorFactory::new()).unwrap();
-            delay_router.send(AddActorMessage::new(delay_actor));
+            let result = delay_router.send(AddActorMessage::new(delay_actor));
+            if result.is_err() {
+                debug!("");
+            }
         }
-        //let delay_actor = system.builder().set_pool_name("tyra").set_mailbox_unbounded().spawn("delay", DelayActorFactory::new()).unwrap();
         self.delay_router = Some(delay_router);
     }
 
@@ -31,7 +34,10 @@ impl InternalActorManager {
         M: ActorMessage + 'static,
         A: Handler<M> + 'static
     {
-        self.delay_router.as_ref().unwrap().send(RouterMessage::new(DelayedMessage::new(msg, destination, duration)));
+        let result = self.delay_router.as_ref().unwrap().send(RouterMessage::new(DelayedMessage::new(msg, destination, duration)));
+        if result.is_err() {
+            debug!("");
+        }
     }
 
 }
