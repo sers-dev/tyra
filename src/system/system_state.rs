@@ -16,17 +16,21 @@ pub struct SystemState {
     mailboxes: Arc<DashMap<ActorAddress, Arc<dyn BaseMailbox>>>,
     wakeup_manager: WakeupManager,
     total_actor_count: Arc<AtomicUsize>,
+    pool_actor_count: Arc<DashMap<String, AtomicUsize>>,
+    max_actors_per_pool: Arc<DashMap<String, usize>>,
     is_stopped: Arc<AtomicBool>,
     is_stopping: Arc<AtomicBool>,
     is_force_stopped: Arc<AtomicBool>,
 }
 
 impl SystemState {
-    pub fn new(wakeup_manager: WakeupManager) -> Self {
+    pub fn new(wakeup_manager: WakeupManager, max_actors_per_pool: Arc<DashMap<String, usize>>) -> Self {
         Self {
             mailboxes: Arc::new(DashMap::new()),
             wakeup_manager,
             total_actor_count: Arc::new(AtomicUsize::new(0)),
+            pool_actor_count: Arc::new(DashMap::new()),
+            max_actors_per_pool,
             is_stopped: Arc::new(AtomicBool::new(false)),
             is_stopping: Arc::new(AtomicBool::new(false)),
             is_force_stopped: Arc::new(AtomicBool::new(false)),
@@ -84,15 +88,62 @@ impl SystemState {
 
     pub fn remove_mailbox(&self, address: &ActorAddress) {
         self.total_actor_count.fetch_sub(1, Ordering::Relaxed);
+        self.pool_actor_count.entry(address.pool.clone()).and_modify(|v| {
+            v.fetch_sub(1, Ordering::Relaxed);
+        });
         self.mailboxes.remove(address);
     }
 
-    pub fn add_mailbox<A>(&self, address: ActorAddress, mailbox: Mailbox<A>)
+    pub fn add_mailbox<A>(&self, address: ActorAddress, mailbox: Mailbox<A>) -> Result<(), ActorError>
     where
         A: Handler<SerializedMessage> + 'static,
     {
+        let maximum_actor_count = self.max_actors_per_pool.get(&address.pool);
+        if maximum_actor_count.is_none() {
+            return Err(ActorError::ThreadPoolDoesNotExistError);
+        }
+        let maximum_actor_count = maximum_actor_count.unwrap();
+        let maximum_actor_count = *maximum_actor_count.value();
+
+        let current_pool_count = self.pool_actor_count.entry(address.pool.clone()).or_insert(AtomicUsize::new(0));
+        let current_pool_count = current_pool_count.value();
+
+        let current = current_pool_count.load(Ordering::Relaxed);
+        if maximum_actor_count != 0 as usize && maximum_actor_count <= current {
+            return Err(ActorError::ThreadPoolHasTooManyActorsError);
+        }
+
+        current_pool_count.fetch_add(1, Ordering::Relaxed);
         self.total_actor_count.fetch_add(1, Ordering::Relaxed);
         self.mailboxes.insert(address, Arc::new(mailbox));
+        return Ok(());
+    }
+
+    pub fn add_pool_actor_limit(&self, pool_name: String, max_actors: usize) {
+        self.max_actors_per_pool.insert(pool_name, max_actors);
+    }
+
+    pub fn get_available_actor_count_for_pool(&self, pool_name: &str) -> Result<usize, ActorError> {
+        let maximum_actor_count = self.max_actors_per_pool.get(pool_name);
+        if maximum_actor_count.is_none() {
+            return Err(ActorError::ThreadPoolDoesNotExistError);
+        }
+        let maximum_actor_count = maximum_actor_count.unwrap();
+        let maximum_actor_count = *maximum_actor_count.value();
+
+
+
+        let current_pool_count = self.pool_actor_count.get(pool_name).unwrap();
+        let current_pool_count = current_pool_count.value().load(Ordering::Relaxed);
+
+        if maximum_actor_count == 0 {
+            let result = usize::MAX - current_pool_count;
+            return Ok(result);
+        }
+
+        let result = maximum_actor_count - current_pool_count;
+        return Ok(result)
+
     }
 
     pub fn get_actor_ref<A>(&self, address: ActorAddress, internal_actor_manager: InternalActorManager) -> Result<ActorWrapper<A>, ActorError>

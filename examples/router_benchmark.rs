@@ -64,7 +64,7 @@ impl Handler<MessageA> for Benchmark {
             );
         }
         if self.count == self.total_msgs {
-            self.aggregator.send(Finish {});
+            self.aggregator.send(Finish {}).unwrap();
         }
         ActorResult::Ok
     }
@@ -162,17 +162,16 @@ fn main() {
                 },
             )
             .unwrap();
-
-        router.send(AddActorMessage::new(actor));
+        router.send(AddActorMessage::new(actor)).unwrap();
     }
 
     println!("Actors have been created");
     let start = Instant::now();
 
-    aggregator.send(Start {});
+    aggregator.send(Start {}).unwrap();
     for _i in 0..message_count {
         let msg = MessageA {};
-        router.send(RouterMessage::new(msg));
+        router.send(RouterMessage::new(msg)).unwrap();
     }
     let duration = start.elapsed();
     println!("It took {:?} to send {} messages", duration, message_count);

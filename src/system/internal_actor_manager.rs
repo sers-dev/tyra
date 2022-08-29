@@ -19,7 +19,8 @@ impl InternalActorManager {
     pub fn init(&mut self, system: ActorSystem) {
         let delay_builder = system.builder().set_pool_name("tyra").set_mailbox_unbounded();
         let delay_router = system.builder().set_pool_name("tyra").set_mailbox_unbounded().spawn("delay-router", RoundRobinRouterFactory::new()).unwrap();
-        for i in 0..3 {
+        let remaining_actors = system.get_available_actor_count_for_pool("tyra").unwrap();
+        for i in 0..remaining_actors {
             let delay_actor = delay_builder.spawn(format!("delay-{}", i), DelayActorFactory::new()).unwrap();
             let result = delay_router.send(AddActorMessage::new(delay_actor));
             if result.is_err() {

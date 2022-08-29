@@ -3,13 +3,14 @@ use crate::actor::actor_builder::ActorBuilder;
 use crate::config::pool_config::ThreadPoolConfig;
 use crate::config::tyra_config::{TyraConfig, DEFAULT_POOL};
 use crate::message::serialized_message::SerializedMessage;
-use crate::prelude::{Actor, Handler};
+use crate::prelude::{Actor, ActorError, Handler};
 use crate::system::system_state::SystemState;
 use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
+use dashmap::DashMap;
 use crate::system::internal_actor_manager::InternalActorManager;
 
 /// Manages thread pools and actors
@@ -46,11 +47,15 @@ impl ActorSystem {
 
         let thread_pool_manager = ThreadPoolManager::new();
         let wakeup_manager = WakeupManager::new();
-        let state = SystemState::new(wakeup_manager.clone());
+
+        let thread_pool_max_actors = DashMap::new();
 
         for (key, value) in thread_pool_config.config.iter() {
             thread_pool_manager.add_pool_with_config(key, value.clone());
+            thread_pool_max_actors.insert(key.clone(), value.actor_limit);
         }
+        let state = SystemState::new(wakeup_manager.clone(), Arc::new(thread_pool_max_actors));
+
 
         let s = state.clone();
         let t = thread_pool_manager.clone();
@@ -118,8 +123,18 @@ impl ActorSystem {
     /// actor_system.add_pool_with_config("test", pool_config);
     /// ```
     pub fn add_pool_with_config(&self, name: &str, thread_pool_config: ThreadPoolConfig) {
+        self.state.add_pool_actor_limit(String::from(name.clone()), thread_pool_config.actor_limit);
         self.thread_pool_manager
             .add_pool_with_config(name, thread_pool_config);
+    }
+
+    /// Returns the amount of Actors that can still be put onto a given thread_pool
+    ///
+    /// If the thread_pool does not have a configured limit, returns (usize::Max - current_actor_count)
+    ///
+    /// Returns ActorError::ThreadPoolDoesNotExistError if the given `pool_name` does not exist
+    pub fn get_available_actor_count_for_pool(&self, pool_name: &str) -> Result<usize, ActorError> {
+        return self.state.get_available_actor_count_for_pool(pool_name);
     }
 
     /// Sends a [SerializedMessage](../prelude/struct.SerializedMessage.html) to an Actor by Address

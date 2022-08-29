@@ -138,18 +138,23 @@ where
 
         match actor_handler {
             Ok(a) => {
-                self.system_state
+                let result = self.system_state
                     .add_mailbox(actor_address.clone(), mailbox);
+
+                if result.is_err() {
+                    return Err(result.unwrap_err());
+                }
+
                 self.wakeup_manager.add_inactive_actor(
                     a.get_address(),
                     Arc::new(RwLock::new(a)),
                 );
 
                 self.existing.insert(actor_address, actor_ref.clone());
-                Ok(actor_ref)
+                return Ok(actor_ref);
             },
             Err(e) => {
-                return Err(e)
+                return Err(e);
             }
         }
 

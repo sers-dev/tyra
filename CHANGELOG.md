@@ -5,7 +5,8 @@
  - fixed a bug where an actor with a limited mailbox can get stuck on shutdown
  - added `send_timeout()`
  - added return `Result<(), ActorSendError>` to message sending functions
-
+ - actually enforce configured actor limits per thread_pool
+ - added `get_available_actor_count_for_pool` that allows user to retrieve how many actors can still be spawned on a given thread_pool
 
 # 0.6.0
 
