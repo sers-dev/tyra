@@ -1,3 +1,4 @@
+use std::error::Error;
 use serde::{Deserialize, Serialize};
 use std::process::exit;
 use std::thread::sleep;
@@ -36,8 +37,8 @@ impl Handler<TestMsg> for RemoteActor {
 struct RemoteActorFactory {}
 
 impl ActorFactory<RemoteActor> for RemoteActorFactory {
-    fn new_actor(&self, _context: ActorContext<RemoteActor>) -> RemoteActor {
-        RemoteActor {}
+    fn new_actor(&mut self, _context: ActorContext<RemoteActor>) -> Result<RemoteActor, Box<dyn Error>> {
+        Ok(RemoteActor {})
     }
 }
 

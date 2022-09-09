@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::panic::UnwindSafe;
 use crate::actor::context::ActorContext;
 use crate::prelude::Actor;
@@ -12,6 +13,7 @@ use crate::prelude::Actor;
 /// Basic usage:
 ///
 /// ```rust
+/// use std::error::Error;
 /// use tyra::prelude::{SerializedMessage, ActorFactory, ActorContext, Handler, Actor};
 ///
 /// struct TestActor {}
@@ -21,8 +23,8 @@ use crate::prelude::Actor;
 /// struct TestFactory {}
 ///
 /// impl ActorFactory<TestActor> for TestFactory {
-///     fn new_actor(&self, _context: ActorContext<TestActor>) -> TestActor {
-///         TestActor {}
+///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
+///         Ok(TestActor {})
 ///     }
 /// }
 /// ```
@@ -35,5 +37,5 @@ where
     /// `ActorContext<A>` is injected and can optionally be stored within the actor itself.
     /// It can then be used to define clean a behavior for a clean [ActorSystem.stop](../prelude/struct.ActorSystem.html#method.stop)
     /// through [Actor.on_system_stop]
-    fn new_actor(&self, _context: ActorContext<A>) -> A;
+    fn new_actor(&mut self, _context: ActorContext<A>) -> Result<A, Box<dyn Error>>;
 }

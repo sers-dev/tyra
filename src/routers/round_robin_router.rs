@@ -1,3 +1,4 @@
+use std::error::Error;
 use log::debug;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
@@ -26,6 +27,7 @@ where
 /// Basic usage:
 ///
 /// ```rust
+/// use std::error::Error;
 /// use tyra::prelude::*;
 /// use std::process::exit;
 /// use std::time::Duration;
@@ -41,8 +43,8 @@ where
 /// // setup required Factory
 /// struct HelloWorldFactory {}
 /// impl ActorFactory<HelloWorld> for HelloWorldFactory {
-///     fn new_actor(&self, _context: ActorContext<HelloWorld>) -> HelloWorld {
-///         HelloWorld {}
+///     fn new_actor(&mut self, _context: ActorContext<HelloWorld>) -> Result<HelloWorld, Box<dyn Error>> {
+///         Ok(HelloWorld {})
 ///     }
 /// }
 ///
@@ -87,8 +89,8 @@ impl<A> ActorFactory<RoundRobinRouter<A>> for RoundRobinRouterFactory
 where
     A: Actor + 'static,
 {
-    fn new_actor(&self, _context: ActorContext<RoundRobinRouter<A>>) -> RoundRobinRouter<A> {
-        RoundRobinRouter::new()
+    fn new_actor(&mut self, _context: ActorContext<RoundRobinRouter<A>>) -> Result<RoundRobinRouter<A>, Box<dyn Error>> {
+        return Ok(RoundRobinRouter::new());
     }
 }
 

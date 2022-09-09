@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
@@ -30,8 +31,8 @@ impl Handler<TestMsg> for StopActor {
 struct StopActorFactory {}
 
 impl ActorFactory<StopActor> for StopActorFactory {
-    fn new_actor(&self, _context: ActorContext<StopActor>) -> StopActor {
-        StopActor {}
+    fn new_actor(&mut self, _context: ActorContext<StopActor>) -> Result<StopActor, Box<dyn Error>> {
+        Ok(StopActor {})
     }
 }
 

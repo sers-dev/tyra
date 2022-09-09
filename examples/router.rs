@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
@@ -16,8 +17,8 @@ impl Actor for HelloWorld {}
 struct HelloWorldFactory {}
 
 impl ActorFactory<HelloWorld> for HelloWorldFactory {
-    fn new_actor(&self, _context: ActorContext<HelloWorld>) -> HelloWorld {
-        HelloWorld { counter: 0 }
+    fn new_actor(&mut self, _context: ActorContext<HelloWorld>) -> Result<HelloWorld, Box<dyn Error>> {
+        Ok(HelloWorld { counter: 0 })
     }
 }
 impl Handler<MessageA> for HelloWorld {

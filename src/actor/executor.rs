@@ -15,6 +15,7 @@ use crossbeam_channel::{Receiver, SendTimeoutError};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
+use log::debug;
 use crate::system::actor_error::ActorError;
 
 pub trait ExecutorTrait: Send + Sync {
@@ -140,12 +141,18 @@ where
         let result = catch_unwind(AssertUnwindSafe(|| {
             self.actor.pre_restart(&self.context);
             let actor = self.actor_props.new_actor(self.context.clone());
-            self.actor = actor;
-            self.is_startup = true;
+            if actor.is_err() {
+                let err = actor.as_ref().err().unwrap();
+                debug!("{:?}", err);
+            }
+            return actor.unwrap();
         }));
         if result.is_err() {
             let actor_result = self.actor.on_panic(&self.context, ActorPanicSource::Restart);
             return self.handle_actor_result(actor_result);
+        } else {
+            self.actor = result.unwrap();
+            self.is_startup = true;
         }
         return ActorState::Running;
     }
@@ -216,7 +223,7 @@ where
     P: ActorFactory<A>,
 {
     pub fn new(
-        actor_props: P,
+        mut actor_props: P,
         actor_address: ActorAddress,
         actor_config: ActorConfig,
         mailbox: Mailbox<A>,
@@ -230,10 +237,14 @@ where
         };
 
         let actor = catch_unwind(AssertUnwindSafe(|| {
-            return actor_props.new_actor(context.clone());
+            let to_return = actor_props.new_actor(context.clone());
+            if to_return.is_err() {
+                let err = to_return.as_ref().err().unwrap();
+                debug!("{:?}", err);
+            }
+            return to_return.unwrap();
         }));
         if actor.is_err() {
-            println!("FUCK");
             return Err(ActorError::InitError);
         }
         return Ok(Self {

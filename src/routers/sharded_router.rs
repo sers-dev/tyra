@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::error::Error;
 use log::debug;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
@@ -28,6 +29,7 @@ pub struct ShardedRouter<A>
 /// Basic usage:
 ///
 /// ```rust
+/// use std::error::Error;
 /// use tyra::prelude::*;
 /// use std::process::exit;
 /// use std::time::Duration;
@@ -43,8 +45,8 @@ pub struct ShardedRouter<A>
 /// // setup required Factory
 /// struct HelloWorldFactory {}
 /// impl ActorFactory<HelloWorld> for HelloWorldFactory {
-///     fn new_actor(&self, _context: ActorContext<HelloWorld>) -> HelloWorld {
-///         HelloWorld {}
+///     fn new_actor(&mut self, _context: ActorContext<HelloWorld>) -> Result<HelloWorld, Box<dyn Error>> {
+///         Ok(HelloWorld {})
 ///     }
 /// }
 ///
@@ -89,8 +91,8 @@ impl<A> ActorFactory<ShardedRouter<A>> for ShardedRouterFactory
     where
         A: Actor + 'static,
 {
-    fn new_actor(&self, _context: ActorContext<ShardedRouter<A>>) -> ShardedRouter<A> {
-        ShardedRouter::new()
+    fn new_actor(&mut self, _context: ActorContext<ShardedRouter<A>>) -> Result<ShardedRouter<A>, Box<dyn Error>> {
+        return Ok(ShardedRouter::new());
     }
 }
 

@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::process::exit;
 use std::time::Duration;
 use tyra::prelude::*;
@@ -44,8 +45,8 @@ impl TemplateActorFactory {
 }
 
 impl ActorFactory<TemplateActor> for TemplateActorFactory {
-    fn new_actor(&self, _context: ActorContext<TemplateActor>) -> TemplateActor {
-        TemplateActor::new()
+    fn new_actor(&mut self, _context: ActorContext<TemplateActor>) -> Result<TemplateActor, Box<dyn Error>> {
+        Ok(TemplateActor::new())
     }
 }
 

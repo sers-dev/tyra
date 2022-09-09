@@ -14,7 +14,7 @@
 //! use tyra::prelude::*;
 //! use std::process::exit;
 //! use std::time::Duration;
-//!
+//! use std::error::Error;
 //! // define message
 //! struct FooBar {}
 //! impl ActorMessage for FooBar {}
@@ -26,8 +26,8 @@
 //! // setup required Factory
 //! struct HelloWorldFactory {}
 //! impl ActorFactory<HelloWorld> for HelloWorldFactory {
-//!     fn new_actor(&self, _context: ActorContext<HelloWorld>) -> HelloWorld {
-//!         HelloWorld {}
+//!     fn new_actor(&mut self, _context: ActorContext<HelloWorld>) -> Result<HelloWorld, Box<dyn Error>> {
+//!         Ok(HelloWorld {})
 //!     }
 //! }
 //!

@@ -1,5 +1,7 @@
+use std::error::Error;
 use std::process::exit;
 use std::time::Duration;
+use anyhow::Context;
 use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, Handler, TyraConfig};
 
 #[derive(Clone)]
@@ -32,10 +34,10 @@ struct ErrActorFactory {
 }
 
 impl ActorFactory<ErrActor> for ErrActorFactory {
-    fn new_actor(&self, _context: ActorContext<ErrActor>) -> ErrActor {
-        ErrActor {
+    fn new_actor(&mut self, _context: ActorContext<ErrActor>) -> Result<ErrActor, Box<dyn Error>> {
+        Ok(ErrActor {
             counter: self.counter,
-        }
+        })
     }
 }
 

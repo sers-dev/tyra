@@ -11,6 +11,8 @@
    - added `get_id` to `Message` trait
    - shards are reset whenever an actor is added/removed to the router
    - shard count is equal to the amount of targets times 5
+ - `ActorFactory::new_actor` now returns a result
+   - result of type error will result in same behavior as a panic
 
 # 0.6.0
 

@@ -148,6 +148,7 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
+    /// use std::error::Error;
     /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorMessage, ActorResult};
     ///
     /// struct TestActor {}
@@ -171,8 +172,8 @@ impl ActorSystem {
     /// struct TestFactory {}
     ///
     /// impl ActorFactory<TestActor> for TestFactory {
-    ///     fn new_actor(&self, _context: ActorContext<TestActor>) -> TestActor {
-    ///         TestActor {}
+    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
+    ///         Ok(TestActor {})
     ///     }
     /// }
     ///
@@ -194,6 +195,7 @@ impl ActorSystem {
     /// Basic usage:
     ///
     /// ```rust
+    /// use std::error::Error;
     /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor};
     ///
     /// struct TestActor {}
@@ -203,8 +205,8 @@ impl ActorSystem {
     /// struct TestFactory {}
     ///
     /// impl ActorFactory<TestActor> for TestFactory {
-    ///     fn new_actor(&self, _context: ActorContext<TestActor>) -> TestActor {
-    ///         TestActor {}
+    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
+    ///         Ok(TestActor {})
     ///     }
     /// }
     ///

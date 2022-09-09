@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
@@ -33,10 +34,10 @@ struct SleepActorFactory {
 }
 
 impl ActorFactory<SleepActor> for SleepActorFactory {
-    fn new_actor(&self, _context: ActorContext<SleepActor>) -> SleepActor {
-        SleepActor {
+    fn new_actor(&mut self, _context: ActorContext<SleepActor>) -> Result<SleepActor, Box<dyn Error>> {
+        Ok(SleepActor {
             counter: self.counter,
-        }
+        })
     }
 }
 

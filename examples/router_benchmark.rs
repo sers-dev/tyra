@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::process::exit;
 use std::time::{Duration, Instant};
 use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, ActorWrapper, Handler, TyraConfig};
@@ -30,8 +31,8 @@ struct BenchmarkFactory {
 }
 
 impl ActorFactory<Benchmark> for BenchmarkFactory {
-    fn new_actor(&self, _context: ActorContext<Benchmark>) -> Benchmark {
-        Benchmark::new(self.total_msgs, self.name.clone(), self.aggregator.clone())
+    fn new_actor(&mut self, _context: ActorContext<Benchmark>) -> Result<Benchmark, Box<dyn Error>> {
+        Ok(Benchmark::new(self.total_msgs, self.name.clone(), self.aggregator.clone()))
     }
 }
 
@@ -98,8 +99,8 @@ impl Aggregator {
 impl Actor for Aggregator {}
 
 impl ActorFactory<Aggregator> for AggregatorFactory {
-    fn new_actor(&self, context: ActorContext<Aggregator>) -> Aggregator {
-        Aggregator::new(self.total_actors, self.name.clone(), context)
+    fn new_actor(&mut self, context: ActorContext<Aggregator>) -> Result<Aggregator, Box<dyn Error>> {
+        Ok(Aggregator::new(self.total_actors, self.name.clone(), context))
     }
 }
 

@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -31,13 +32,13 @@ struct BenchmarkFactory {
 }
 
 impl ActorFactory<Benchmark> for BenchmarkFactory {
-    fn new_actor(&self, context: ActorContext<Benchmark>) -> Benchmark {
-        Benchmark::new(
+    fn new_actor(&mut self, context: ActorContext<Benchmark>) -> Result<Benchmark, Box<dyn Error>> {
+        Ok(Benchmark::new(
             self.total_msgs,
             self.name.clone(),
             context,
             self.aggregator.clone(),
-        )
+        ))
     }
 }
 
@@ -109,8 +110,8 @@ impl Aggregator {
 impl Actor for Aggregator {}
 
 impl ActorFactory<Aggregator> for AggregatorFactory {
-    fn new_actor(&self, context: ActorContext<Aggregator>) -> Aggregator {
-        Aggregator::new(self.total_actors, self.name.clone(), context)
+    fn new_actor(&mut self, context: ActorContext<Aggregator>) -> Result<Aggregator, Box<dyn Error>> {
+        Ok(Aggregator::new(self.total_actors, self.name.clone(), context))
     }
 }
 

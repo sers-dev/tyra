@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::process::exit;
 use std::time::{Duration, Instant};
 use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, Handler, TyraConfig};
@@ -19,8 +20,8 @@ struct BenchmarkFactory {
 }
 
 impl ActorFactory<Benchmark> for BenchmarkFactory {
-    fn new_actor(&self, context: ActorContext<Benchmark>) -> Benchmark {
-        Benchmark::new(self.total_msgs, self.name.clone(), context)
+    fn new_actor(&mut self, context: ActorContext<Benchmark>) -> Result<Benchmark, Box<dyn Error>> {
+        return Ok(Benchmark::new(self.total_msgs, self.name.clone(), context));
     }
 }
 
