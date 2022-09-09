@@ -10,4 +10,9 @@
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
 /// ```
-pub trait ActorMessage: Send + Sync {}
+pub trait ActorMessage: Send + Sync {
+    /// returns the message id
+    fn get_id(&self) -> usize {
+        return 0;
+    }
+}

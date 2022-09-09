@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use log::debug;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
@@ -10,16 +11,17 @@ use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
 use crate::routers::router_message::RouterMessage;
 
-pub struct RoundRobinRouter<A>
-where
-    A: Actor,
+pub struct ShardedRouter<A>
+    where
+        A: Actor,
 {
-    route_index: usize,
+    num_shards: usize,
     route_to: Vec<ActorWrapper<A>>,
+    sharding: HashMap<usize, ActorWrapper<A>>,
     can_route: bool,
 }
 
-/// implements [ActorFactory](../prelude/trait.ActorFactory.html) to spawn a RoundRobinRouter within an [ActorSystem](../prelude/struct.ActorSystem.html)
+/// implements [ActorFactory](../prelude/trait.ActorFactory.html) to spawn a ShardedRouter within an [ActorSystem](../prelude/struct.ActorSystem.html)
 ///
 /// # Examples
 ///
@@ -55,7 +57,7 @@ where
 /// }
 ///
 /// // create a new actor system with the default config
-/// use tyra::router::{RoundRobinRouterFactory, AddActorMessage, RouterMessage};
+/// use tyra::router::{ShardedRouterFactory, AddActorMessage, RouterMessage};
 /// let actor_config = TyraConfig::new().unwrap();
 /// let actor_system = ActorSystem::new(actor_config);
 ///
@@ -67,7 +69,7 @@ where
 ///     .unwrap();
 ///
 /// // create the router, fill it, and route a message
-/// let router_factory = RoundRobinRouterFactory::new();
+/// let router_factory = ShardedRouterFactory::new();
 /// let router = actor_system
 ///     .builder()
 ///     .spawn("router-hello-world", router_factory)
@@ -75,52 +77,64 @@ where
 /// router.send(AddActorMessage::new(actor.clone()));
 /// router.send(RouterMessage::new(FooBar{}));
 /// ```
-pub struct RoundRobinRouterFactory {}
+pub struct ShardedRouterFactory {}
 
-impl RoundRobinRouterFactory {
+impl ShardedRouterFactory {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl<A> ActorFactory<RoundRobinRouter<A>> for RoundRobinRouterFactory
-where
-    A: Actor + 'static,
+impl<A> ActorFactory<ShardedRouter<A>> for ShardedRouterFactory
+    where
+        A: Actor + 'static,
 {
-    fn new_actor(&self, _context: ActorContext<RoundRobinRouter<A>>) -> RoundRobinRouter<A> {
-        RoundRobinRouter::new()
+    fn new_actor(&self, _context: ActorContext<ShardedRouter<A>>) -> ShardedRouter<A> {
+        ShardedRouter::new()
     }
 }
 
-impl<A> RoundRobinRouter<A>
-where
-    A: Actor,
+impl<A> ShardedRouter<A>
+    where
+        A: Actor,
 {
     pub fn new() -> Self {
         Self {
-            route_index: 0,
+            num_shards: 0,
             route_to: Vec::new(),
+            sharding: HashMap::new(),
             can_route: false,
+        }
+    }
+
+    fn recalculate_shards(&mut self) {
+        let num_routees = self.route_to.len();
+        self.num_shards = self.route_to.len() * 5;
+        self.sharding.clear();
+        for i in 0..self.num_shards {
+            let routee = self.route_to.get(i % num_routees).unwrap().clone();
+            self.sharding.insert(i, routee);
         }
     }
 }
 
-impl<A> Actor for RoundRobinRouter<A> where A: Actor {}
+impl<A> Actor for ShardedRouter<A> where A: Actor {}
 
-impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
-where
-    A: Actor,
+impl<A> Handler<AddActorMessage<A>> for ShardedRouter<A>
+    where
+        A: Actor,
 {
     fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) -> ActorResult {
         self.route_to.push(msg.actor);
         self.can_route = true;
+        self.recalculate_shards();
         return ActorResult::Ok;
     }
 }
 
-impl<A> Handler<RemoveActorMessage<A>> for RoundRobinRouter<A>
-where
-    A: Actor,
+impl<A> Handler<RemoveActorMessage<A>> for ShardedRouter<A>
+    where
+        A: Actor,
 {
     fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) -> ActorResult {
         if let Some(pos) = self
@@ -129,6 +143,7 @@ where
             .position(|x| x.get_address() == msg.actor.get_address())
         {
             self.route_to.remove(pos);
+            self.recalculate_shards();
         }
         if self.route_to.len() == 0 {
             self.can_route = false
@@ -137,22 +152,18 @@ where
     }
 }
 
-impl<A, M> Handler<RouterMessage<M>> for RoundRobinRouter<A>
-where
-    A: Actor + Handler<M> + 'static,
-    M: ActorMessage + 'static,
+impl<A, M> Handler<RouterMessage<M>> for ShardedRouter<A>
+    where
+        A: Actor + Handler<M> + 'static,
+        M: ActorMessage + 'static,
 {
     fn handle(&mut self, msg: RouterMessage<M>, _context: &ActorContext<Self>) -> ActorResult {
         if !self.can_route {
             return ActorResult::Ok;
         }
 
-        self.route_index += 1;
-        if self.route_index >= self.route_to.len() {
-            self.route_index = 0;
-        }
-
-        let forward_to = self.route_to.get(self.route_index).unwrap();
+        let shard_id = msg.get_id() % self.num_shards;
+        let forward_to = self.sharding.get(&shard_id).unwrap();
         let result = forward_to.send(msg.msg);
         if result.is_err() {
             debug!("");
@@ -161,10 +172,10 @@ where
     }
 }
 
-impl<A, M> Handler<BulkRouterMessage<M>> for RoundRobinRouter<A>
-where
-    A: Actor + Handler<BulkActorMessage<M>> + 'static,
-    M: ActorMessage + 'static,
+impl<A, M> Handler<BulkRouterMessage<M>> for ShardedRouter<A>
+    where
+        A: Actor + Handler<BulkActorMessage<M>> + 'static,
+        M: ActorMessage + 'static,
 {
     fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) -> ActorResult {
         if !self.can_route {
@@ -172,16 +183,11 @@ where
         }
 
         let total_messages = msg.data.len();
-        let total_routees = self.route_to.len();
-        let messages_per_routee = total_messages / total_routees;
+        let messages_per_routee = total_messages / self.num_shards;
 
-        for _ in 0..total_routees {
-            self.route_index += 1;
-            if self.route_index >= self.route_to.len() {
-                self.route_index = 0;
-            }
+        for i in 0..self.num_shards {
 
-            let forward_to = self.route_to.get(self.route_index).unwrap();
+            let forward_to = self.sharding.get(&i).unwrap();
             let chunk: Vec<M> = msg.data.drain(0..messages_per_routee).collect();
             let result = forward_to.send(BulkActorMessage::new(chunk));
             if result.is_err() {

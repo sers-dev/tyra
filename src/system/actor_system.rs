@@ -267,7 +267,7 @@ impl ActorSystem {
     ///
     /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
-    /// actor_system.stop(Duration::from_secs(1));
+    /// actor_system.stop(Duration::from_secs(3));
     /// exit(actor_system.await_shutdown());
     /// ```
     pub fn await_shutdown(&self) -> i32 {

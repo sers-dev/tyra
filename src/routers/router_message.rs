@@ -8,7 +8,11 @@ where
     pub msg: M,
 }
 
-impl<M> ActorMessage for RouterMessage<M> where M: ActorMessage + 'static {}
+impl<M> ActorMessage for RouterMessage<M> where M: ActorMessage + 'static {
+    fn get_id(&self) -> usize {
+        return self.msg.get_id();
+    }
+}
 
 impl<M> RouterMessage<M>
 where

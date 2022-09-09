@@ -7,6 +7,10 @@
  - added return `Result<(), ActorSendError>` to message sending functions
  - actually enforce configured actor limits per thread_pool
  - added `get_available_actor_count_for_pool` that allows user to retrieve how many actors can still be spawned on a given thread_pool
+ - added `ShardedRouter` that will consistently route messages to the targets
+   - added `get_id` to `Message` trait
+   - shards are reset whenever an actor is added/removed to the router
+   - shard count is equal to the amount of targets times 5
 
 # 0.6.0
 
