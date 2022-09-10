@@ -13,6 +13,8 @@
    - shard count is equal to the amount of targets times 5
  - `ActorFactory::new_actor` now returns a result
    - result of type error will result in same behavior as a panic
+ - `send_after` now returns `Result` like `send` and `send_timeout`
+ - added `stop_with_code` to `ActorSystem` that stops the system with a user defined error code
 
 # 0.6.0
 
