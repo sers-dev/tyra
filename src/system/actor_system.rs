@@ -250,6 +250,25 @@ impl ActorSystem {
         self.state.stop(graceful_termination_timeout);
     }
 
+    /// Same as stop, but with fixed user defined exit code
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ThreadPoolConfig};
+    /// use std::time::Duration;
+    ///
+    /// let actor_config = TyraConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// actor_system.stop_with_code(Duration::from_secs(1), -1);
+    /// ```
+    pub fn stop_with_code(&self, graceful_termination_timeout: Duration, code: i32) {
+        self.state.use_forced_exit_code(code);
+        self.stop(graceful_termination_timeout);
+    }
+
     /// Waits for the system to stop
     ///
     /// # Returns
@@ -257,6 +276,8 @@ impl ActorSystem {
     /// `0 as i32` if cleanly stopped by removing all actors from system
     ///
     /// `1 as i32` if force stopped after stop timeout
+    ///
+    /// `i32` if stop was called through `stop_with_code`
     ///
     /// # Examples
     ///
@@ -276,7 +297,7 @@ impl ActorSystem {
         while !self.state.is_stopped() {
             sleep(Duration::from_millis(1));
         }
-        self.state.is_force_stopped() as i32
+        return self.state.get_exit_code();
     }
 
     /// Returns a reference to the [TyraConfig](../prelude/struct.TyraConfig.html)

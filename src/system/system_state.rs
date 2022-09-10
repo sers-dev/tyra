@@ -4,7 +4,7 @@ use crate::message::serialized_message::SerializedMessage;
 use crate::prelude::{ActorWrapper, Handler};
 use crate::system::wakeup_manager::WakeupManager;
 use dashmap::DashMap;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -21,6 +21,8 @@ pub struct SystemState {
     is_stopped: Arc<AtomicBool>,
     is_stopping: Arc<AtomicBool>,
     is_force_stopped: Arc<AtomicBool>,
+    forced_exit_code: Arc<AtomicI32>,
+    use_forced_exit_code: Arc<AtomicBool>,
 }
 
 impl SystemState {
@@ -34,6 +36,8 @@ impl SystemState {
             is_stopped: Arc::new(AtomicBool::new(false)),
             is_stopping: Arc::new(AtomicBool::new(false)),
             is_force_stopped: Arc::new(AtomicBool::new(false)),
+            forced_exit_code: Arc::new(AtomicI32::new(0)),
+            use_forced_exit_code: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -67,7 +71,19 @@ impl SystemState {
         self.is_stopping.load(Ordering::Relaxed)
     }
 
-    pub fn is_force_stopped(&self) -> bool {
+    pub fn use_forced_exit_code(&self, code: i32) {
+        self.forced_exit_code.store(code, Ordering::Relaxed);
+        self.use_forced_exit_code.store(true, Ordering::Relaxed);
+    }
+
+    pub fn get_exit_code(&self) -> i32 {
+        if self.use_forced_exit_code.load(Ordering::Relaxed) {
+            return self.forced_exit_code.load(Ordering::Relaxed)
+        }
+        return self.is_force_stopped() as i32;
+    }
+
+    fn is_force_stopped(&self) -> bool {
         self.is_force_stopped.load(Ordering::Relaxed)
     }
 

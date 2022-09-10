@@ -94,16 +94,18 @@ where
     }
 
     /// Sends a message to the actor after a specified delay
-    pub fn send_after<M>(&self, msg: M, delay: Duration)
+    pub fn send_after<M>(&self, msg: M, delay: Duration) -> Result<(), ActorSendError>
         where
             A: Handler<M> + 'static,
             M: ActorMessage + 'static,
     {
         if self.mailbox.is_stopped() {
-            return;
+            return Err(ActorSendError::AlreadyStoppedError);
         }
 
         self.internal_actor_manager.send_after(msg, self.clone(), delay);
+
+        return Ok(());
 
     }
 
