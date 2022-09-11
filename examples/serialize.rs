@@ -16,21 +16,21 @@ impl ActorMessage for TestMsg {}
 struct RemoteActor {}
 
 impl Actor for RemoteActor {
-    fn handle_serialized_message(&mut self, msg: SerializedMessage, context: &ActorContext<Self>) -> ActorResult {
+    fn handle_serialized_message(&mut self, msg: SerializedMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let result = bincode::deserialize(&msg.content);
         if result.is_err() {
-            return ActorResult::Ok
+            return Ok(ActorResult::Ok);
         }
         let decoded: TestMsg = result.unwrap();
         context.actor_ref.send_after(decoded, Duration::from_millis(50));
-        ActorResult::Ok
+        Ok(ActorResult::Ok)
     }
 }
 
 impl Handler<TestMsg> for RemoteActor {
-    fn handle(&mut self, msg: TestMsg, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, msg: TestMsg, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         println!("{}", msg.content);
-        ActorResult::Ok
+        Ok(ActorResult::Ok)
     }
 }
 

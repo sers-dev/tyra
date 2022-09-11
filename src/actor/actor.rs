@@ -1,6 +1,7 @@
+use std::error::Error;
 use crate::prelude::{ActorContext, ActorPanicSource, ActorResult, SerializedMessage};
 use std::panic::UnwindSafe;
-use log::debug;
+use log::{debug, error};
 use crate::message::actor_stop_message::ActorStopMessage;
 
 /// Core trait to define Actors
@@ -98,8 +99,8 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
         &mut self,
         _msg: SerializedMessage,
         _context: &ActorContext<Self>,
-    ) -> ActorResult {
-        return ActorResult::Ok;
+    ) -> Result<ActorResult, Box<dyn Error>> {
+        return Ok(ActorResult::Ok);
     }
 
     /// executed whenever a panic occurs within the actor
@@ -107,30 +108,40 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// determines actor behavior in case of a panic based on return value
     /// WARNING: returning `ActorResult::Restart` if `source == ActorPanicSource::Restart` can potentially result in an endless loop that will block the thread the actor is running on, until the restart was successful
     /// NOTE: if this function panics it will trigger a second time with `source == ActorPanicSource::OnPanic`, if another panic occurs in that case, the actor will be stopped immediately without finishing the mailbox!
-    fn on_panic(&mut self, _context: &ActorContext<Self>, source: ActorPanicSource) -> ActorResult {
+    fn on_panic(&mut self, _context: &ActorContext<Self>, source: ActorPanicSource) -> Result<ActorResult, Box<dyn Error>> {
         return match source {
 
             ActorPanicSource::PreStart => {
-                ActorResult::Ok
+                Ok(ActorResult::Ok)
             }
             ActorPanicSource::Message => {
-                ActorResult::Restart
+                Ok(ActorResult::Restart)
             }
             ActorPanicSource::Restart => {
-                ActorResult::Ok
+                Ok(ActorResult::Ok)
             }
             ActorPanicSource::OnPanic => {
-                ActorResult::Kill
+                Ok(ActorResult::Kill)
             }
         }
+    }
+
+    /// executed whenever an error occurs within the actor
+    ///
+    /// determines actor behavior in case of an error based on return value
+    /// WARNING: returning `ActorResult::Restart` if `source == ActorPanicSource::Restart` can potentially result in an endless loop that will block the thread the actor is running on, until the restart was successful
+    /// NOTE: if this function panics it will trigger a second time with `source == ActorPanicSource::OnPanic`, if another panic occurs in that case, the actor will be stopped immediately without finishing the mailbox!
+    fn on_error(&mut self, _context: &ActorContext<Self>, err: Box<dyn Error>) -> ActorResult {
+        error!("{:?}", err);
+        return ActorResult::Ok;
     }
 
     /// executed before the first message is handled
     ///
     /// re-executed after actor restart before first message is handled
     /// panic triggers `self.on_panic()` with `source = ActorPanicSource::PreStart`
-    fn pre_start(&mut self, _context: &ActorContext<Self>) -> ActorResult {
-        return ActorResult::Ok;
+    fn pre_start(&mut self, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+        return Ok(ActorResult::Ok);
     }
 
     /// executed before the actor is restarted
@@ -145,19 +156,19 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///
     /// If the return value is neither ActorResult::Stop nor ActorResult::StopImmediately the return value will internally be converted to ActorResult::Stop
     /// panic triggers `self.on_panic()` with `source = ActorPanicSource::Message`
-    fn on_actor_stop(&mut self, _context: &ActorContext<Self>) -> ActorResult {
-        return ActorResult::Stop;
+    fn on_actor_stop(&mut self, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+        return Ok(ActorResult::Stop);
     }
 
     /// executed when Actor handles internal SystemStopMessage initiated by [ActorSystem.stop](../prelude/struct.ActorSystem.html#method.stop)
     ///
     /// Default behavior sends an `ActorStopMessage` to all actors which will trigger a clean shutdown
     /// panic triggers `self.on_panic()` with `source = ActorPanicSource::Message`
-    fn on_system_stop(&mut self, context: &ActorContext<Self>) -> ActorResult {
+    fn on_system_stop(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let result = context.actor_ref.send(ActorStopMessage {});
         if result.is_err() {
             debug!("")
         }
-        return ActorResult::Ok;
+        return Ok(ActorResult::Ok);
     }
 }

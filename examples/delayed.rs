@@ -55,9 +55,9 @@ impl ActorFactory<TemplateActor> for TemplateActorFactory {
 //Handler//
 ///////////
 impl Handler<TemplateMessage> for TemplateActor {
-    fn handle(&mut self, _msg: TemplateMessage, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, _msg: TemplateMessage, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         println!("{}", _msg.id);
-        ActorResult::Ok
+        Ok(ActorResult::Ok)
     }
 }
 

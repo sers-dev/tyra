@@ -30,7 +30,7 @@ impl<A, M> Handler<DelayedMessage<A, M>> for DelayActor
         M: ActorMessage + 'static,
         A: Actor + Handler<M> + 'static,
 {
-    fn handle(&mut self, msg: DelayedMessage<A, M>, context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, msg: DelayedMessage<A, M>, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let duration = msg.started.elapsed();
         if duration >= msg.delay {
             let result = msg.destination.send(msg.msg);
@@ -43,6 +43,6 @@ impl<A, M> Handler<DelayedMessage<A, M>> for DelayActor
             let _ = context.actor_ref.send(msg);
         }
 
-        return ActorResult::Ok;
+        return Ok(ActorResult::Ok);
     }
 }

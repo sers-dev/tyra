@@ -20,11 +20,11 @@ impl Actor for StopActor {
 }
 
 impl Handler<TestMsg> for StopActor {
-    fn handle(&mut self, _msg: TestMsg, context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, _msg: TestMsg, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         context.actor_ref.send(TestMsg {});
         println!("Message received!");
         sleep(Duration::from_millis(100));
-        ActorResult::Ok
+        Ok(ActorResult::Ok)
     }
 }
 

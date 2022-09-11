@@ -1,3 +1,4 @@
+use std::error::Error;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_config::{ActorConfig};
 use crate::actor::actor_factory::ActorFactory;
@@ -28,7 +29,7 @@ pub trait ExecutorTrait: Send + Sync {
     fn on_actor_panic(&mut self, source: ActorPanicSource) -> ActorState;
     fn restart_actor(&mut self) -> ActorState;
     fn stop_actor(&mut self, immediately: bool) -> ActorState;
-    fn handle_actor_result(&mut self, result: ActorResult) -> ActorState;
+    fn handle_actor_result(&mut self, result: Result<ActorResult, Box<dyn Error>>) -> ActorState;
 
 }
 
@@ -79,26 +80,10 @@ where
             let result = catch_unwind(AssertUnwindSafe(|| {
                 return self.actor.pre_start(&self.context);
             }));
-           if result.is_err() {
-               return self.on_actor_panic(ActorPanicSource::PreStart);
-           }
-            else {
-                let actor_result = result.unwrap();
-                match actor_result {
-                    ActorResult::Ok => {}
-                    ActorResult::Restart => {
-                        return self.restart_actor();
-                    }
-                    ActorResult::Stop => {
-                        return self.stop_actor(false);
-                    }
-                    ActorResult::Kill => {
-                        return self.stop_actor(true);
-                    }
-                    ActorResult::Sleep(duration) => {
-                        return ActorState::Sleeping(duration);
-                    }
-                }
+            return if result.is_err() {
+                self.on_actor_panic(ActorPanicSource::PreStart)
+            } else {
+                self.handle_actor_result(result.unwrap())
             }
         }
         let m = self.queue.try_recv();
@@ -196,8 +181,22 @@ where
         self.last_wakeup = Instant::now();
     }
 
-    fn handle_actor_result(&mut self, result: ActorResult) -> ActorState {
-        return match result {
+    fn handle_actor_result(&mut self, result: Result<ActorResult, Box<dyn Error>>) -> ActorState {
+        let res: ActorResult;
+        if result.is_err() {
+            let catch_result = catch_unwind(AssertUnwindSafe(|| {
+                let actor_result = self.actor.on_error(&self.context, result.unwrap_err());
+                return actor_result
+            }));
+            if catch_result.is_err() {
+                return self.stop_actor(true);
+            }
+            res = catch_result.unwrap();
+        }
+        else {
+            res = result.unwrap();
+        }
+        return match res {
             ActorResult::Ok => {
                 ActorState::Running
             }

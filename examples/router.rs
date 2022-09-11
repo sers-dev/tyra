@@ -22,10 +22,10 @@ impl ActorFactory<HelloWorld> for HelloWorldFactory {
     }
 }
 impl Handler<MessageA> for HelloWorld {
-    fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         self.counter += 1;
         println!("Received MSG {}", self.counter);
-        ActorResult::Ok
+        Ok(ActorResult::Ok)
     }
 }
 

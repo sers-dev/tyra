@@ -15,6 +15,7 @@
    - result of type error will result in same behavior as a panic
  - `send_after` now returns `Result` like `send` and `send_timeout`
  - added `stop_with_code` to `ActorSystem` that stops the system with a user defined error code
+ - changed `ActorResult` to `Result<ActorResult, Box<dyn Error>>` and added `on_error()` to `Actor` trait  
 
 # 0.6.0
 

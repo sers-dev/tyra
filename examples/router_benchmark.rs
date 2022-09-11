@@ -51,7 +51,7 @@ impl Benchmark {
 impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
-    fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         if self.count == 0 {
             //sleep(Duration::from_secs((3) as u64));
             self.start = Instant::now();
@@ -67,7 +67,7 @@ impl Handler<MessageA> for Benchmark {
         if self.count == self.total_msgs {
             self.aggregator.send(Finish {}).unwrap();
         }
-        ActorResult::Ok
+        Ok(ActorResult::Ok)
     }
 }
 
@@ -105,7 +105,7 @@ impl ActorFactory<Aggregator> for AggregatorFactory {
 }
 
 impl Handler<Finish> for Aggregator {
-    fn handle(&mut self, _msg: Finish, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, _msg: Finish, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         self.actors_finished += 1;
         if self.actors_finished == self.total_actors {
             let duration = self.start.elapsed();
@@ -115,15 +115,15 @@ impl Handler<Finish> for Aggregator {
             );
             self.ctx.system.stop(Duration::from_secs(60));
         }
-        ActorResult::Ok
+        Ok(ActorResult::Ok)
     }
 }
 
 impl Handler<Start> for Aggregator {
-    fn handle(&mut self, _msg: Start, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, _msg: Start, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         //sleep(Duration::from_secs((3) as u64));
         self.start = Instant::now();
-        ActorResult::Ok
+        Ok(ActorResult::Ok)
     }
 }
 

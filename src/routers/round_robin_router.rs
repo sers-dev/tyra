@@ -50,8 +50,8 @@ where
 ///
 /// // setup Message Handler for Actor
 /// impl Handler<FooBar> for HelloWorld {
-///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) -> ActorResult {
-///         ActorResult::Ok
+///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+///         Ok(ActorResult::Ok)
 ///     }
 ///
 /// }
@@ -113,10 +113,10 @@ impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
 where
     A: Actor,
 {
-    fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         self.route_to.push(msg.actor);
         self.can_route = true;
-        return ActorResult::Ok;
+        return Ok(ActorResult::Ok);
     }
 }
 
@@ -124,7 +124,7 @@ impl<A> Handler<RemoveActorMessage<A>> for RoundRobinRouter<A>
 where
     A: Actor,
 {
-    fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         if let Some(pos) = self
             .route_to
             .iter()
@@ -135,7 +135,7 @@ where
         if self.route_to.len() == 0 {
             self.can_route = false
         }
-        return ActorResult::Ok;
+        return Ok(ActorResult::Ok);
     }
 }
 
@@ -144,9 +144,9 @@ where
     A: Actor + Handler<M> + 'static,
     M: ActorMessage + 'static,
 {
-    fn handle(&mut self, msg: RouterMessage<M>, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, msg: RouterMessage<M>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
-            return ActorResult::Ok;
+            return Ok(ActorResult::Ok);
         }
 
         self.route_index += 1;
@@ -159,7 +159,7 @@ where
         if result.is_err() {
             debug!("");
         }
-        return ActorResult::Ok;
+        return Ok(ActorResult::Ok);
     }
 }
 
@@ -168,9 +168,9 @@ where
     A: Actor + Handler<BulkActorMessage<M>> + 'static,
     M: ActorMessage + 'static,
 {
-    fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
-            return ActorResult::Ok;
+            return Ok(ActorResult::Ok);
         }
 
         let total_messages = msg.data.len();
@@ -190,6 +190,6 @@ where
                 debug!("ASDF");
             }
         }
-        return ActorResult::Ok;
+        return Ok(ActorResult::Ok);
     }
 }

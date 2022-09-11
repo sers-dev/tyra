@@ -156,16 +156,16 @@ impl ActorSystem {
     /// struct HelloWorld {}
     /// impl ActorMessage for HelloWorld {}
     /// impl Actor for TestActor {
-    ///     fn handle_serialized_message(&mut self, _msg: SerializedMessage, context: &ActorContext<Self>) -> ActorResult {
+    ///     fn handle_serialized_message(&mut self, _msg: SerializedMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
     ///         context.actor_ref.send(HelloWorld{});
-    ///         ActorResult::Ok
+    ///         Ok(ActorResult::Ok)
     ///     }
     ///
     /// }
     ///
     /// impl Handler<HelloWorld> for TestActor {
-    ///     fn handle(&mut self, _msg: HelloWorld, _context: &ActorContext<Self>) -> ActorResult {
-    ///         ActorResult::Ok
+    ///     fn handle(&mut self, _msg: HelloWorld, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    ///         Ok(ActorResult::Ok)
     ///     }
     /// }
     ///

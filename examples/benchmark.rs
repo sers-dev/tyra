@@ -39,7 +39,7 @@ impl Benchmark {
 impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
-    fn handle(&mut self, _msg: MessageA, context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, _msg: MessageA, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         if self.count == 0 {
             println!("START PROCESSING!");
             self.start = Instant::now();
@@ -59,7 +59,7 @@ impl Handler<MessageA> for Benchmark {
         if self.count == self.total_msgs {
             context.system.stop(Duration::from_secs(60));
         }
-        ActorResult::Ok
+        Ok(ActorResult::Ok)
     }
 }
 

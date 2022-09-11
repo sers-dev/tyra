@@ -17,7 +17,7 @@ struct SleepActor {
 impl Actor for SleepActor {}
 
 impl Handler<SleepMsg> for SleepActor {
-    fn handle(&mut self, _msg: SleepMsg, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, _msg: SleepMsg, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         self.counter += 1;
         //if self.counter == 1 {
         sleep(Duration::from_secs(3));
@@ -25,7 +25,7 @@ impl Handler<SleepMsg> for SleepActor {
         //if self.counter % 1000000 == 0 {
         println!("Received SERS: {}", self.counter);
         //}
-        ActorResult::Ok
+        Ok(ActorResult::Ok)
     }
 }
 

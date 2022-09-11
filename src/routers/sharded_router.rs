@@ -52,8 +52,8 @@ pub struct ShardedRouter<A>
 ///
 /// // setup Message Handler for Actor
 /// impl Handler<FooBar> for HelloWorld {
-///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) -> ActorResult {
-///         ActorResult::Ok
+///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+///         Ok(ActorResult::Ok)
 ///     }
 ///
 /// }
@@ -126,11 +126,11 @@ impl<A> Handler<AddActorMessage<A>> for ShardedRouter<A>
     where
         A: Actor,
 {
-    fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         self.route_to.push(msg.actor);
         self.can_route = true;
         self.recalculate_shards();
-        return ActorResult::Ok;
+        return Ok(ActorResult::Ok);
     }
 }
 
@@ -138,7 +138,7 @@ impl<A> Handler<RemoveActorMessage<A>> for ShardedRouter<A>
     where
         A: Actor,
 {
-    fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         if let Some(pos) = self
             .route_to
             .iter()
@@ -150,7 +150,7 @@ impl<A> Handler<RemoveActorMessage<A>> for ShardedRouter<A>
         if self.route_to.len() == 0 {
             self.can_route = false
         }
-        return ActorResult::Ok;
+        return Ok(ActorResult::Ok);
     }
 }
 
@@ -159,9 +159,9 @@ impl<A, M> Handler<RouterMessage<M>> for ShardedRouter<A>
         A: Actor + Handler<M> + 'static,
         M: ActorMessage + 'static,
 {
-    fn handle(&mut self, msg: RouterMessage<M>, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, msg: RouterMessage<M>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
-            return ActorResult::Ok;
+            return Ok(ActorResult::Ok);
         }
 
         let shard_id = msg.get_id() % self.num_shards;
@@ -170,7 +170,7 @@ impl<A, M> Handler<RouterMessage<M>> for ShardedRouter<A>
         if result.is_err() {
             debug!("");
         }
-        return ActorResult::Ok;
+        return Ok(ActorResult::Ok);
     }
 }
 
@@ -179,9 +179,9 @@ impl<A, M> Handler<BulkRouterMessage<M>> for ShardedRouter<A>
         A: Actor + Handler<BulkActorMessage<M>> + 'static,
         M: ActorMessage + 'static,
 {
-    fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) -> ActorResult {
+    fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
-            return ActorResult::Ok;
+            return Ok(ActorResult::Ok);
         }
 
         let total_messages = msg.data.len();
@@ -196,6 +196,6 @@ impl<A, M> Handler<BulkRouterMessage<M>> for ShardedRouter<A>
                 debug!("ASDF");
             }
         }
-        return ActorResult::Ok;
+        return Ok(ActorResult::Ok);
     }
 }

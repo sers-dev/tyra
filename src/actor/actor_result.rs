@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 /// ActorResults that determine how the actor should proceed
 pub enum ActorResult {
     /// continue processing messages
