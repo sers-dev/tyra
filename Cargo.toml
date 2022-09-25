@@ -33,3 +33,4 @@ tiny_http = { path = "../tiny-http-test" }
 
 [dev-dependencies]
 bincode = "1.3.3"
+ntest = "0.8.1"
