@@ -9,7 +9,6 @@ use crate::prelude::{Actor, Handler, SerializedMessage};
 use crate::system::actor_system::ActorSystem;
 use crate::system::system_state::SystemState;
 use crate::system::wakeup_manager::WakeupManager;
-use crossbeam_channel::{bounded, unbounded};
 use dashmap::DashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, RwLock};
@@ -108,9 +107,9 @@ where
         }
 
         let (sender, receiver) = if self.actor_config.mailbox_size == 0 {
-            unbounded()
+            flume::unbounded()
         } else {
-            bounded(self.actor_config.mailbox_size)
+            flume::bounded(self.actor_config.mailbox_size)
         };
 
         let mailbox = Mailbox {

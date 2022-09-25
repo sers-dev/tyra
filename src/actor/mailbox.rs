@@ -7,7 +7,6 @@ use std::panic::UnwindSafe;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use crossbeam_channel::Sender;
 use crate::actor::actor_send_error::ActorSendError;
 
 pub trait BaseMailbox: Send + Sync + UnwindSafe {
@@ -19,7 +18,7 @@ pub trait BaseMailbox: Send + Sync + UnwindSafe {
 pub struct Mailbox<A> {
     pub is_stopped: Arc<AtomicBool>,
     pub is_sleeping: Arc<AtomicBool>,
-    pub msg_in: Sender<MessageEnvelope<A>>,
+    pub msg_in: flume::Sender<MessageEnvelope<A>>,
 }
 
 impl<A> BaseMailbox for Mailbox<A>

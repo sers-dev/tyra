@@ -1,3 +1,9 @@
+# WIP 0.8.0
+
+ - switch internal actor mailbox to `flume` from `crossbeam-channel`
+   - `crossbeam-channel` is still being used to keep actors thread independent
+   - see [github issue #13](https://github.com/sers-dev/tyra/issues/13) for reasoning
+
 # 0.7.0
  
  - actors can now delay message processing by going into a sleep state

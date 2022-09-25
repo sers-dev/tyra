@@ -12,7 +12,6 @@ use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
 use crate::message::system_stop_message::SystemStopMessage;
 use crate::prelude::{Actor, ActorPanicSource, ActorResult};
 use crate::system::actor_system::ActorSystem;
-use crossbeam_channel::{Receiver, SendTimeoutError};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
@@ -42,7 +41,7 @@ where
     actor_props: P,
     actor_config: ActorConfig,
     mailbox: Mailbox<A>,
-    queue: Receiver<MessageEnvelope<A>>,
+    queue: flume::Receiver<MessageEnvelope<A>>,
     actor_address: ActorAddress,
     is_startup: bool,
     system_triggered_stop: bool,
@@ -226,7 +225,7 @@ where
         actor_address: ActorAddress,
         actor_config: ActorConfig,
         mailbox: Mailbox<A>,
-        receiver: Receiver<MessageEnvelope<A>>,
+        receiver: flume::Receiver<MessageEnvelope<A>>,
         system: ActorSystem,
         actor_ref: ActorWrapper<A>,
     ) -> Result<Self, ActorError> {
@@ -259,7 +258,7 @@ where
             context,
         });
     }
-    pub fn send<M>(&self, msg: M) -> Result<(), SendTimeoutError<MessageEnvelope<A>>>
+    pub fn send<M>(&self, msg: M) -> Result<(), flume::SendTimeoutError<MessageEnvelope<A>>>
     where
         A: Handler<M>,
         M: ActorMessage + 'static,
