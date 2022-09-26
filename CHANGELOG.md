@@ -5,6 +5,7 @@
    - see [github issue #13](https://github.com/sers-dev/tyra/issues/13) for reasoning
  - added generic `ActorInitMessage` without a generic `Handler` implementation
    - a `Handler<ActorInitMessage>` can optionally be implemented by the user for any `actor` which can then be used to initialize the actor
+ - update documentation + tests
 
 # 0.7.0
  

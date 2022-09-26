@@ -41,16 +41,8 @@ impl<A> Handler<ActorStopMessage> for A
 where
     A: Actor + Sized,
 {
-    fn handle(&mut self, _msg: ActorStopMessage, context: &ActorContext<A>) -> Result<ActorResult, Box<dyn Error>> {
-        let actor_result = self.on_actor_stop(context);
-        if actor_result.is_err() {
-            return actor_result;
-        }
-        let actor_result = actor_result.unwrap();
-        if actor_result != ActorResult::Stop || actor_result != ActorResult::Kill {
-            return Ok(ActorResult::Stop);
-        }
-        return Ok(actor_result);
+    fn handle(&mut self, _msg: ActorStopMessage, _context: &ActorContext<A>) -> Result<ActorResult, Box<dyn Error>> {
+        return Ok(ActorResult::Stop);
     }
 }
 

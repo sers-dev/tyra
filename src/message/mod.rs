@@ -2,7 +2,6 @@ pub mod actor_message;
 pub mod actor_stop_message;
 pub mod bulk_actor_message;
 pub mod envelope;
-pub mod message_type;
 pub mod serialized_message;
 pub mod system_stop_message;
 pub mod delayed_message;

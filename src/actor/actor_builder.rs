@@ -89,8 +89,99 @@ where
     ///
     /// `Ok(ActorWrapper<A>)` if the actor is already running on the system
     ///
-    /// `Err(ActorError)` see
+    /// `Err(ActorError)` see [ActorError](../prelude/enum.ActorError.html) for detailed information
     ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tyra::prelude::*;
+    /// use std::error::Error;
+    /// use std::time::Duration;
+    ///
+    /// struct TestActor {}
+    /// impl TestActor {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl Actor for TestActor {}
+    ///
+    /// struct TestActorFactory {}
+    /// impl TestActorFactory {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl ActorFactory<TestActor> for TestActorFactory {
+    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
+    ///         Ok(TestActor::new())
+    ///     }
+    /// }
+    ///
+    /// struct SecondActor {}
+    /// impl SecondActor {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl Actor for SecondActor {}
+    ///
+    /// struct SecondActorFactory {}
+    /// impl SecondActorFactory {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl ActorFactory<SecondActor> for SecondActorFactory {
+    ///     fn new_actor(&mut self, _context: ActorContext<SecondActor>) -> Result<SecondActor, Box<dyn Error>> {
+    ///         let error = std::io::Error::from_raw_os_error(1337);
+    ///         return Err(Box::new(error));
+    ///     }
+    /// }
+    ///
+    /// #[ntest::timeout(5000)]
+    /// fn main() {
+    ///     let mut actor_config = TyraConfig::new().unwrap();
+    ///     actor_config.thread_pool.config.insert(String::from("default"), ThreadPoolConfig::new(1, 1, 1, 1.0));
+    ///     let actor_system = ActorSystem::new(actor_config);
+    ///     let actor_name = "test";
+    ///
+    ///     //this works, because there's no actor called `test` yet on the pool
+    ///     let this_works = actor_system.builder().spawn(actor_name, TestActorFactory::new());
+    ///     assert!(this_works.is_ok(), "The actor could not be spawned");
+    ///
+    ///     //this works, because there's already an actor called `test` with type `TestActor` on the pool, therefore the result is the same actor that was created in the previous spawn command
+    ///     let this_works_as_well = actor_system.builder().spawn(actor_name, TestActorFactory::new());
+    ///     assert!(this_works_as_well.is_ok(), "The `ActorWrapper` could not be fetched");
+    ///
+    ///     //this does not work, because the pool is currently configured to only allow a single actor
+    ///     let pool_full = actor_system.builder().spawn("full", TestActorFactory::new());
+    ///     assert!(pool_full.is_err(), "The actor could not be spawned");
+    ///     let err = pool_full.err().unwrap();
+    ///     assert_eq!(err, ActorError::ThreadPoolHasTooManyActorsError, "Error is not correct");
+    ///
+    ///     //this does not work, because the pool does not exist in the configuration
+    ///     let invalid_pool = actor_system.builder().set_pool_name("invalid").spawn(actor_name, TestActorFactory::new());
+    ///     assert!(invalid_pool.is_err(), "The Actor was spawned");
+    ///     let err = invalid_pool.err().unwrap();
+    ///     assert_eq!(err, ActorError::ThreadPoolDoesNotExistError, "Error is not correct");
+    ///
+    ///     //this does not work, because although there's not yet an actor called `second` on the pool the `new_actor` method returns an error
+    ///     let this_is_not_working = actor_system.builder().spawn("second", SecondActorFactory::new());
+    ///     assert!(this_is_not_working.is_err(), "The SecondActor was spawned");
+    ///     let err = this_is_not_working.err().unwrap();
+    ///     assert_eq!(err, ActorError::InitError, "Error is not correct");
+    ///
+    ///     //this does not work, because there's already an actor called `test` with a different type on the pool
+    ///     let this_is_not_working_either = actor_system.builder().spawn(actor_name, SecondActorFactory::new());
+    ///     assert!(this_is_not_working_either.is_err(), "Illegal Actor type conversion");
+    ///     let err = this_is_not_working_either.err().unwrap();
+    ///     assert_eq!(err, ActorError::InvalidActorTypeError, "Error is not correct");
+    ///
+    ///     actor_system.stop(Duration::from_millis(1000));
+    ///     std::process::exit(actor_system.await_shutdown());
+    /// }
+    /// ```
     pub fn spawn<P>(&self, name: impl Into<String>, props: P) -> Result<ActorWrapper<A>, ActorError>
     where
         P: ActorFactory<A> + 'static,

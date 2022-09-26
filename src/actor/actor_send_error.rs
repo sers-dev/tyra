@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ActorSendError {
     /// Triggered by [ActorWrapper.send_timeout](../prelude/struct.ActorWrapper.html#method.send_timout) if message can't be delivered without user defined timeout
     #[error("Message could not be delivered in time")]

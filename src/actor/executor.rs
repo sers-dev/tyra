@@ -132,8 +132,7 @@ where
             return actor.unwrap();
         }));
         if result.is_err() {
-            let actor_result = self.actor.on_panic(&self.context, ActorPanicSource::Restart);
-            return self.handle_actor_result(actor_result);
+            return self.on_actor_panic(ActorPanicSource::Restart);
         } else {
             self.actor = result.unwrap();
             self.is_startup = true;

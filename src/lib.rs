@@ -4,7 +4,7 @@
 //!
 //! Furthermore Actors are bound to a thread pool and can be moved between executions to any of the threads of said pool.
 //!
-//! [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam) is used for all internal-messaging
+//! [crossbeam-channel](https://github.com/crossbeam-rs/crossbeam) and [flume](https://github.com/zesterer/flume) are used for all internal-messaging
 //!
 //! # Examples
 //!
@@ -15,6 +15,8 @@
 //! use std::process::exit;
 //! use std::time::Duration;
 //! use std::error::Error;
+//! use log::trace;
+//!
 //! // define message
 //! struct FooBar {}
 //! impl ActorMessage for FooBar {}
@@ -35,7 +37,7 @@
 //! // this is where the actual work is done
 //! impl Handler<FooBar> for HelloWorld {
 //!     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-//!         println!("Message Received!");
+//!         trace!("Message Received!");
 //!         Ok(ActorResult::Ok)
 //!     }
 //! }
@@ -51,11 +53,11 @@
 //!         .builder()
 //!         .spawn("hello-world", factory)
 //!         .unwrap();
-//!     actor.send(FooBar {});
+//!     actor.send(FooBar {}).unwrap();
 //!
 //!     // cleanup
-//!     actor.stop();
-//!     actor_system.stop(Duration::from_secs(5));
+//!     actor.stop().unwrap();
+//!     actor_system.stop(Duration::from_millis(5000));
 //!     exit(actor_system.await_shutdown());
 //! }
 //! ```
@@ -67,7 +69,7 @@
 //! ```text
 //!                             ┌──────────────────────┐
 //!                             │                      │
-//!                             │  TyraConfig  │
+//!                             │      TyraConfig      │
 //!                             │                      │
 //!                             └──────────┬───────────┘
 //!                                        │

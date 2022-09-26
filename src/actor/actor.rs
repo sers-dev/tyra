@@ -9,12 +9,12 @@ use crate::message::actor_stop_message::ActorStopMessage;
 ///
 /// # Guaranteed Execution Order
 ///
-/// 1. [ActorFactory.new_actor](../prelude/trait.ActorFactory.html#tymethod.new_actor)
-/// 2. [pre_start](../prelude/trait.Actor.html#method.pre_start)
-/// 3. Start processing [Handler Implementations](../prelude/trait.Handler.html#tymethod.handle)
-/// 4. [on_actor_stop](../prelude/trait.Actor.html#method.on_actor_stop)
-/// 5. Stops accepting new messages, but will continue to work through all existing Messages in Mailbox
-/// 6. [post_stop](../prelude/trait.Actor.html#method.post_stop)
+/// 1.  [ActorFactory.new_actor](../prelude/trait.ActorFactory.html#tymethod.new_actor)
+/// 2.  [pre_start](../prelude/trait.Actor.html#method.pre_start) only after first message has been sent
+/// 3.  Start processing [Handler Implementations](../prelude/trait.Handler.html#tymethod.handle)
+/// 4a. If ActorResult::Stop => Stops accepting new messages, but will continue to work through all existing messages in Mailbox before continuing to the next step
+/// 4b. If ActorResult::Kill => Stops accepting new messages, skips all messages in Mailbox and will immediately continue with the next step
+/// 5.  [post_stop](../prelude/trait.Actor.html#method.post_stop)
 ///
 /// # Examples
 ///
@@ -147,7 +147,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(2000)]
+    /// #[ntest::timeout(5000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
@@ -213,12 +213,12 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///
     /// impl Handler<ActorInitMessage> for TestActor {
     ///     fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-    ///         let error = std::io::Error::from_raw_os_error(22);
+    ///         let error = std::io::Error::from_raw_os_error(1337);
     ///         return Err(Box::new(error));
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(2000)]
+    /// #[ntest::timeout(5000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
@@ -275,7 +275,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(2000)]
+    /// #[ntest::timeout(5000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
@@ -329,7 +329,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(2000)]
+    /// #[ntest::timeout(5000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
@@ -379,7 +379,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(2000)]
+    /// #[ntest::timeout(5000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
@@ -389,63 +389,6 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// ```
     fn post_stop(&mut self, _context: &ActorContext<Self>) {}
-
-    /// executed when Actor handles internal ActorStopMessage
-    ///
-    /// If the return value is neither ActorResult::Stop nor ActorResult::StopImmediately the return value will internally be converted to ActorResult::Stop
-    /// panic triggers `self.on_panic()` with `source = ActorPanicSource::Message`
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use tyra::prelude::*;
-    /// use std::error::Error;
-    /// use std::time::Duration;
-    ///
-    /// struct TestActor {}
-    /// impl TestActor {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl Actor for TestActor {
-    ///     fn on_actor_stop(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.system.stop(Duration::from_millis(1000));
-    ///         return Ok(ActorResult::Kill);
-    ///     }
-    /// }
-    ///
-    /// struct TestActorFactory {}
-    /// impl TestActorFactory {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl ActorFactory<TestActor> for TestActorFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-    ///         Ok(TestActor::new())
-    ///     }
-    /// }
-    ///
-    /// impl Handler<ActorInitMessage> for TestActor {
-    ///     fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.actor_ref.stop()?;
-    ///         return Ok(ActorResult::Ok);
-    ///     }
-    /// }
-    ///
-    /// #[ntest::timeout(2000)]
-    /// fn main() {
-    ///     let actor_config = TyraConfig::new().unwrap();
-    ///     let actor_system = ActorSystem::new(actor_config);
-    ///     let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
-    ///     actor.send(ActorInitMessage::new()).unwrap();
-    ///     std::process::exit(actor_system.await_shutdown());
-    /// }
-    /// ```
-    fn on_actor_stop(&mut self, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-        return Ok(ActorResult::Stop);
-    }
 
     /// executed when Actor handles internal SystemStopMessage initiated by [ActorSystem.stop](../prelude/struct.ActorSystem.html#method.stop)
     ///
@@ -491,7 +434,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(2000)]
+    /// #[ntest::timeout(5000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);

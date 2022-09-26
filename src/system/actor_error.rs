@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ActorError {
     /// Triggered by [ActorBuilder.spawn](../prelude/struct.ActorBuilder.html#method.spawn) if panic happens within [new_actor](../prelude/trait.ActorFactory.html#method.new_actor)
     #[error("Actor could not be started")]

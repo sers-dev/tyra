@@ -14,7 +14,7 @@ use crate::prelude::Actor;
 ///
 /// ```rust
 /// use std::error::Error;
-/// use tyra::prelude::{SerializedMessage, ActorFactory, ActorContext, Handler, Actor};
+/// use tyra::prelude::*;
 ///
 /// struct TestActor {}
 ///
