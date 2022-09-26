@@ -37,7 +37,7 @@ impl InternalActorManager {
     {
         let result = self.delay_router.as_ref().unwrap().send(RouterMessage::new(DelayedMessage::new(msg, destination, duration)));
         if result.is_err() {
-            debug!("");
+            error!("Could not send message to delay router");
         }
     }
 

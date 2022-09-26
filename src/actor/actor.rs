@@ -1,7 +1,7 @@
 use std::error::Error;
 use crate::prelude::{ActorContext, ActorPanicSource, ActorResult, SerializedMessage};
 use std::panic::UnwindSafe;
-use log::{debug, error};
+use log::{error};
 use crate::message::actor_stop_message::ActorStopMessage;
 
 /// Core trait to define Actors
@@ -446,7 +446,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     fn on_system_stop(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let result = context.actor_ref.send(ActorStopMessage::new());
         if result.is_err() {
-            error!("Could not forward message ActorStopMessage to target {}", forward_to.get_address().actor);
+            error!("Could not forward message ActorStopMessage to target {}", context.actor_ref.get_address().actor);
         }
         return Ok(ActorResult::Ok);
     }

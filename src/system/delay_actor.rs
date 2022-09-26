@@ -35,7 +35,7 @@ impl<A, M> Handler<DelayedMessage<A, M>> for DelayActor
         if duration >= msg.delay {
             let result = msg.destination.send(msg.msg);
             if result.is_err() {
-                error!("Could not delay message {} to target {}", msg.get_id(), forward_to.get_address().actor);
+                error!("Could not delay message to target {}", msg.destination.get_address().actor);
             }
         }
         else {

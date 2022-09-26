@@ -1,3 +1,7 @@
+# 0.8.1
+ 
+ - fix broken logging
+
 # 0.8.0
 
  - switch internal actor mailbox to `flume` from `crossbeam-channel`
