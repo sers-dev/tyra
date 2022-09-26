@@ -5,7 +5,7 @@
 
 ## Current State
 
-`0.8.0` is intended to be the last Release minor release before `1.0.0` where it's officially declared ready for production
+`0.8.0` is intended to be the last minor release before `1.0.0` where it's officially declared ready for production
  - since `0.7.0` it's been used for a variety of internal non-public tools
  - documentation + examples + tests should be in a good state
  - API is finalized
