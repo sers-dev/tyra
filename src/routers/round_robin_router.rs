@@ -1,5 +1,5 @@
 use std::error::Error;
-use log::debug;
+use log::{error};
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
@@ -157,7 +157,7 @@ where
         let forward_to = self.route_to.get(self.route_index).unwrap();
         let result = forward_to.send(msg.msg);
         if result.is_err() {
-            debug!("");
+            error!("Could not forward message {} to target {}", msg.get_id(), forward_to.get_address().actor);
         }
         return Ok(ActorResult::Ok);
     }
@@ -187,7 +187,7 @@ where
             let chunk: Vec<M> = msg.data.drain(0..messages_per_routee).collect();
             let result = forward_to.send(BulkActorMessage::new(chunk));
             if result.is_err() {
-                debug!("ASDF");
+                error!("Could not forward message {} to target {}", msg.get_id(), forward_to.get_address().actor);
             }
         }
         return Ok(ActorResult::Ok);

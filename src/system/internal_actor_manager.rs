@@ -1,5 +1,5 @@
 use std::time::Duration;
-use log::debug;
+use log::error;
 use crate::message::delayed_message::DelayedMessage;
 use crate::prelude::{ActorMessage, ActorSystem, ActorWrapper, Handler};
 use crate::router::{AddActorMessage, RoundRobinRouter, RoundRobinRouterFactory, RouterMessage};
@@ -24,7 +24,7 @@ impl InternalActorManager {
             let delay_actor = delay_builder.spawn(format!("delay-{}", i), DelayActorFactory::new()).unwrap();
             let result = delay_router.send(AddActorMessage::new(delay_actor));
             if result.is_err() {
-                debug!("");
+                error!("Could not add delay_actor to delay_router");
             }
         }
         self.delay_router = Some(delay_router);

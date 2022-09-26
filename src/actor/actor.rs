@@ -158,7 +158,6 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// ```
     fn on_panic(&mut self, _context: &ActorContext<Self>, source: ActorPanicSource) -> Result<ActorResult, Box<dyn Error>> {
         return match source {
-
             ActorPanicSource::PreStart => {
                 Ok(ActorResult::Ok)
             }
@@ -447,7 +446,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     fn on_system_stop(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let result = context.actor_ref.send(ActorStopMessage::new());
         if result.is_err() {
-            debug!("")
+            error!("Could not forward message ActorStopMessage to target {}", forward_to.get_address().actor);
         }
         return Ok(ActorResult::Ok);
     }

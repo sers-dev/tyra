@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::thread::sleep;
 use std::time::Duration;
-use log::debug;
+use log::error;
 use crate::message::delayed_message::DelayedMessage;
 use crate::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, Handler};
 
@@ -35,7 +35,7 @@ impl<A, M> Handler<DelayedMessage<A, M>> for DelayActor
         if duration >= msg.delay {
             let result = msg.destination.send(msg.msg);
             if result.is_err() {
-                debug!("");
+                error!("Could not delay message {} to target {}", msg.get_id(), forward_to.get_address().actor);
             }
         }
         else {

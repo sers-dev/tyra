@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::error::Error;
-use log::debug;
+use log::error;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
@@ -168,7 +168,7 @@ impl<A, M> Handler<RouterMessage<M>> for ShardedRouter<A>
         let forward_to = self.sharding.get(&shard_id).unwrap();
         let result = forward_to.send(msg.msg);
         if result.is_err() {
-            debug!("");
+            error!("Could not forward message {} to target {}", msg.get_id(), forward_to.get_address().actor);
         }
         return Ok(ActorResult::Ok);
     }
@@ -193,7 +193,7 @@ impl<A, M> Handler<BulkRouterMessage<M>> for ShardedRouter<A>
             let chunk: Vec<M> = msg.data.drain(0..messages_per_routee).collect();
             let result = forward_to.send(BulkActorMessage::new(chunk));
             if result.is_err() {
-                debug!("ASDF");
+                error!("Could not forward message {} to target {}", msg.get_id(), forward_to.get_address().actor);
             }
         }
         return Ok(ActorResult::Ok);

@@ -15,7 +15,6 @@
 //! use std::process::exit;
 //! use std::time::Duration;
 //! use std::error::Error;
-//! use log::trace;
 //!
 //! // define message
 //! struct FooBar {}
@@ -37,7 +36,7 @@
 //! // this is where the actual work is done
 //! impl Handler<FooBar> for HelloWorld {
 //!     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-//!         trace!("Message Received!");
+//!         println!("Message Received!");
 //!         Ok(ActorResult::Ok)
 //!     }
 //! }
