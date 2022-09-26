@@ -1,11 +1,11 @@
-# WIP 0.8.0
+# 0.8.0
 
  - switch internal actor mailbox to `flume` from `crossbeam-channel`
    - `crossbeam-channel` is still being used to keep actors thread independent
    - see [github issue #13](https://github.com/sers-dev/tyra/issues/13) for reasoning
  - added generic `ActorInitMessage` without a generic `Handler` implementation
    - a `Handler<ActorInitMessage>` can optionally be implemented by the user for any `actor` which can then be used to initialize the actor
- - update documentation + tests
+ - update documentation + tests + examples
 
 # 0.7.0
  

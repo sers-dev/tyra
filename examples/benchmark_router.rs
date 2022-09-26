@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::process::exit;
 use std::time::{Duration, Instant};
-use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, ActorWrapper, Handler, TyraConfig};
+use tyra::prelude::*;
 use tyra::router::{AddActorMessage, RoundRobinRouterFactory, RouterMessage};
 
 struct MessageA {}
@@ -53,7 +53,6 @@ impl Actor for Benchmark {}
 impl Handler<MessageA> for Benchmark {
     fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         if self.count == 0 {
-            //sleep(Duration::from_secs((3) as u64));
             self.start = Instant::now();
         }
         self.count += 1;
@@ -121,7 +120,6 @@ impl Handler<Finish> for Aggregator {
 
 impl Handler<Start> for Aggregator {
     fn handle(&mut self, _msg: Start, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-        //sleep(Duration::from_secs((3) as u64));
         self.start = Instant::now();
         Ok(ActorResult::Ok)
     }
@@ -132,7 +130,6 @@ fn main() {
     let actor_system = ActorSystem::new(actor_config);
 
     let message_count = 10000000;
-    // ideal number is "amount of threads - 3"
     let actor_count = 10;
 
     let router_factory = RoundRobinRouterFactory::new();

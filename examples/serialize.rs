@@ -1,9 +1,8 @@
 use std::error::Error;
 use serde::{Deserialize, Serialize};
 use std::process::exit;
-use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorSystem, Handler, SerializedMessage, TyraConfig, ActorResult};
+use tyra::prelude::*;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 struct TestMsg {
@@ -22,7 +21,7 @@ impl Actor for RemoteActor {
             return Ok(ActorResult::Ok);
         }
         let decoded: TestMsg = result.unwrap();
-        context.actor_ref.send_after(decoded, Duration::from_millis(50));
+        context.actor_ref.send_after(decoded, Duration::from_millis(50))?;
         Ok(ActorResult::Ok)
     }
 }
@@ -49,7 +48,6 @@ fn main() {
     let hw = RemoteActorFactory {};
     let x = actor_system
         .builder()
-        .set_mailbox_size(7)
         .spawn("hello-world", hw)
         .unwrap();
     let msg = TestMsg {

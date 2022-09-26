@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::process::exit;
 use std::time::{Duration, Instant};
-use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, Handler, TyraConfig};
+use tyra::prelude::*;
 
 struct MessageA {}
 
@@ -82,7 +82,6 @@ fn main() {
     println!("Actors have been created");
     let start = Instant::now();
 
-    actor.sleep(Duration::from_secs(3)).unwrap();
     for _i in 0..message_count {
         let msg = MessageA {};
         actor.send(msg).unwrap();

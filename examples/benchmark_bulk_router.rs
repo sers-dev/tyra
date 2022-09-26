@@ -2,7 +2,7 @@ use std::error::Error;
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tyra::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, ActorSystem, ActorWrapper, Handler, TyraConfig};
+use tyra::prelude::*;
 use tyra::router::{AddActorMessage, BulkRouterMessage, RoundRobinRouterFactory};
 
 struct MessageA {}
@@ -76,7 +76,7 @@ impl Handler<MessageA> for Benchmark {
             );
         }
         if self.count == self.total_msgs {
-            self.aggregator.send(Finish {});
+            self.aggregator.send(Finish {})?;
         }
         Ok(ActorResult::Ok)
     }
@@ -175,19 +175,19 @@ fn main() {
             )
             .unwrap();
 
-        router.send(AddActorMessage::new(actor));
+        router.send(AddActorMessage::new(actor)).unwrap();
     }
 
     println!("Actors have been created");
     let start = Instant::now();
 
-    aggregator.send(Start {});
+    aggregator.send(Start {}).unwrap();
     let mut msgs = Vec::new();
     for _i in 0..message_count {
         let msg = MessageA {};
         msgs.push(msg);
     }
-    router.send(BulkRouterMessage::new(msgs));
+    router.send(BulkRouterMessage::new(msgs)).unwrap();
 
     let duration = start.elapsed();
     println!("It took {:?} to send {} messages", duration, message_count);
