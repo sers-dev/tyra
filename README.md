@@ -33,7 +33,7 @@ The most interesting things to look at are specifically (ordered from fastest to
 - [cargo run --release --example benchmark_single_actor_process_after_send_single_thread](benchmark_single_actor_process_after_send_single_thread)
 - [cargo run --release --example benchmark_single_actor_process_after_send](benchmark_single_actor_process_after_send)
 - [cargo run --release --example benchmark_single_actor](benchmark_single_actor)
-   - probably the most common scenario
+  - probably the most common scenario
 - [cargo run --release --example benchmark_single_actor_single_thread](benchmark_single_actor_single_thread)
   - roughly as fast as the `benchmark_single_actor` but some executions are much slower
 
