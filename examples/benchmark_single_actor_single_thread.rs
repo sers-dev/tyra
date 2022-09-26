@@ -39,7 +39,11 @@ impl Benchmark {
 impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
-    fn handle(&mut self, _msg: MessageA, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        _msg: MessageA,
+        context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         if self.count == 0 {
             println!("START PROCESSING!");
             self.start = Instant::now();
@@ -65,7 +69,10 @@ impl Handler<MessageA> for Benchmark {
 
 fn main() {
     let mut actor_config = TyraConfig::new().unwrap();
-    actor_config.thread_pool.config.insert(String::from("default"), ThreadPoolConfig::new(1, 1, 1 , 1.0));
+    actor_config
+        .thread_pool
+        .config
+        .insert(String::from("default"), ThreadPoolConfig::new(1, 1, 1, 1.0));
     let actor_system = ActorSystem::new(actor_config);
 
     let message_count = 10000000;

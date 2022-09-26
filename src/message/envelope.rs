@@ -1,14 +1,18 @@
-use std::error::Error;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
 use crate::prelude::{Actor, ActorResult};
+use std::error::Error;
 
 pub trait MessageEnvelopeTrait<A>: Send + Sync
 where
     A: Actor,
 {
-    fn handle(&mut self, actor: &mut A, context: &ActorContext<A>) -> Result<ActorResult, Box<dyn Error>>;
+    fn handle(
+        &mut self,
+        actor: &mut A,
+        context: &ActorContext<A>,
+    ) -> Result<ActorResult, Box<dyn Error>>;
 }
 
 pub struct MessageEnvelope<A>(Box<dyn MessageEnvelopeTrait<A> + Send + Sync>);
@@ -27,7 +31,11 @@ impl<A> MessageEnvelopeTrait<A> for MessageEnvelope<A>
 where
     A: Actor,
 {
-    fn handle(&mut self, act: &mut A, context: &ActorContext<A>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        act: &mut A,
+        context: &ActorContext<A>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         return self.0.handle(act, context);
     }
 }
@@ -44,7 +52,11 @@ where
     M: ActorMessage + Send + 'static,
     A: Handler<M> + Actor,
 {
-    fn handle(&mut self, act: &mut A, context: &ActorContext<A>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        act: &mut A,
+        context: &ActorContext<A>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         if let Some(msg) = self.msg.take() {
             return act.handle(msg, context);
         }

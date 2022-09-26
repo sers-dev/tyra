@@ -6,14 +6,14 @@ use crate::actor::executor::{Executor, ExecutorTrait};
 use crate::actor::mailbox::Mailbox;
 use crate::config::tyra_config::DEFAULT_POOL;
 use crate::prelude::{Actor, Handler, SerializedMessage};
+use crate::system::actor_error::ActorError;
 use crate::system::actor_system::ActorSystem;
+use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::system_state::SystemState;
 use crate::system::wakeup_manager::WakeupManager;
 use dashmap::DashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, RwLock};
-use crate::system::actor_error::ActorError;
-use crate::system::internal_actor_manager::InternalActorManager;
 
 /// Used to create [Actor]s in the [ActorSystem]
 ///
@@ -194,7 +194,9 @@ where
         };
 
         if self.system_state.is_mailbox_active(&actor_address) {
-            return self.system_state.get_actor_ref(actor_address, self.internal_actor_manager.clone());
+            return self
+                .system_state
+                .get_actor_ref(actor_address, self.internal_actor_manager.clone());
         }
 
         let (sender, receiver) = if self.actor_config.mailbox_size == 0 {
@@ -228,25 +230,23 @@ where
 
         match actor_handler {
             Ok(a) => {
-                let result = self.system_state
+                let result = self
+                    .system_state
                     .add_mailbox(actor_address.clone(), mailbox);
 
                 if result.is_err() {
                     return Err(result.unwrap_err());
                 }
 
-                self.wakeup_manager.add_inactive_actor(
-                    a.get_address(),
-                    Arc::new(RwLock::new(a)),
-                );
+                self.wakeup_manager
+                    .add_inactive_actor(a.get_address(), Arc::new(RwLock::new(a)));
 
                 self.existing.insert(actor_address, actor_ref.clone());
                 return Ok(actor_ref);
-            },
+            }
             Err(e) => {
                 return Err(e);
             }
         }
-
     }
 }

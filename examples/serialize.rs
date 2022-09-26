@@ -1,5 +1,5 @@
-use std::error::Error;
 use serde::{Deserialize, Serialize};
+use std::error::Error;
 use std::process::exit;
 use std::time::{Duration, Instant};
 use tyra::prelude::*;
@@ -15,19 +15,29 @@ impl ActorMessage for TestMsg {}
 struct RemoteActor {}
 
 impl Actor for RemoteActor {
-    fn handle_serialized_message(&mut self, msg: SerializedMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle_serialized_message(
+        &mut self,
+        msg: SerializedMessage,
+        context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         let result = bincode::deserialize(&msg.content);
         if result.is_err() {
             return Ok(ActorResult::Ok);
         }
         let decoded: TestMsg = result.unwrap();
-        context.actor_ref.send_after(decoded, Duration::from_millis(50))?;
+        context
+            .actor_ref
+            .send_after(decoded, Duration::from_millis(50))?;
         Ok(ActorResult::Ok)
     }
 }
 
 impl Handler<TestMsg> for RemoteActor {
-    fn handle(&mut self, msg: TestMsg, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        msg: TestMsg,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         println!("{}", msg.content);
         Ok(ActorResult::Ok)
     }
@@ -36,7 +46,10 @@ impl Handler<TestMsg> for RemoteActor {
 struct RemoteActorFactory {}
 
 impl ActorFactory<RemoteActor> for RemoteActorFactory {
-    fn new_actor(&mut self, _context: ActorContext<RemoteActor>) -> Result<RemoteActor, Box<dyn Error>> {
+    fn new_actor(
+        &mut self,
+        _context: ActorContext<RemoteActor>,
+    ) -> Result<RemoteActor, Box<dyn Error>> {
         Ok(RemoteActor {})
     }
 }
@@ -46,10 +59,7 @@ fn main() {
     let actor_system = ActorSystem::new(actor_config);
 
     let hw = RemoteActorFactory {};
-    let x = actor_system
-        .builder()
-        .spawn("hello-world", hw)
-        .unwrap();
+    let x = actor_system.builder().spawn("hello-world", hw).unwrap();
     let msg = TestMsg {
         content: String::from("Hello World!"),
     };

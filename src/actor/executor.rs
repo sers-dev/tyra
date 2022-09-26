@@ -1,6 +1,5 @@
-use std::error::Error;
 use crate::actor::actor_address::ActorAddress;
-use crate::actor::actor_config::{ActorConfig};
+use crate::actor::actor_config::ActorConfig;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_state::ActorState;
 use crate::actor::actor_wrapper::ActorWrapper;
@@ -11,12 +10,13 @@ use crate::message::actor_message::ActorMessage;
 use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
 use crate::message::system_stop_message::SystemStopMessage;
 use crate::prelude::{Actor, ActorPanicSource, ActorResult};
+use crate::system::actor_error::ActorError;
 use crate::system::actor_system::ActorSystem;
+use log::debug;
+use std::error::Error;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
-use log::debug;
-use crate::system::actor_error::ActorError;
 
 pub trait ExecutorTrait: Send + Sync {
     fn handle(&mut self, is_system_stopping: bool) -> ActorState;
@@ -29,7 +29,6 @@ pub trait ExecutorTrait: Send + Sync {
     fn restart_actor(&mut self) -> ActorState;
     fn stop_actor(&mut self, immediately: bool) -> ActorState;
     fn handle_actor_result(&mut self, result: Result<ActorResult, Box<dyn Error>>) -> ActorState;
-
 }
 
 pub struct Executor<A, P>
@@ -83,13 +82,13 @@ where
                 self.on_actor_panic(ActorPanicSource::PreStart)
             } else {
                 self.handle_actor_result(result.unwrap())
-            }
+            };
         }
         let m = self.queue.try_recv();
 
         if m.is_err() {
             if self.is_stopped() {
-                let _ = catch_unwind(AssertUnwindSafe(|| { self.actor.post_stop(&self.context) }));
+                let _ = catch_unwind(AssertUnwindSafe(|| self.actor.post_stop(&self.context)));
                 return ActorState::Stopped;
             }
             self.mailbox.is_sleeping.store(true, Ordering::Relaxed);
@@ -115,7 +114,7 @@ where
     fn stop_actor(&mut self, immediately: bool) -> ActorState {
         self.mailbox.is_stopped.store(true, Ordering::Relaxed);
         if immediately {
-            let _ = catch_unwind(AssertUnwindSafe(|| { self.actor.post_stop(&self.context) }));
+            let _ = catch_unwind(AssertUnwindSafe(|| self.actor.post_stop(&self.context)));
             return ActorState::Stopped;
         }
         return ActorState::Running;
@@ -147,13 +146,15 @@ where
         }));
         if result.is_err() {
             let result = catch_unwind(AssertUnwindSafe(|| {
-                let actor_result = self.actor.on_panic(&self.context, ActorPanicSource::OnPanic);
+                let actor_result = self
+                    .actor
+                    .on_panic(&self.context, ActorPanicSource::OnPanic);
                 return self.handle_actor_result(actor_result);
             }));
             if result.is_err() {
                 self.stop_actor(true);
             }
-            return result.unwrap()
+            return result.unwrap();
         }
         return result.unwrap();
     }
@@ -184,33 +185,22 @@ where
         if result.is_err() {
             let catch_result = catch_unwind(AssertUnwindSafe(|| {
                 let actor_result = self.actor.on_error(&self.context, result.unwrap_err());
-                return actor_result
+                return actor_result;
             }));
             if catch_result.is_err() {
                 return self.stop_actor(true);
             }
             res = catch_result.unwrap();
-        }
-        else {
+        } else {
             res = result.unwrap();
         }
         return match res {
-            ActorResult::Ok => {
-                ActorState::Running
-            }
-            ActorResult::Restart => {
-                self.restart_actor()
-            }
-            ActorResult::Stop => {
-                self.stop_actor(false)
-            }
-            ActorResult::Kill => {
-                self.stop_actor(true)
-            }
-            ActorResult::Sleep(duration) => {
-                ActorState::Sleeping(duration)
-            }
-        }
+            ActorResult::Ok => ActorState::Running,
+            ActorResult::Restart => self.restart_actor(),
+            ActorResult::Stop => self.stop_actor(false),
+            ActorResult::Kill => self.stop_actor(true),
+            ActorResult::Sleep(duration) => ActorState::Sleeping(duration),
+        };
     }
 }
 
@@ -262,7 +252,9 @@ where
         A: Handler<M>,
         M: ActorMessage + 'static,
     {
-        return self.mailbox.msg_in.send_timeout(MessageEnvelope::new(msg), Duration::from_millis(10))
+        return self
+            .mailbox
+            .msg_in
+            .send_timeout(MessageEnvelope::new(msg), Duration::from_millis(10));
     }
-
 }

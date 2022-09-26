@@ -1,5 +1,3 @@
-use std::error::Error;
-use log::{error};
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
@@ -10,6 +8,8 @@ use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
 use crate::routers::router_message::RouterMessage;
+use log::error;
+use std::error::Error;
 
 pub struct RoundRobinRouter<A>
 where
@@ -89,7 +89,10 @@ impl<A> ActorFactory<RoundRobinRouter<A>> for RoundRobinRouterFactory
 where
     A: Actor + 'static,
 {
-    fn new_actor(&mut self, _context: ActorContext<RoundRobinRouter<A>>) -> Result<RoundRobinRouter<A>, Box<dyn Error>> {
+    fn new_actor(
+        &mut self,
+        _context: ActorContext<RoundRobinRouter<A>>,
+    ) -> Result<RoundRobinRouter<A>, Box<dyn Error>> {
         return Ok(RoundRobinRouter::new());
     }
 }
@@ -113,7 +116,11 @@ impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
 where
     A: Actor,
 {
-    fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        msg: AddActorMessage<A>,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         self.route_to.push(msg.actor);
         self.can_route = true;
         return Ok(ActorResult::Ok);
@@ -124,7 +131,11 @@ impl<A> Handler<RemoveActorMessage<A>> for RoundRobinRouter<A>
 where
     A: Actor,
 {
-    fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        msg: RemoveActorMessage<A>,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         if let Some(pos) = self
             .route_to
             .iter()
@@ -144,7 +155,11 @@ where
     A: Actor + Handler<M> + 'static,
     M: ActorMessage + 'static,
 {
-    fn handle(&mut self, msg: RouterMessage<M>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        msg: RouterMessage<M>,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
             return Ok(ActorResult::Ok);
         }
@@ -157,7 +172,10 @@ where
         let forward_to = self.route_to.get(self.route_index).unwrap();
         let result = forward_to.send(msg.msg);
         if result.is_err() {
-            error!("Could not forward message to target {}", forward_to.get_address().actor);
+            error!(
+                "Could not forward message to target {}",
+                forward_to.get_address().actor
+            );
         }
         return Ok(ActorResult::Ok);
     }
@@ -168,7 +186,11 @@ where
     A: Actor + Handler<BulkActorMessage<M>> + 'static,
     M: ActorMessage + 'static,
 {
-    fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        mut msg: BulkRouterMessage<M>,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
             return Ok(ActorResult::Ok);
         }
@@ -187,7 +209,10 @@ where
             let chunk: Vec<M> = msg.data.drain(0..messages_per_routee).collect();
             let result = forward_to.send(BulkActorMessage::new(chunk));
             if result.is_err() {
-                error!("Could not forward message to target {}", forward_to.get_address().actor);
+                error!(
+                    "Could not forward message to target {}",
+                    forward_to.get_address().actor
+                );
             }
         }
         return Ok(ActorResult::Ok);

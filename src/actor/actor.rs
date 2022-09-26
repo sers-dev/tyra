@@ -1,8 +1,8 @@
-use std::error::Error;
-use crate::prelude::{ActorContext, ActorPanicSource, ActorResult, SerializedMessage};
-use std::panic::UnwindSafe;
-use log::{error};
 use crate::message::actor_stop_message::ActorStopMessage;
+use crate::prelude::{ActorContext, ActorPanicSource, ActorResult, SerializedMessage};
+use log::error;
+use std::error::Error;
+use std::panic::UnwindSafe;
 
 /// Core trait to define Actors
 ///
@@ -156,21 +156,17 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
     /// ```
-    fn on_panic(&mut self, _context: &ActorContext<Self>, source: ActorPanicSource) -> Result<ActorResult, Box<dyn Error>> {
+    fn on_panic(
+        &mut self,
+        _context: &ActorContext<Self>,
+        source: ActorPanicSource,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         return match source {
-            ActorPanicSource::PreStart => {
-                Ok(ActorResult::Ok)
-            }
-            ActorPanicSource::Message => {
-                Ok(ActorResult::Restart)
-            }
-            ActorPanicSource::Restart => {
-                Ok(ActorResult::Ok)
-            }
-            ActorPanicSource::OnPanic => {
-                Ok(ActorResult::Kill)
-            }
-        }
+            ActorPanicSource::PreStart => Ok(ActorResult::Ok),
+            ActorPanicSource::Message => Ok(ActorResult::Restart),
+            ActorPanicSource::Restart => Ok(ActorResult::Ok),
+            ActorPanicSource::OnPanic => Ok(ActorResult::Kill),
+        };
     }
 
     /// executed whenever an error occurs within the actor
@@ -443,10 +439,16 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     assert_eq!(1337, result);
     /// }
     /// ```
-    fn on_system_stop(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn on_system_stop(
+        &mut self,
+        context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         let result = context.actor_ref.send(ActorStopMessage::new());
         if result.is_err() {
-            error!("Could not forward message ActorStopMessage to target {}", context.actor_ref.get_address().actor);
+            error!(
+                "Could not forward message ActorStopMessage to target {}",
+                context.actor_ref.get_address().actor
+            );
         }
         return Ok(ActorResult::Ok);
     }

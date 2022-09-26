@@ -1,3 +1,4 @@
+use crate::actor::actor_send_error::ActorSendError;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
 use crate::message::envelope::MessageEnvelope;
@@ -7,7 +8,6 @@ use std::panic::UnwindSafe;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use crate::actor::actor_send_error::ActorSendError;
 
 pub trait BaseMailbox: Send + Sync + UnwindSafe {
     fn send_serialized(&self, _msg: SerializedMessage);
@@ -66,13 +66,12 @@ where
         }
 
         return Err(ActorSendError::AlreadyStoppedError);
-
     }
 
     pub fn send_timeout<M>(&self, msg: M, timeout: Duration) -> Result<(), ActorSendError>
-        where
-            A: Handler<M>,
-            M: ActorMessage + 'static,
+    where
+        A: Handler<M>,
+        M: ActorMessage + 'static,
     {
         let result = self.msg_in.send_timeout(MessageEnvelope::new(msg), timeout);
         if result.is_ok() {

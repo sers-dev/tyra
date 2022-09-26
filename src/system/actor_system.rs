@@ -4,14 +4,14 @@ use crate::config::pool_config::ThreadPoolConfig;
 use crate::config::tyra_config::{TyraConfig, DEFAULT_POOL};
 use crate::message::serialized_message::SerializedMessage;
 use crate::prelude::{Actor, ActorError, Handler};
+use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::system_state::SystemState;
 use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
+use dashmap::DashMap;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use dashmap::DashMap;
-use crate::system::internal_actor_manager::InternalActorManager;
 
 /// Manages thread pools and actors
 #[derive(Clone)]
@@ -21,7 +21,7 @@ pub struct ActorSystem {
     wakeup_manager: WakeupManager,
     name: String,
     config: Arc<TyraConfig>,
-    internal_actor_manager: InternalActorManager
+    internal_actor_manager: InternalActorManager,
 }
 
 impl ActorSystem {
@@ -38,7 +38,6 @@ impl ActorSystem {
     /// let actor_system = ActorSystem::new(actor_config);
     /// ```
     pub fn new(config: TyraConfig) -> Self {
-
         if config.general.override_panic_hook {
             std::panic::set_hook(Box::new(|_| {}));
         }
@@ -56,7 +55,6 @@ impl ActorSystem {
         }
         let state = SystemState::new(wakeup_manager.clone(), Arc::new(thread_pool_max_actors));
 
-
         let s = state.clone();
         let t = thread_pool_manager.clone();
         let w = wakeup_manager.clone();
@@ -68,7 +66,6 @@ impl ActorSystem {
         let w = wakeup_manager.clone();
         let s = state.clone();
         std::thread::spawn(move || w.clone().manage_sleeping(s));
-
 
         let mut system = ActorSystem {
             state,
@@ -123,7 +120,8 @@ impl ActorSystem {
     /// actor_system.add_pool_with_config("test", pool_config);
     /// ```
     pub fn add_pool_with_config(&self, name: &str, thread_pool_config: ThreadPoolConfig) {
-        self.state.add_pool_actor_limit(String::from(name.clone()), thread_pool_config.actor_limit);
+        self.state
+            .add_pool_actor_limit(String::from(name.clone()), thread_pool_config.actor_limit);
         self.thread_pool_manager
             .add_pool_with_config(name, thread_pool_config);
     }
@@ -220,7 +218,6 @@ impl ActorSystem {
     where
         A: Handler<SerializedMessage> + Actor,
     {
-
         ActorBuilder::new(
             self.clone(),
             self.state.clone(),
@@ -337,5 +334,4 @@ impl ActorSystem {
     pub fn get_name(&self) -> &str {
         &self.name
     }
-
 }

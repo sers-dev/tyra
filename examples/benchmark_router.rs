@@ -31,8 +31,15 @@ struct BenchmarkFactory {
 }
 
 impl ActorFactory<Benchmark> for BenchmarkFactory {
-    fn new_actor(&mut self, _context: ActorContext<Benchmark>) -> Result<Benchmark, Box<dyn Error>> {
-        Ok(Benchmark::new(self.total_msgs, self.name.clone(), self.aggregator.clone()))
+    fn new_actor(
+        &mut self,
+        _context: ActorContext<Benchmark>,
+    ) -> Result<Benchmark, Box<dyn Error>> {
+        Ok(Benchmark::new(
+            self.total_msgs,
+            self.name.clone(),
+            self.aggregator.clone(),
+        ))
     }
 }
 
@@ -51,7 +58,11 @@ impl Benchmark {
 impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
-    fn handle(&mut self, _msg: MessageA, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        _msg: MessageA,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         if self.count == 0 {
             self.start = Instant::now();
         }
@@ -98,13 +109,24 @@ impl Aggregator {
 impl Actor for Aggregator {}
 
 impl ActorFactory<Aggregator> for AggregatorFactory {
-    fn new_actor(&mut self, context: ActorContext<Aggregator>) -> Result<Aggregator, Box<dyn Error>> {
-        Ok(Aggregator::new(self.total_actors, self.name.clone(), context))
+    fn new_actor(
+        &mut self,
+        context: ActorContext<Aggregator>,
+    ) -> Result<Aggregator, Box<dyn Error>> {
+        Ok(Aggregator::new(
+            self.total_actors,
+            self.name.clone(),
+            context,
+        ))
     }
 }
 
 impl Handler<Finish> for Aggregator {
-    fn handle(&mut self, _msg: Finish, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        _msg: Finish,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         self.actors_finished += 1;
         if self.actors_finished == self.total_actors {
             let duration = self.start.elapsed();
@@ -119,7 +141,11 @@ impl Handler<Finish> for Aggregator {
 }
 
 impl Handler<Start> for Aggregator {
-    fn handle(&mut self, _msg: Start, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        _msg: Start,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         self.start = Instant::now();
         Ok(ActorResult::Ok)
     }

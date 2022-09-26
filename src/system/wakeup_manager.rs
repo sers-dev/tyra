@@ -39,17 +39,24 @@ impl WakeupManager {
             wakeup_queue_in,
             wakeup_queue_out,
             sleep_queue_in,
-            sleep_queue_out
+            sleep_queue_out,
         }
     }
 
-    pub fn add_sleeping_actor(&self, address: ActorAddress, actor: Arc<RwLock<dyn ExecutorTrait>>, sleep: Duration) {
+    pub fn add_sleeping_actor(
+        &self,
+        address: ActorAddress,
+        actor: Arc<RwLock<dyn ExecutorTrait>>,
+        sleep: Duration,
+    ) {
         self.add_inactive_actor(address.clone(), actor);
-        self.sleep_queue_in.send(Sleep {
-            now: Instant::now(),
-            duration: sleep,
-            actor_address: address
-        }).unwrap();
+        self.sleep_queue_in
+            .send(Sleep {
+                now: Instant::now(),
+                duration: sleep,
+                actor_address: address,
+            })
+            .unwrap();
     }
 
     pub fn add_inactive_actor(&self, address: ActorAddress, actor: Arc<RwLock<dyn ExecutorTrait>>) {
@@ -79,21 +86,26 @@ impl WakeupManager {
             let sleep_msg = msg.unwrap();
             let duration = sleep_msg.now.elapsed();
             if duration >= sleep_msg.duration {
-                self.wakeup_queue_in.send(Wakeup {
-                    iteration: 1,
-                    actor_address: sleep_msg.actor_address
-                }).unwrap();
-                continue
+                self.wakeup_queue_in
+                    .send(Wakeup {
+                        iteration: 1,
+                        actor_address: sleep_msg.actor_address,
+                    })
+                    .unwrap();
+                continue;
             }
 
             sleep(Duration::from_millis(1000));
             self.sleep_queue_in.send(sleep_msg).unwrap();
             continue;
-
         }
     }
 
-    pub fn manage_inactive(&self, system_status: SystemState, thread_pool_manager: ThreadPoolManager) {
+    pub fn manage_inactive(
+        &self,
+        system_status: SystemState,
+        thread_pool_manager: ThreadPoolManager,
+    ) {
         let mut wake_deduplication: HashMap<ActorAddress, Instant> = HashMap::new();
         let recv_timeout = Duration::from_secs(1);
         loop {

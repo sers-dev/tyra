@@ -1,7 +1,7 @@
-use std::error::Error;
-use std::panic::UnwindSafe;
 use crate::actor::context::ActorContext;
 use crate::prelude::Actor;
+use std::error::Error;
+use std::panic::UnwindSafe;
 
 /// [Actor] can only be created from a Factory
 ///

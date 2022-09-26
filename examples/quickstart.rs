@@ -1,6 +1,6 @@
-use tyra::prelude::*;
 use std::error::Error;
 use std::time::Duration;
+use tyra::prelude::*;
 
 // define an `ActorMessage` that can be sent to `Actors` that implement the corresponding `Handler<T>`
 struct TestMessage {}
@@ -28,14 +28,21 @@ impl TestActorFactory {
     }
 }
 impl ActorFactory<TestActor> for TestActorFactory {
-    fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
+    fn new_actor(
+        &mut self,
+        _context: ActorContext<TestActor>,
+    ) -> Result<TestActor, Box<dyn Error>> {
         Ok(TestActor::new())
     }
 }
 
 // implement our message for the `Actor`
 impl Handler<TestMessage> for TestActor {
-    fn handle(&mut self, _msg: TestMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        _msg: TestMessage,
+        context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         println!("HELLO WORLD!");
         context.system.stop(Duration::from_millis(1000));
         Ok(ActorResult::Ok)
@@ -48,7 +55,10 @@ fn main() {
     // start system with config
     let actor_system = ActorSystem::new(actor_config);
     // create actor on the system
-    let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
+    let actor = actor_system
+        .builder()
+        .spawn("test", TestActorFactory::new())
+        .unwrap();
     // send a message to the actor
     actor.send(TestMessage::new()).unwrap();
     // wait for the system to stop

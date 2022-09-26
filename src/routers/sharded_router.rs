@@ -1,6 +1,3 @@
-use std::collections::HashMap;
-use std::error::Error;
-use log::error;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
@@ -11,10 +8,13 @@ use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
 use crate::routers::router_message::RouterMessage;
+use log::error;
+use std::collections::HashMap;
+use std::error::Error;
 
 pub struct ShardedRouter<A>
-    where
-        A: Actor,
+where
+    A: Actor,
 {
     num_shards: usize,
     route_to: Vec<ActorWrapper<A>>,
@@ -88,17 +88,20 @@ impl ShardedRouterFactory {
 }
 
 impl<A> ActorFactory<ShardedRouter<A>> for ShardedRouterFactory
-    where
-        A: Actor + 'static,
+where
+    A: Actor + 'static,
 {
-    fn new_actor(&mut self, _context: ActorContext<ShardedRouter<A>>) -> Result<ShardedRouter<A>, Box<dyn Error>> {
+    fn new_actor(
+        &mut self,
+        _context: ActorContext<ShardedRouter<A>>,
+    ) -> Result<ShardedRouter<A>, Box<dyn Error>> {
         return Ok(ShardedRouter::new());
     }
 }
 
 impl<A> ShardedRouter<A>
-    where
-        A: Actor,
+where
+    A: Actor,
 {
     pub fn new() -> Self {
         Self {
@@ -123,10 +126,14 @@ impl<A> ShardedRouter<A>
 impl<A> Actor for ShardedRouter<A> where A: Actor {}
 
 impl<A> Handler<AddActorMessage<A>> for ShardedRouter<A>
-    where
-        A: Actor,
+where
+    A: Actor,
 {
-    fn handle(&mut self, msg: AddActorMessage<A>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        msg: AddActorMessage<A>,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         self.route_to.push(msg.actor);
         self.can_route = true;
         self.recalculate_shards();
@@ -135,10 +142,14 @@ impl<A> Handler<AddActorMessage<A>> for ShardedRouter<A>
 }
 
 impl<A> Handler<RemoveActorMessage<A>> for ShardedRouter<A>
-    where
-        A: Actor,
+where
+    A: Actor,
 {
-    fn handle(&mut self, msg: RemoveActorMessage<A>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        msg: RemoveActorMessage<A>,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         if let Some(pos) = self
             .route_to
             .iter()
@@ -155,11 +166,15 @@ impl<A> Handler<RemoveActorMessage<A>> for ShardedRouter<A>
 }
 
 impl<A, M> Handler<RouterMessage<M>> for ShardedRouter<A>
-    where
-        A: Actor + Handler<M> + 'static,
-        M: ActorMessage + 'static,
+where
+    A: Actor + Handler<M> + 'static,
+    M: ActorMessage + 'static,
 {
-    fn handle(&mut self, msg: RouterMessage<M>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        msg: RouterMessage<M>,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
             return Ok(ActorResult::Ok);
         }
@@ -168,18 +183,25 @@ impl<A, M> Handler<RouterMessage<M>> for ShardedRouter<A>
         let forward_to = self.sharding.get(&shard_id).unwrap();
         let result = forward_to.send(msg.msg);
         if result.is_err() {
-            error!("Could not forward message to target {}", forward_to.get_address().actor);
+            error!(
+                "Could not forward message to target {}",
+                forward_to.get_address().actor
+            );
         }
         return Ok(ActorResult::Ok);
     }
 }
 
 impl<A, M> Handler<BulkRouterMessage<M>> for ShardedRouter<A>
-    where
-        A: Actor + Handler<BulkActorMessage<M>> + 'static,
-        M: ActorMessage + 'static,
+where
+    A: Actor + Handler<BulkActorMessage<M>> + 'static,
+    M: ActorMessage + 'static,
 {
-    fn handle(&mut self, mut msg: BulkRouterMessage<M>, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        mut msg: BulkRouterMessage<M>,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
             return Ok(ActorResult::Ok);
         }
@@ -188,12 +210,14 @@ impl<A, M> Handler<BulkRouterMessage<M>> for ShardedRouter<A>
         let messages_per_routee = total_messages / self.num_shards;
 
         for i in 0..self.num_shards {
-
             let forward_to = self.sharding.get(&i).unwrap();
             let chunk: Vec<M> = msg.data.drain(0..messages_per_routee).collect();
             let result = forward_to.send(BulkActorMessage::new(chunk));
             if result.is_err() {
-                error!("Could not forward message to target {}", forward_to.get_address().actor);
+                error!(
+                    "Could not forward message to target {}",
+                    forward_to.get_address().actor
+                );
             }
         }
         return Ok(ActorResult::Ok);

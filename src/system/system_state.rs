@@ -2,14 +2,14 @@ use crate::actor::actor_address::ActorAddress;
 use crate::actor::mailbox::{BaseMailbox, Mailbox};
 use crate::message::serialized_message::SerializedMessage;
 use crate::prelude::{ActorWrapper, Handler};
+use crate::system::actor_error::ActorError;
+use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::wakeup_manager::WakeupManager;
 use dashmap::DashMap;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use crate::system::actor_error::ActorError;
-use crate::system::internal_actor_manager::InternalActorManager;
 
 #[derive(Clone)]
 pub struct SystemState {
@@ -26,7 +26,10 @@ pub struct SystemState {
 }
 
 impl SystemState {
-    pub fn new(wakeup_manager: WakeupManager, max_actors_per_pool: Arc<DashMap<String, usize>>) -> Self {
+    pub fn new(
+        wakeup_manager: WakeupManager,
+        max_actors_per_pool: Arc<DashMap<String, usize>>,
+    ) -> Self {
         Self {
             mailboxes: Arc::new(DashMap::new()),
             wakeup_manager,
@@ -78,7 +81,7 @@ impl SystemState {
 
     pub fn get_exit_code(&self) -> i32 {
         if self.use_forced_exit_code.load(Ordering::Relaxed) {
-            return self.forced_exit_code.load(Ordering::Relaxed)
+            return self.forced_exit_code.load(Ordering::Relaxed);
         }
         return self.is_force_stopped() as i32;
     }
@@ -104,13 +107,19 @@ impl SystemState {
 
     pub fn remove_mailbox(&self, address: &ActorAddress) {
         self.total_actor_count.fetch_sub(1, Ordering::Relaxed);
-        self.pool_actor_count.entry(address.pool.clone()).and_modify(|v| {
-            v.fetch_sub(1, Ordering::Relaxed);
-        });
+        self.pool_actor_count
+            .entry(address.pool.clone())
+            .and_modify(|v| {
+                v.fetch_sub(1, Ordering::Relaxed);
+            });
         self.mailboxes.remove(address);
     }
 
-    pub fn add_mailbox<A>(&self, address: ActorAddress, mailbox: Mailbox<A>) -> Result<(), ActorError>
+    pub fn add_mailbox<A>(
+        &self,
+        address: ActorAddress,
+        mailbox: Mailbox<A>,
+    ) -> Result<(), ActorError>
     where
         A: Handler<SerializedMessage> + 'static,
     {
@@ -121,7 +130,10 @@ impl SystemState {
         let maximum_actor_count = maximum_actor_count.unwrap();
         let maximum_actor_count = *maximum_actor_count.value();
 
-        let current_pool_count = self.pool_actor_count.entry(address.pool.clone()).or_insert(AtomicUsize::new(0));
+        let current_pool_count = self
+            .pool_actor_count
+            .entry(address.pool.clone())
+            .or_insert(AtomicUsize::new(0));
         let current_pool_count = current_pool_count.value();
 
         let current = current_pool_count.load(Ordering::Relaxed);
@@ -147,8 +159,6 @@ impl SystemState {
         let maximum_actor_count = maximum_actor_count.unwrap();
         let maximum_actor_count = *maximum_actor_count.value();
 
-
-
         let current_pool_count = self.pool_actor_count.get(pool_name).unwrap();
         let current_pool_count = current_pool_count.value().load(Ordering::Relaxed);
 
@@ -158,11 +168,14 @@ impl SystemState {
         }
 
         let result = maximum_actor_count - current_pool_count;
-        return Ok(result)
-
+        return Ok(result);
     }
 
-    pub fn get_actor_ref<A>(&self, address: ActorAddress, internal_actor_manager: InternalActorManager) -> Result<ActorWrapper<A>, ActorError>
+    pub fn get_actor_ref<A>(
+        &self,
+        address: ActorAddress,
+        internal_actor_manager: InternalActorManager,
+    ) -> Result<ActorWrapper<A>, ActorError>
     where
         A: Handler<SerializedMessage> + 'static,
     {
@@ -172,7 +185,7 @@ impl SystemState {
                 m.clone(),
                 address,
                 self.wakeup_manager.clone(),
-                internal_actor_manager
+                internal_actor_manager,
             )),
             None => Err(ActorError::InvalidActorTypeError),
         };
