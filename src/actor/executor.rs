@@ -69,7 +69,7 @@ where
 {
     fn handle(&mut self, system_is_stopping: bool) -> ActorState {
         if system_is_stopping && !self.system_triggered_stop {
-            let result = self.send(SystemStopMessage {});
+            let result = self.send(SystemStopMessage::new());
             if result.is_ok() {
                 self.system_triggered_stop = true;
             }

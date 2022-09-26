@@ -111,7 +111,7 @@ where
 
     /// Tells the actor to stop accepting message and to shutdown after all existing messages have been processed
     pub fn stop(&self) -> Result<(), ActorSendError> {
-        return self.send(ActorStopMessage {});
+        return self.send(ActorStopMessage::new());
     }
 
     /// Tells the actor to sleep for the specified duration
