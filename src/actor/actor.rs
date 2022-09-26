@@ -124,7 +124,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// impl Actor for TestActor {
     ///     fn on_panic(&mut self, context: &ActorContext<Self>, source: ActorPanicSource) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.system.stop(Duration::from_millis(1000));
+    ///         context.system.stop(Duration::from_millis(5000));
     ///         return Ok(ActorResult::Kill);
     ///     }
     /// }
@@ -147,7 +147,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(5000)]
+    /// #[ntest::timeout(10000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
@@ -194,7 +194,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// impl Actor for TestActor {
     ///     fn on_error(&mut self, context: &ActorContext<Self>, err: Box<dyn Error>) -> ActorResult {
-    ///         context.system.stop(Duration::from_millis(1000));
+    ///         context.system.stop(Duration::from_millis(5000));
     ///         return ActorResult::Kill;
     ///     }
     /// }
@@ -218,7 +218,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(5000)]
+    /// #[ntest::timeout(10000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
@@ -252,7 +252,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// impl Actor for TestActor {
     ///     fn pre_start(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.system.stop(Duration::from_millis(1000));
+    ///         context.system.stop(Duration::from_millis(5000));
     ///         return Ok(ActorResult::Kill);
     ///     }
     /// }
@@ -275,7 +275,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(5000)]
+    /// #[ntest::timeout(10000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
@@ -307,7 +307,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// impl Actor for TestActor {
     ///     fn pre_restart(&mut self, context: &ActorContext<Self>) {
-    ///         context.system.stop(Duration::from_millis(1000));
+    ///         context.system.stop(Duration::from_millis(5000));
     ///     }
     /// }
     ///
@@ -329,7 +329,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(5000)]
+    /// #[ntest::timeout(10000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
@@ -357,7 +357,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// impl Actor for TestActor {
     ///     fn post_stop(&mut self, context: &ActorContext<Self>) {
-    ///         context.system.stop(Duration::from_millis(1000));
+    ///         context.system.stop(Duration::from_millis(5000));
     ///     }
     /// }
     ///
@@ -379,7 +379,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(5000)]
+    /// #[ntest::timeout(10000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
@@ -429,12 +429,12 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///
     /// impl Handler<ActorInitMessage> for TestActor {
     ///     fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.system.stop(Duration::from_millis(1000));
+    ///         context.system.stop(Duration::from_millis(5000));
     ///         return Ok(ActorResult::Ok);
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(5000)]
+    /// #[ntest::timeout(10000)]
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);

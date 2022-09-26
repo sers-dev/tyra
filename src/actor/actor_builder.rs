@@ -139,7 +139,7 @@ where
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(5000)]
+    /// #[ntest::timeout(10000)]
     /// fn main() {
     ///     let mut actor_config = TyraConfig::new().unwrap();
     ///     actor_config.thread_pool.config.insert(String::from("default"), ThreadPoolConfig::new(1, 1, 1, 1.0));
