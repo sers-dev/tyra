@@ -1,3 +1,8 @@
+# WIP 1.0.0
+
+ - added `LeastMessageRouter`
+
+ 
 # 0.8.0
 
  - switch internal actor mailbox to `flume` from `crossbeam-channel`

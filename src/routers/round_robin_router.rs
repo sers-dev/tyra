@@ -74,8 +74,8 @@ where
 ///     .builder()
 ///     .spawn("router-hello-world", router_factory)
 ///     .unwrap();
-/// router.send(AddActorMessage::new(actor.clone()));
-/// router.send(RouterMessage::new(FooBar{}));
+/// router.send(AddActorMessage::new(actor.clone())).unwrap();
+/// router.send(RouterMessage::new(FooBar{})).unwrap();
 /// ```
 pub struct RoundRobinRouterFactory {}
 

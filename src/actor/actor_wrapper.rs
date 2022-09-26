@@ -131,6 +131,10 @@ where
     pub fn get_address(&self) -> &ActorAddress {
         &self.address
     }
+
+    pub fn get_mailbox_size(&self) -> usize {
+        return self.mailbox.len();
+    }
 }
 
 impl<A> Clone for ActorWrapper<A>

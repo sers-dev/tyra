@@ -4,6 +4,7 @@ mod remove_actor_message;
 mod round_robin_router;
 mod router_message;
 mod sharded_router;
+mod least_message_router;
 
 pub mod prelude {
     pub use crate::routers::add_actor_message::AddActorMessage;
@@ -14,4 +15,6 @@ pub mod prelude {
     pub use crate::routers::router_message::RouterMessage;
     pub use crate::routers::sharded_router::ShardedRouter;
     pub use crate::routers::sharded_router::ShardedRouterFactory;
+    pub use crate::routers::least_message_router::LeastMessageRouter;
+    pub use crate::routers::least_message_router::LeastMessageRouterFactory;
 }

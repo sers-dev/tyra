@@ -3,26 +3,24 @@ use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::ActorMessage;
-use crate::prelude::{Actor, ActorResult, BulkActorMessage};
+use crate::prelude::{Actor, ActorResult};
 use crate::routers::add_actor_message::AddActorMessage;
-use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
 use crate::routers::router_message::RouterMessage;
 use log::error;
-use std::collections::HashMap;
 use std::error::Error;
 
-pub struct ShardedRouter<A>
+pub struct LeastMessageRouter<A>
 where
     A: Actor,
 {
-    num_shards: usize,
+    next_route_index: usize,
+    min_mailbox_size: usize,
     route_to: Vec<ActorWrapper<A>>,
-    sharding: HashMap<usize, ActorWrapper<A>>,
     can_route: bool,
 }
 
-/// implements [ActorFactory](../prelude/trait.ActorFactory.html) to spawn a ShardedRouter within an [ActorSystem](../prelude/struct.ActorSystem.html)
+/// implements [ActorFactory](../prelude/trait.ActorFactory.html) to spawn a LeastMessageRouter within an [ActorSystem](../prelude/struct.ActorSystem.html)
 ///
 /// # Examples
 ///
@@ -59,7 +57,7 @@ where
 /// }
 ///
 /// // create a new actor system with the default config
-/// use tyra::router::{ShardedRouterFactory, AddActorMessage, RouterMessage};
+/// use tyra::router::{LeastMessageRouterFactory, AddActorMessage, RouterMessage};
 /// let actor_config = TyraConfig::new().unwrap();
 /// let actor_system = ActorSystem::new(actor_config);
 ///
@@ -71,7 +69,7 @@ where
 ///     .unwrap();
 ///
 /// // create the router, fill it, and route a message
-/// let router_factory = ShardedRouterFactory::new();
+/// let router_factory = LeastMessageRouterFactory::new(15);
 /// let router = actor_system
 ///     .builder()
 ///     .spawn("router-hello-world", router_factory)
@@ -79,53 +77,47 @@ where
 /// router.send(AddActorMessage::new(actor.clone())).unwrap();
 /// router.send(RouterMessage::new(FooBar{})).unwrap();
 /// ```
-pub struct ShardedRouterFactory {}
+pub struct LeastMessageRouterFactory {
+    min_mailbox_size: usize
+}
 
-impl ShardedRouterFactory {
-    pub fn new() -> Self {
-        Self {}
+impl LeastMessageRouterFactory {
+    pub fn new(min_mailbox_size: usize) -> Self {
+        Self {
+            min_mailbox_size,
+        }
     }
 }
 
-impl<A> ActorFactory<ShardedRouter<A>> for ShardedRouterFactory
+impl<A> ActorFactory<LeastMessageRouter<A>> for LeastMessageRouterFactory
 where
     A: Actor + 'static,
 {
     fn new_actor(
         &mut self,
-        _context: ActorContext<ShardedRouter<A>>,
-    ) -> Result<ShardedRouter<A>, Box<dyn Error>> {
-        return Ok(ShardedRouter::new());
+        _context: ActorContext<LeastMessageRouter<A>>,
+    ) -> Result<LeastMessageRouter<A>, Box<dyn Error>> {
+        return Ok(LeastMessageRouter::new(self.min_mailbox_size));
     }
 }
 
-impl<A> ShardedRouter<A>
+impl<A> LeastMessageRouter<A>
 where
     A: Actor,
 {
-    pub fn new() -> Self {
+    pub fn new(min_mailbox_size: usize) -> Self {
         Self {
-            num_shards: 0,
+            next_route_index: 0,
+            min_mailbox_size,
             route_to: Vec::new(),
-            sharding: HashMap::new(),
             can_route: false,
-        }
-    }
-
-    fn recalculate_shards(&mut self) {
-        let num_routees = self.route_to.len();
-        self.num_shards = self.route_to.len() * 5;
-        self.sharding.clear();
-        for i in 0..self.num_shards {
-            let routee = self.route_to.get(i % num_routees).unwrap().clone();
-            self.sharding.insert(i, routee);
         }
     }
 }
 
-impl<A> Actor for ShardedRouter<A> where A: Actor {}
+impl<A> Actor for LeastMessageRouter<A> where A: Actor {}
 
-impl<A> Handler<AddActorMessage<A>> for ShardedRouter<A>
+impl<A> Handler<AddActorMessage<A>> for LeastMessageRouter<A>
 where
     A: Actor,
 {
@@ -136,12 +128,11 @@ where
     ) -> Result<ActorResult, Box<dyn Error>> {
         self.route_to.push(msg.actor);
         self.can_route = true;
-        self.recalculate_shards();
         return Ok(ActorResult::Ok);
     }
 }
 
-impl<A> Handler<RemoveActorMessage<A>> for ShardedRouter<A>
+impl<A> Handler<RemoveActorMessage<A>> for LeastMessageRouter<A>
 where
     A: Actor,
 {
@@ -156,7 +147,6 @@ where
             .position(|x| x.get_address() == msg.actor.get_address())
         {
             self.route_to.remove(pos);
-            self.recalculate_shards();
         }
         if self.route_to.len() == 0 {
             self.can_route = false
@@ -165,7 +155,7 @@ where
     }
 }
 
-impl<A, M> Handler<RouterMessage<M>> for ShardedRouter<A>
+impl<A, M> Handler<RouterMessage<M>> for LeastMessageRouter<A>
 where
     A: Actor + Handler<M> + 'static,
     M: ActorMessage + 'static,
@@ -179,46 +169,32 @@ where
             return Ok(ActorResult::Ok);
         }
 
-        let shard_id = msg.get_id() % self.num_shards;
-        let forward_to = self.sharding.get(&shard_id).unwrap();
-        let result = forward_to.send(msg.msg);
+        let mut target = self.route_to.get(self.next_route_index).unwrap();
+        let mut mailbox_size = target.get_mailbox_size();
+        let target_len = self.route_to.len();
+        for i in 0..target_len {
+            if mailbox_size >= self.min_mailbox_size {
+                break;
+            }
+            let potential_target = self.route_to.get(i).unwrap();
+            let size = potential_target.get_mailbox_size();
+            if size < mailbox_size {
+                mailbox_size = size;
+                target = potential_target;
+            }
+        }
+
+        self.next_route_index += 1;
+        if self.next_route_index >= target_len {
+            self.next_route_index = 0;
+        }
+
+        let result = target.send(msg.msg);
         if result.is_err() {
             error!(
                 "Could not forward message to target {}",
-                forward_to.get_address().actor
-            );
-        }
-        return Ok(ActorResult::Ok);
-    }
-}
-
-impl<A, M> Handler<BulkRouterMessage<M>> for ShardedRouter<A>
-where
-    A: Actor + Handler<BulkActorMessage<M>> + 'static,
-    M: ActorMessage + 'static,
-{
-    fn handle(
-        &mut self,
-        mut msg: BulkRouterMessage<M>,
-        _context: &ActorContext<Self>,
-    ) -> Result<ActorResult, Box<dyn Error>> {
-        if !self.can_route {
-            return Ok(ActorResult::Ok);
-        }
-
-        let total_messages = msg.data.len();
-        let messages_per_routee = total_messages / self.num_shards;
-
-        for i in 0..self.num_shards {
-            let forward_to = self.sharding.get(&i).unwrap();
-            let chunk: Vec<M> = msg.data.drain(0..messages_per_routee).collect();
-            let result = forward_to.send(BulkActorMessage::new(chunk));
-            if result.is_err() {
-                error!(
-                    "Could not forward message to target {}",
-                    forward_to.get_address().actor
-                );
-            }
+                target.get_address().actor
+            )
         }
         return Ok(ActorResult::Ok);
     }

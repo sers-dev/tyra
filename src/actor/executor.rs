@@ -84,6 +84,7 @@ where
                 self.handle_actor_result(result.unwrap())
             };
         }
+        let _len = self.queue.len();
         let m = self.queue.try_recv();
 
         if m.is_err() {

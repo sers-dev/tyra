@@ -87,4 +87,8 @@ where
     pub fn is_stopped(&self) -> bool {
         self.is_stopped.load(Ordering::Relaxed)
     }
+
+    pub fn len(&self) -> usize {
+        return self.msg_in.len();
+    }
 }
