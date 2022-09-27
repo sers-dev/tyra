@@ -51,7 +51,7 @@ Nonetheless, it makes sense to post some generic data that gives at least some i
    - `general.default_mailbox_size: 0` (setting a fixed mailbox_size would further increase performance)
    - `general.default_message_throughput: 15` (obviously could also be optimized for single actor usage, but would probably not be a fair measurement)
    - `thread_pool.config.default.threads_max: 10` (overwritten by `_single_thread` tests)
- - running `benchmark_single_actor` 10mil messages always within at least 3.3 seconds
+ - running `benchmark_single_actor`
    - send+receive 10mil messages in at least 3.3 seconds
      - ~3mil messages per second
  - running `benchmark_single_actor_process_after_send_single_thread`
