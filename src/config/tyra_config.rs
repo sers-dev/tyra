@@ -1,3 +1,4 @@
+use std::path::Path;
 use crate::config::global_config::GeneralConfig;
 use crate::config::pool_config::PoolConfig;
 
@@ -33,19 +34,19 @@ impl TyraConfig {
     /// config.general.name = String::from("HelloWorld");
     /// ```
     pub fn new() -> Result<Self, ConfigError> {
-        let mut config = Config::new();
 
         let default: &str = std::include_str!("default.toml");
 
-        config
-            .merge(File::from_str(default, FileFormat::Toml))
-            .expect("Could not load default Config");
+        let mut config = Config::builder();
 
-        config
-            .merge(Environment::with_prefix("TYRA").separator("_CONFIG_"))
-            .expect("Could not parse ENV variables");
+        config = config.add_source(File::from_str(default, FileFormat::Toml));
+        let path = Path::new("config/tyra.toml");
+        if path.exists() {
+            config = config.add_source(File::from(Path::new("config/tyra.toml")));
+        }
 
-        let mut parsed: TyraConfig = config.try_into().expect("Could not parse Config");
+        let conf = config.build().expect("Could not fetch Config");
+        let mut parsed: TyraConfig = conf.try_deserialize().expect("Could not parse Config");
         if parsed.general.name == "$HOSTNAME" {
             parsed.general.name = String::from(hostname::get().unwrap().to_str().unwrap());
         }

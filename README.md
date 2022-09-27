@@ -2,7 +2,6 @@
 
 `Tyra` is a cross-platform Typed Actor System Written in Rust.
 
-
 ## Current State
 
 `0.8.0` is intended to be the last minor release before `1.0.0` where it's officially declared ready for production
@@ -17,6 +16,12 @@ So why's it not yet `1.0.0`?
  - finalizing dependencies
 
 The current development status can be tracked in the [CHANGELOG.md](CHANGELOG.md)
+
+## Configuration
+
+See [default.toml](./src/config/default.toml) for a list of all configuration parameters and their defaults.
+
+Configuration can be adjusted by providing a `./config/tyra.toml`.
 
 ## Clustering
 
