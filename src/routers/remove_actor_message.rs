@@ -1,5 +1,5 @@
 use crate::actor::actor_wrapper::ActorWrapper;
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::Actor;
 
 /// Removes an Actor from the Router
@@ -19,4 +19,4 @@ where
     }
 }
 
-impl<A> ActorMessage for RemoveActorMessage<A> where A: Actor {}
+impl<A> BaseActorMessage for RemoveActorMessage<A> where A: Actor {}

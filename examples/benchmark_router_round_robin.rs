@@ -2,7 +2,7 @@ use std::error::Error;
 use std::process::exit;
 use std::time::{Duration, Instant};
 use tyra::prelude::*;
-use tyra::router::{AddActorMessage, RoundRobinRouterFactory, RouterMessage};
+use tyra::router::{AddActorMessage, RoundRobinRouterFactory};
 
 struct MessageA {}
 
@@ -195,7 +195,7 @@ fn main() {
     aggregator.send(Start {}).unwrap();
     for _i in 0..message_count {
         let msg = MessageA {};
-        router.send(RouterMessage::new(msg)).unwrap();
+        router.send(msg).unwrap();
     }
     let duration = start.elapsed();
     println!("It took {:?} to send {} messages", duration, message_count);

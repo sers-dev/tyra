@@ -1,4 +1,4 @@
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::DefaultActorMessage;
 
 /// For Remote message handling
 ///
@@ -18,4 +18,4 @@ impl SerializedMessage {
     }
 }
 
-impl ActorMessage for SerializedMessage {}
+impl DefaultActorMessage for SerializedMessage {}

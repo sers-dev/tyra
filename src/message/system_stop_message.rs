@@ -1,4 +1,4 @@
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::DefaultActorMessage;
 
 pub struct SystemStopMessage {}
 
@@ -8,4 +8,4 @@ impl SystemStopMessage {
     }
 }
 
-impl ActorMessage for SystemStopMessage {}
+impl DefaultActorMessage for SystemStopMessage {}

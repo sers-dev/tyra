@@ -1,6 +1,6 @@
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::{Actor, ActorResult};
 use std::error::Error;
 
@@ -21,7 +21,7 @@ impl<A> MessageEnvelope<A> {
     pub fn new<M>(msg: M) -> Self
     where
         A: Handler<M> + Actor,
-        M: ActorMessage + Send + Sync + 'static,
+        M: BaseActorMessage + Send + Sync + 'static,
     {
         MessageEnvelope(Box::new(SyncMessageEnvelope { msg: Some(msg) }))
     }
@@ -42,14 +42,14 @@ where
 
 pub struct SyncMessageEnvelope<M>
 where
-    M: ActorMessage + Send + Sync,
+    M: BaseActorMessage + Send + Sync,
 {
     msg: Option<M>,
 }
 
 impl<A, M> MessageEnvelopeTrait<A> for SyncMessageEnvelope<M>
 where
-    M: ActorMessage + Send + 'static,
+    M: BaseActorMessage + Send + 'static,
     A: Handler<M> + Actor,
 {
     fn handle(

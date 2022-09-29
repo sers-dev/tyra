@@ -2,12 +2,11 @@ use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
-use crate::message::actor_message::ActorMessage;
-use crate::prelude::{Actor, ActorResult, BulkActorMessage};
+use crate::message::actor_message::BaseActorMessage;
+use crate::prelude::{Actor, ActorMessage, ActorResult, BulkActorMessage};
 use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
-use crate::routers::router_message::RouterMessage;
 use log::error;
 use std::collections::HashMap;
 use std::error::Error;
@@ -33,6 +32,7 @@ where
 /// use tyra::prelude::*;
 /// use std::process::exit;
 /// use std::time::Duration;
+/// use tyra::router::{ShardedRouterFactory, AddActorMessage};
 ///
 /// // define message
 /// struct FooBar {}
@@ -59,7 +59,6 @@ where
 /// }
 ///
 /// // create a new actor system with the default config
-/// use tyra::router::{ShardedRouterFactory, AddActorMessage, RouterMessage};
 /// let actor_config = TyraConfig::new().unwrap();
 /// let actor_system = ActorSystem::new(actor_config);
 ///
@@ -77,7 +76,7 @@ where
 ///     .spawn("router-hello-world", router_factory)
 ///     .unwrap();
 /// router.send(AddActorMessage::new(actor.clone())).unwrap();
-/// router.send(RouterMessage::new(FooBar{})).unwrap();
+/// router.send(FooBar{}).unwrap();
 /// ```
 pub struct ShardedRouterFactory {}
 
@@ -165,14 +164,14 @@ where
     }
 }
 
-impl<A, M> Handler<RouterMessage<M>> for ShardedRouter<A>
+impl<A, M> Handler<M> for ShardedRouter<A>
 where
     A: Actor + Handler<M> + 'static,
     M: ActorMessage + 'static,
 {
     fn handle(
         &mut self,
-        msg: RouterMessage<M>,
+        msg: M,
         _context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
@@ -181,7 +180,7 @@ where
 
         let shard_id = msg.get_id() % self.num_shards;
         let forward_to = self.sharding.get(&shard_id).unwrap();
-        let result = forward_to.send(msg.msg);
+        let result = forward_to.send(msg);
         if result.is_err() {
             error!(
                 "Could not forward message to target {}",
@@ -195,7 +194,7 @@ where
 impl<A, M> Handler<BulkRouterMessage<M>> for ShardedRouter<A>
 where
     A: Actor + Handler<BulkActorMessage<M>> + 'static,
-    M: ActorMessage + 'static,
+    M: BaseActorMessage + 'static,
 {
     fn handle(
         &mut self,

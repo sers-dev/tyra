@@ -1,4 +1,4 @@
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::DefaultActorMessage;
 use std::time::Duration;
 
 /// Puts an actor to sleep for a specified time
@@ -6,7 +6,7 @@ pub struct SleepMessage {
     pub duration: Duration,
 }
 
-impl ActorMessage for SleepMessage {}
+impl DefaultActorMessage for SleepMessage {}
 
 impl SleepMessage {
     pub fn new(duration: Duration) -> Self {

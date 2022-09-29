@@ -2,12 +2,11 @@ use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::{ActorMessage, BaseActorMessage};
 use crate::prelude::{Actor, ActorResult, BulkActorMessage};
 use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
-use crate::routers::router_message::RouterMessage;
 use log::error;
 use std::error::Error;
 
@@ -31,6 +30,7 @@ where
 /// use tyra::prelude::*;
 /// use std::process::exit;
 /// use std::time::Duration;
+/// use tyra::router::{RoundRobinRouterFactory, AddActorMessage};
 ///
 /// // define message
 /// struct FooBar {}
@@ -57,7 +57,6 @@ where
 /// }
 ///
 /// // create a new actor system with the default config
-/// use tyra::router::{RoundRobinRouterFactory, AddActorMessage, RouterMessage};
 /// let actor_config = TyraConfig::new().unwrap();
 /// let actor_system = ActorSystem::new(actor_config);
 ///
@@ -75,7 +74,7 @@ where
 ///     .spawn("router-hello-world", router_factory)
 ///     .unwrap();
 /// router.send(AddActorMessage::new(actor.clone())).unwrap();
-/// router.send(RouterMessage::new(FooBar{})).unwrap();
+/// router.send(FooBar{}).unwrap();
 /// ```
 pub struct RoundRobinRouterFactory {}
 
@@ -150,14 +149,14 @@ where
     }
 }
 
-impl<A, M> Handler<RouterMessage<M>> for RoundRobinRouter<A>
+impl<A, M> Handler<M> for RoundRobinRouter<A>
 where
     A: Actor + Handler<M> + 'static,
     M: ActorMessage + 'static,
 {
     fn handle(
         &mut self,
-        msg: RouterMessage<M>,
+        msg: M,
         _context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
@@ -170,7 +169,7 @@ where
         }
 
         let forward_to = self.route_to.get(self.route_index).unwrap();
-        let result = forward_to.send(msg.msg);
+        let result = forward_to.send(msg);
         if result.is_err() {
             error!(
                 "Could not forward message to target {}",
@@ -184,7 +183,7 @@ where
 impl<A, M> Handler<BulkRouterMessage<M>> for RoundRobinRouter<A>
 where
     A: Actor + Handler<BulkActorMessage<M>> + 'static,
-    M: ActorMessage + 'static,
+    M: BaseActorMessage + 'static,
 {
     fn handle(
         &mut self,

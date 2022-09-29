@@ -1,6 +1,6 @@
 use crate::actor::actor_send_error::ActorSendError;
 use crate::actor::handler::Handler;
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::BaseActorMessage;
 use crate::message::envelope::MessageEnvelope;
 use crate::prelude::{Actor, SerializedMessage};
 use std::any::Any;
@@ -58,7 +58,7 @@ where
     pub fn send<M>(&self, msg: M) -> Result<(), ActorSendError>
     where
         A: Handler<M>,
-        M: ActorMessage + 'static,
+        M: BaseActorMessage + 'static,
     {
         let result = self.msg_in.send(MessageEnvelope::new(msg));
         if result.is_ok() {
@@ -71,7 +71,7 @@ where
     pub fn send_timeout<M>(&self, msg: M, timeout: Duration) -> Result<(), ActorSendError>
     where
         A: Handler<M>,
-        M: ActorMessage + 'static,
+        M: BaseActorMessage + 'static,
     {
         let result = self.msg_in.send_timeout(MessageEnvelope::new(msg), timeout);
         if result.is_ok() {

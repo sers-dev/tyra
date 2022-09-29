@@ -1,4 +1,4 @@
-use crate::message::actor_message::ActorMessage;
+use crate::prelude::ActorMessage;
 
 /// Can be implemented by an Actor through Handler<ActorInitMessage> to be used to init an Actor
 pub struct ActorInitMessage {}
@@ -9,4 +9,5 @@ impl ActorInitMessage {
     }
 }
 
+/// intentionally implements `ActorMessage`, because it does NOT provide a generic `Handler<ActorInitMessage>` implementation
 impl ActorMessage for ActorInitMessage {}

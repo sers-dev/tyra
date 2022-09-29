@@ -1,6 +1,6 @@
 use crate::actor::actor::Actor;
 use crate::actor::context::ActorContext;
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::BaseActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::message::sleep_message::SleepMessage;
 use crate::message::system_stop_message::SystemStopMessage;
@@ -15,7 +15,7 @@ use std::error::Error;
 ///
 /// ```rust
 /// use std::error::Error;
-/// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, ActorMessage, Handler, Actor, ActorResult};
+/// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorResult, ActorMessage};
 ///
 /// struct TestActor {}
 /// impl Actor for TestActor {}
@@ -32,7 +32,7 @@ use std::error::Error;
 pub trait Handler<M: ?Sized>
 where
     Self: Actor + Sized,
-    M: ActorMessage,
+    M: BaseActorMessage,
 {
     fn handle(
         &mut self,
@@ -71,7 +71,7 @@ impl<M, A> Handler<BulkActorMessage<M>> for A
 where
     Self: Actor + Sized,
     A: Handler<M>,
-    M: ActorMessage,
+    M: BaseActorMessage,
 {
     fn handle(
         &mut self,

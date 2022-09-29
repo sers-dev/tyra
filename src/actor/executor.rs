@@ -6,7 +6,7 @@ use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::actor::mailbox::Mailbox;
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::BaseActorMessage;
 use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
 use crate::message::system_stop_message::SystemStopMessage;
 use crate::prelude::{Actor, ActorPanicSource, ActorResult};
@@ -251,7 +251,7 @@ where
     pub fn send<M>(&self, msg: M) -> Result<(), flume::SendTimeoutError<MessageEnvelope<A>>>
     where
         A: Handler<M>,
-        M: ActorMessage + 'static,
+        M: BaseActorMessage + 'static,
     {
         return self
             .mailbox

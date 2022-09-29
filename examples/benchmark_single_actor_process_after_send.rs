@@ -69,8 +69,6 @@ impl Handler<MessageA> for Benchmark {
 
 fn main() {
     let actor_config = TyraConfig::new().unwrap();
-    let test = actor_config.thread_pool.config.get("default").unwrap();
-    let test = test.threads_max;
     let actor_system = ActorSystem::new(actor_config);
 
     let message_count = 10000000;
@@ -86,8 +84,6 @@ fn main() {
         )
         .unwrap();
     println!("Actors have been created");
-    println!("TEST: {}", actor.get_address().system);
-    println!("TEST2: {}", test);
     let start = Instant::now();
 
     actor.sleep(Duration::from_secs(3)).unwrap();

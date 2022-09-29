@@ -147,7 +147,7 @@ impl ActorSystem {
     ///
     /// ```rust
     /// use std::error::Error;
-    /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorMessage, ActorResult};
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorResult, ActorMessage};
     ///
     /// struct TestActor {}
     ///

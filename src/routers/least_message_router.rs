@@ -2,11 +2,9 @@ use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
-use crate::message::actor_message::ActorMessage;
-use crate::prelude::{Actor, ActorResult};
+use crate::prelude::{Actor, ActorMessage, ActorResult};
 use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
-use crate::routers::router_message::RouterMessage;
 use log::error;
 use std::error::Error;
 
@@ -31,7 +29,7 @@ where
 /// use tyra::prelude::*;
 /// use std::process::exit;
 /// use std::time::Duration;
-///
+/// use tyra::router::{LeastMessageRouterFactory, AddActorMessage};
 /// // define message
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
@@ -57,7 +55,6 @@ where
 /// }
 ///
 /// // create a new actor system with the default config
-/// use tyra::router::{LeastMessageRouterFactory, AddActorMessage, RouterMessage};
 /// let actor_config = TyraConfig::new().unwrap();
 /// let actor_system = ActorSystem::new(actor_config);
 ///
@@ -75,7 +72,7 @@ where
 ///     .spawn("router-hello-world", router_factory)
 ///     .unwrap();
 /// router.send(AddActorMessage::new(actor.clone())).unwrap();
-/// router.send(RouterMessage::new(FooBar{})).unwrap();
+/// router.send(FooBar{}).unwrap();
 /// ```
 pub struct LeastMessageRouterFactory {
     min_mailbox_size: usize
@@ -155,14 +152,14 @@ where
     }
 }
 
-impl<A, M> Handler<RouterMessage<M>> for LeastMessageRouter<A>
+impl<A, M> Handler<M> for LeastMessageRouter<A>
 where
     A: Actor + Handler<M> + 'static,
     M: ActorMessage + 'static,
 {
     fn handle(
         &mut self,
-        msg: RouterMessage<M>,
+        msg: M,
         _context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
@@ -189,7 +186,7 @@ where
             self.next_route_index = 0;
         }
 
-        let result = target.send(msg.msg);
+        let result = target.send(msg);
         if result.is_err() {
             error!(
                 "Could not forward message to target {}",

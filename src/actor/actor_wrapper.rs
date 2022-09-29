@@ -2,7 +2,7 @@ use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_send_error::ActorSendError;
 use crate::actor::handler::Handler;
 use crate::actor::mailbox::Mailbox;
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::BaseActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::message::sleep_message::SleepMessage;
 use crate::prelude::Actor;
@@ -59,7 +59,7 @@ where
     pub fn send<M>(&self, msg: M) -> Result<(), ActorSendError>
     where
         A: Handler<M>,
-        M: ActorMessage + 'static,
+        M: BaseActorMessage + 'static,
     {
         if self.mailbox.is_stopped() {
             return Err(ActorSendError::AlreadyStoppedError);
@@ -82,7 +82,7 @@ where
     pub fn send_timeout<M>(&self, msg: M, timeout: Duration) -> Result<(), ActorSendError>
     where
         A: Handler<M>,
-        M: ActorMessage + 'static,
+        M: BaseActorMessage + 'static,
     {
         if self.mailbox.is_stopped() {
             return Err(ActorSendError::AlreadyStoppedError);
@@ -105,7 +105,7 @@ where
     pub fn send_after<M>(&self, msg: M, delay: Duration) -> Result<(), ActorSendError>
     where
         A: Handler<M> + 'static,
-        M: ActorMessage + 'static,
+        M: BaseActorMessage + 'static,
     {
         if self.mailbox.is_stopped() {
             return Err(ActorSendError::AlreadyStoppedError);

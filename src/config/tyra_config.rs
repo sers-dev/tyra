@@ -2,7 +2,7 @@ use std::path::Path;
 use crate::config::global_config::GeneralConfig;
 use crate::config::pool_config::PoolConfig;
 
-use config::{Config, ConfigError, Environment, File, FileFormat};
+use config::{Config, ConfigError, File, FileFormat};
 use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_POOL: &str = "default";

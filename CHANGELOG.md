@@ -3,6 +3,8 @@
  - added `LeastMessageRouter`
  - config now supports loading optional file `./config/tyra.toml` to overwrite config parameters
    - defaults < `./config/tyra.toml` < environment variables
+ - removed `RouterMessage<M>`
+   - routers now support any user-defined message per default through a generic implementation
  
 # 0.8.0
 

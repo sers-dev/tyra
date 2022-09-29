@@ -1,9 +1,10 @@
 use crate::message::delayed_message::DelayedMessage;
-use crate::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, Handler};
+use crate::prelude::{Actor, ActorContext, ActorFactory, ActorResult, Handler};
 use log::error;
 use std::error::Error;
 use std::thread::sleep;
 use std::time::Duration;
+use crate::message::actor_message::BaseActorMessage;
 
 pub struct DelayActor {}
 impl Actor for DelayActor {}
@@ -30,7 +31,7 @@ impl DelayActorFactory {
 
 impl<A, M> Handler<DelayedMessage<A, M>> for DelayActor
 where
-    M: ActorMessage + 'static,
+    M: BaseActorMessage + 'static,
     A: Actor + Handler<M> + 'static,
 {
     fn handle(

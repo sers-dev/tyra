@@ -1,5 +1,5 @@
 use crate::actor::actor_wrapper::ActorWrapper;
-use crate::message::actor_message::ActorMessage;
+use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::Actor;
 
 /// Adds an Actor to the Router
@@ -19,4 +19,4 @@ where
     }
 }
 
-impl<A> ActorMessage for AddActorMessage<A> where A: Actor {}
+impl<A> BaseActorMessage for AddActorMessage<A> where A: Actor {}
