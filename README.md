@@ -1,21 +1,6 @@
 # Tyra (TYped Rust Actor)
 
-`Tyra` is a cross-platform Typed Actor System Written in Rust.
-
-## Current State
-
-`0.8.0` is intended to be the last minor release before `1.0.0` where it's officially declared ready for production
- - since `0.7.0` it's been used for a variety of internal non-public tools
- - documentation + examples + tests should be in a good state
- - API is finalized
- - performance is acceptable
-
-So why's it not yet `1.0.0`?
- - more time to intensively test
-   - fixing more bugs found from testing
- - finalizing dependencies
-
-The current development status can be tracked in the [CHANGELOG.md](CHANGELOG.md)
+`Tyra` is a production ready, cross-platform Typed Actor System Written in Rust.
 
 ## Configuration
 
