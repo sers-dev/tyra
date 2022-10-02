@@ -292,7 +292,7 @@ impl ActorSystem {
     /// ```
     pub fn await_shutdown(&self) -> i32 {
         while !self.state.is_stopped() {
-            sleep(Duration::from_millis(1));
+            sleep(Duration::from_millis(500));
         }
         return self.state.get_exit_code();
     }

@@ -5,7 +5,8 @@
    - defaults < `./config/tyra.toml` < environment variables
  - removed `RouterMessage<M>`
    - routers now support any user-defined message per default through a generic implementation
- 
+ - increase internal sleep in `await_shutdown` to decrease cpu load
+
 # 0.8.0
 
  - switch internal actor mailbox to `flume` from `crossbeam-channel`

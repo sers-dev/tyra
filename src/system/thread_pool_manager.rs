@@ -130,7 +130,7 @@ impl ThreadPoolManager {
                     });
                 }
             }
-            sleep(Duration::from_secs((1) as u64));
+            sleep(Duration::from_millis(1000));
         }
     }
 }

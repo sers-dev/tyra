@@ -61,7 +61,7 @@ impl SystemState {
                 self.mailboxes.clear();
                 break;
             }
-            sleep(Duration::from_millis(1));
+            sleep(Duration::from_millis(10));
         }
         self.is_stopped.store(true, Ordering::Relaxed);
     }
