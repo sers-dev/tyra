@@ -3,8 +3,7 @@
 ///
 /// It is used by Messages defined in the system
 /// All messages that use this trait directly should also implement a dynamic `Handler<M>` that applies to any `Actor`
-pub trait BaseActorMessage: Send + Sync {
-}
+pub trait BaseActorMessage: Send + Sync {}
 
 /// This trait is used by Messages defined by the system
 /// All messages that use this trait should also implement a dynamic `Handler<M>` that applies to any `Actor`
@@ -15,10 +14,7 @@ pub trait DefaultActorMessage: Send + Sync {
     }
 }
 
-impl<A> BaseActorMessage for A
-where
-    A: DefaultActorMessage
-{}
+impl<A> BaseActorMessage for A where A: DefaultActorMessage {}
 
 /// Core trait to define Messages
 ///
@@ -40,7 +36,4 @@ pub trait ActorMessage: Send + Sync {
 }
 
 /// this should be `BaseActorMessage` but it's currently not possible because of https://github.com/rust-lang/rust/issues/20400
-impl<A> DefaultActorMessage for A
-    where
-        A: ActorMessage
-{}
+impl<A> DefaultActorMessage for A where A: ActorMessage {}

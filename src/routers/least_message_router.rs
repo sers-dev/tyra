@@ -75,14 +75,12 @@ where
 /// router.send(FooBar{}).unwrap();
 /// ```
 pub struct LeastMessageRouterFactory {
-    min_mailbox_size: usize
+    min_mailbox_size: usize,
 }
 
 impl LeastMessageRouterFactory {
     pub fn new(min_mailbox_size: usize) -> Self {
-        Self {
-            min_mailbox_size,
-        }
+        Self { min_mailbox_size }
     }
 }
 

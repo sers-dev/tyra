@@ -1,6 +1,6 @@
-use std::path::Path;
 use crate::config::global_config::GeneralConfig;
 use crate::config::pool_config::PoolConfig;
+use std::path::Path;
 
 use config::{Config, ConfigError, File, FileFormat};
 use serde::{Deserialize, Serialize};
@@ -34,7 +34,6 @@ impl TyraConfig {
     /// config.general.name = String::from("HelloWorld");
     /// ```
     pub fn new() -> Result<Self, ConfigError> {
-
         let default: &str = std::include_str!("default.toml");
 
         let mut config = Config::builder();
