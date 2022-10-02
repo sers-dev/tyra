@@ -1,4 +1,4 @@
-# WIP 1.0.0
+# 1.0.0
 
  - added `LeastMessageRouter`
  - config now supports loading optional file `./config/tyra.toml` to overwrite config parameters
