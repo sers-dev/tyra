@@ -1,3 +1,8 @@
+# 1.1.0
+
+ - upgrade dependencies
+ - 
+
 # 1.0.0
 
  - added `LeastMessageRouter`
