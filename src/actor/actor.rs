@@ -335,6 +335,56 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// ```
     fn pre_restart(&mut self, _context: &ActorContext<Self>) {}
 
+    /// executed before mailbox will be disabled
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tyra::prelude::*;
+    /// use std::error::Error;
+    /// use std::time::Duration;
+    ///
+    /// struct TestActor {}
+    /// impl TestActor {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl Actor for TestActor {
+    ///     fn pre_stop(&mut self, context: &ActorContext<Self>) {
+    ///         context.system.stop(Duration::from_millis(5000));
+    ///     }
+    /// }
+    ///
+    /// struct TestActorFactory {}
+    /// impl TestActorFactory {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl ActorFactory<TestActor> for TestActorFactory {
+    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
+    ///         Ok(TestActor::new())
+    ///     }
+    /// }
+    ///
+    /// impl Handler<ActorInitMessage> for TestActor {
+    ///     fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    ///         return Ok(ActorResult::Stop);
+    ///     }
+    /// }
+    ///
+    /// #[ntest::timeout(10000)]
+    /// fn main() {
+    ///     let actor_config = TyraConfig::new().unwrap();
+    ///     let actor_system = ActorSystem::new(actor_config);
+    ///     let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
+    ///     actor.send(ActorInitMessage::new()).unwrap();
+    ///     std::process::exit(actor_system.await_shutdown());
+    /// }
+    /// ```
+    fn pre_stop(&mut self, _context: &ActorContext<Self>) {}
+
     /// executed after the last message is handled
     ///
     /// # Examples
@@ -443,7 +493,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
         &mut self,
         context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
-        let result = context.actor_ref.send(ActorStopMessage::new());
+        let result = context.actor_ref.stop();
         if result.is_err() {
             error!(
                 "Could not forward message ActorStopMessage to target {}",

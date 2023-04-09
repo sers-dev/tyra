@@ -113,6 +113,7 @@ where
     }
 
     fn stop_actor(&mut self, immediately: bool) -> ActorState {
+        let _ = catch_unwind(AssertUnwindSafe(|| self.actor.pre_stop(&self.context)));
         self.mailbox.is_stopped.store(true, Ordering::Relaxed);
         if immediately {
             let _ = catch_unwind(AssertUnwindSafe(|| self.actor.post_stop(&self.context)));

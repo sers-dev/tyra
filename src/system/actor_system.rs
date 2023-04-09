@@ -76,11 +76,40 @@ impl ActorSystem {
             internal_actor_manager: InternalActorManager::new(),
         };
 
+        if config.general.sigint_graceful_timeout_in_seconds > 0 {
+            let sys = system.clone();
+            ctrlc::set_handler(move || {
+                sys.sigint_handler(Duration::from_secs(300));
+            }).unwrap();
+        }
+
         system.internal_actor_manager.init(system.clone());
 
         system
     }
 
+    /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyra/blob/master/src/config/default.toml)
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use std::time::Duration;
+    /// use tyra::prelude::{TyraConfig, ActorSystem};
+    ///
+    /// let mut actor_config = TyraConfig::new().unwrap();
+    /// //disable automatic setup of sigint handling, so that we can set it manually
+    /// actor_config.general.sigint_graceful_timeout_in_seconds = 0;
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// ctrlc::set_handler(move || {actor_system.sigint_handler(Duration::from_secs(60));}).unwrap();
+    /// ```
+    pub fn sigint_handler(&self, graceful_termination_timeout: Duration) {
+        if self.state.is_stopping() {
+            self.force_stop();
+        }
+        self.stop(graceful_termination_timeout);
+    }
     /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyra/blob/master/src/config/default.toml)
     ///
     /// # Examples
@@ -245,6 +274,10 @@ impl ActorSystem {
     /// ```
     pub fn stop(&self, graceful_termination_timeout: Duration) {
         self.state.stop(graceful_termination_timeout);
+    }
+
+    pub fn force_stop(&self) {
+        self.state.force_stop();
     }
 
     /// Same as stop, but with fixed user defined exit code

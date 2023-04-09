@@ -11,6 +11,8 @@ default_mailbox_size = 0
 default_message_throughput = 15
 # defines if the rust panic hook should be overwritten by the actor system on startup
 override_panic_hook = true
+# will start a graceful shutdown on first SIGINT, or force a shutdown if multiple SIGINT are received. Can be disabled by setting to 0
+sigint_graceful_timeout_in_seconds = 300
 
 # default pool settings
 [thread_pool.config.default]

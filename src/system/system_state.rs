@@ -44,6 +44,11 @@ impl SystemState {
         }
     }
 
+    pub fn force_stop(&self) {
+        self.is_force_stopped.store(true, Ordering::Relaxed);
+        self.stop(Duration::from_secs(1));
+    }
+
     pub fn stop(&self, graceful_termination_timeout: Duration) {
         if self.is_stopping() {
             return;
@@ -56,7 +61,7 @@ impl SystemState {
     fn shutdown(&self, timeout: Duration) {
         let now = Instant::now();
         while self.get_actor_count() != 0 {
-            if now.elapsed() >= timeout {
+            if now.elapsed() >= timeout || self.is_force_stopped.load(Ordering::Relaxed) {
                 self.is_force_stopped.store(true, Ordering::Relaxed);
                 self.mailboxes.clear();
                 break;
