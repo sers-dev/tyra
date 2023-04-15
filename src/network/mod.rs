@@ -1,6 +1,7 @@
 pub mod tcp_remote_actor;
+pub mod network_manager;
 
 pub mod prelude {
-    pub use crate::network::tcp_remote_actor::TcpRemoteActorFactory;
-    pub use crate::network::tcp_remote_actor::TcpRemoteActor;
+    pub use crate::network::network_manager::NetworkManagerFactory;
+    pub use crate::network::network_manager::NetworkManager;
 }
