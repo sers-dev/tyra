@@ -7,7 +7,7 @@ use crate::prelude::{Actor, ActorMessage, ActorResult, BulkActorMessage};
 use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
-use log::error;
+use log::{debug, error};
 use std::collections::HashMap;
 use std::error::Error;
 
@@ -19,6 +19,8 @@ where
     route_to: Vec<ActorWrapper<A>>,
     sharding: HashMap<usize, ActorWrapper<A>>,
     can_route: bool,
+    stop_on_system_stop: bool,
+    stop_on_empty_targets: bool,
 }
 
 /// implements [ActorFactory](../prelude/trait.ActorFactory.html) to spawn a ShardedRouter within an [ActorSystem](../prelude/struct.ActorSystem.html)
@@ -70,7 +72,7 @@ where
 ///     .unwrap();
 ///
 /// // create the router, fill it, and route a message
-/// let router_factory = ShardedRouterFactory::new();
+/// let router_factory = ShardedRouterFactory::new(true, true);
 /// let router = actor_system
 ///     .builder()
 ///     .spawn("router-hello-world", router_factory)
@@ -78,11 +80,20 @@ where
 /// router.send(AddActorMessage::new(actor.clone())).unwrap();
 /// router.send(FooBar{}).unwrap();
 /// ```
-pub struct ShardedRouterFactory {}
+pub struct ShardedRouterFactory {
+    /// defines if the actor should automatically be stopped when the system is stopped. If set to false it's up to the user to setup their own shutdown process if they want a quick and clean exit
+    stop_on_system_stop: bool,
+    /// defines if the actor should automatically be stopped if it receives a message after all targets have been automatically removed
+    /// this does not apply if the last target has been removed through a `RemoveActorMessage
+    stop_on_empty_targets: bool,
+}
 
 impl ShardedRouterFactory {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(stop_on_system_stop: bool, stop_on_empty_targets: bool) -> Self {
+        Self {
+            stop_on_system_stop,
+            stop_on_empty_targets,
+        }
     }
 }
 
@@ -94,7 +105,10 @@ where
         &mut self,
         _context: ActorContext<ShardedRouter<A>>,
     ) -> Result<ShardedRouter<A>, Box<dyn Error>> {
-        return Ok(ShardedRouter::new());
+        return Ok(ShardedRouter::new(
+            self.stop_on_system_stop,
+            self.stop_on_empty_targets,
+        ));
     }
 }
 
@@ -102,12 +116,14 @@ impl<A> ShardedRouter<A>
 where
     A: Actor,
 {
-    pub fn new() -> Self {
+    pub fn new(stop_on_system_stop: bool, stop_on_empty_targets: bool) -> Self {
         Self {
             num_shards: 0,
             route_to: Vec::new(),
             sharding: HashMap::new(),
             can_route: false,
+            stop_on_system_stop,
+            stop_on_empty_targets,
         }
     }
 
@@ -122,7 +138,22 @@ where
     }
 }
 
-impl<A> Actor for ShardedRouter<A> where A: Actor {}
+impl<A> Actor for ShardedRouter<A> where A: Actor {
+    fn on_system_stop(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+        if self.stop_on_system_stop {
+            let result = context.actor_ref.stop();
+            if result.is_err() {
+                error!(
+                    "Could not forward message ActorStopMessage to target {}",
+                    context.actor_ref.get_address().actor
+                );
+                return Ok(ActorResult::Stop);
+            }
+        }
+        return Ok(ActorResult::Ok);
+
+    }
+}
 
 impl<A> Handler<AddActorMessage<A>> for ShardedRouter<A>
 where
@@ -178,8 +209,22 @@ where
             return Ok(ActorResult::Ok);
         }
 
-        let shard_id = msg.get_id() % self.num_shards;
-        let forward_to = self.sharding.get(&shard_id).unwrap();
+        let mut shard_id = msg.get_id() % self.num_shards;
+        let mut forward_to = self.sharding.get(&shard_id).unwrap();
+        loop {
+            if !forward_to.is_stopped() {
+                break;
+            }
+            self.route_to.remove(shard_id);
+           if self.route_to.len() == 0 && self.stop_on_empty_targets {
+               debug!("Stopping router, because all targets have been removed");
+               return Ok(ActorResult::Stop)
+           }
+            self.recalculate_shards();
+            shard_id = msg.get_id() % self.num_shards;
+            forward_to = self.sharding.get(&shard_id).unwrap();
+        }
+
         let result = forward_to.send(msg);
         if result.is_err() {
             error!(
@@ -203,6 +248,14 @@ where
     ) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
             return Ok(ActorResult::Ok);
+        }
+
+        for i in 0..self.route_to.len() {
+            let target = self.route_to.get(i).unwrap();
+            if target.is_stopped() {
+                self.route_to.remove(i);
+                self.recalculate_shards();
+            }
         }
 
         let total_messages = msg.data.len();

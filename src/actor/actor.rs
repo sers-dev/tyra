@@ -1,4 +1,3 @@
-use crate::message::actor_stop_message::ActorStopMessage;
 use crate::prelude::{ActorContext, ActorPanicSource, ActorResult, SerializedMessage};
 use log::error;
 use std::error::Error;
@@ -499,6 +498,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
                 "Could not forward message ActorStopMessage to target {}",
                 context.actor_ref.get_address().actor
             );
+            return Ok(ActorResult::Stop);
         }
         return Ok(ActorResult::Ok);
     }

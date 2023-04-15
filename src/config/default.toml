@@ -11,8 +11,8 @@ default_mailbox_size = 0
 default_message_throughput = 15
 # defines if the rust panic hook should be overwritten by the actor system on startup
 override_panic_hook = true
-# will start a graceful shutdown on first SIGINT, or force a shutdown if multiple SIGINT are received. Can be disabled by setting to 0
-sigint_graceful_timeout_in_seconds = 300
+# will start a graceful shutdown on first SIGINT, SIGTERM or SIGHUP, or force a shutdown if multiple signals are received. Can be disabled by setting to 0
+signal_graceful_timeout_in_seconds = 300
 
 # default pool settings
 [thread_pool.config.default]
@@ -37,3 +37,47 @@ threads_min = 2
 threads_max = 3
 # num_cpu * factor = amount of threads to spawn for this pool
 threads_factor = 1
+
+
+##WIP: How cluster config could look like
+#####
+#
+#
+## default cluster settings
+#[cluster]
+## addresses and port used by the cluster.
+## if port is omitted, the default of 2022 is used
+## if port is set to 0, a port will automatically be assigned
+#hosts = ["tcp://127.0.0.1:2022", "tcp://192.168.0.1:2022", "udp://0.0.0.0:2023"]
+#
+## cluster groups the node should be part of. Valid values are "server", "client" and "proxy"
+## - server: can be elected as master node and will open specified ports in hosts
+## - client: can't be elected as master node and will ignore cluster.hosts config
+## - proxy: will forward traffic between two nodes that can't directly communicate with each other
+#groups = ["server", "client", "proxy"]
+#
+## list of cluster members, entries can include IPs and DNS records, multi A records are supported as well
+## if the same node is listed multiple times with different ip addresses, only the first working occurence will be used as a connection
+## if port is omitted, the default of 2022 is used
+#members = [
+#    "tcp://jkasfhjklahsjkghjklalkj.ahjasdjkhaskhjg.asdf:1234",
+#    "tcp://registry.git.sers.dev",
+#    "tcp://git.sers.dev",
+#    "tcp://abc.sers.dev:1234",
+#]
+## list of cidrs that are allowed to connect
+#trusted_cidrs = [
+#    "78.47.25.243/32",
+#    "78.47.42.31/32",
+#]
+#
+## name of the pre shared key that should be used to encrypt outgoing traffic
+#active_psk = "default"
+#
+## list of encryption keys that are used in the cluster
+## new connections will go through trial and error to find which key is used by which server
+#[cluster.pre_shared_keys]
+#default = "sers"
+#additional = "hello-world"
+#
+#

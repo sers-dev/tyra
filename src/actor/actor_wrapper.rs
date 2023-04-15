@@ -10,6 +10,7 @@ use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::wakeup_manager::WakeupManager;
 use std::fmt::{Debug, Formatter};
 use std::panic::UnwindSafe;
+use std::thread::sleep;
 use std::time::Duration;
 
 /// Wrapper used to interact with [Actor]
@@ -132,8 +133,27 @@ where
         &self.address
     }
 
+    /// Returns the current mailbox size
     pub fn get_mailbox_size(&self) -> usize {
         return self.mailbox.len();
+    }
+
+    /// Returns true if an actor is no longer accepting messages
+    pub fn is_mailbox_stopped(&self) -> bool {
+        return self.mailbox.is_stopped()
+    }
+
+    /// Returns true if an actor has been completely stopped after processing all messages that are still within the queue
+    pub fn is_stopped(&self) -> bool {
+        return self.get_mailbox_size() == 0 && self.mailbox.is_stopped()
+    }
+
+    /// Blocks until the actor has been stopped
+    pub fn wait_for_stop(&self) {
+        let _ = self.stop();
+        while !self.is_stopped() {
+            sleep(Duration::from_millis(25));
+        }
     }
 }
 

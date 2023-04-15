@@ -165,7 +165,7 @@ fn main() {
     // ideal number is "amount of threads - 3"
     let actor_count = 7;
 
-    let router_factory = RoundRobinRouterFactory::new();
+    let router_factory = RoundRobinRouterFactory::new(true, true);
     let router = actor_system
         .builder()
         .spawn("benchmark-router", router_factory)

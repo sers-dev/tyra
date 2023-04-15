@@ -1,7 +1,13 @@
 # 1.1.0
 
  - upgrade dependencies
- - 
+ - `LeastMessageRouter.min_mailbox_size` is now working correctly
+ - Routers now come with 2 new configurations to configure behavior
+   - `stop_on_system_stop` => if false, the user needs to manually stop the router for a clean and quick shutdown of the system
+   - `stop_on_empty_targets` => automatically stops the router if there are no more targets to receive a message to be routed. This does not apply to manually removed targets
+ - Routers now automatically remove stopped actors from their target pool if they have been stopped
+ - Added `.is_mailbox_stopped()`, `is_stopped()` and `wait_for_stop()` to `ActorWrapper<A>`
+ - Added `general.signal_graceful_timeout_in_seconds` to config 
 
 # 1.0.0
 

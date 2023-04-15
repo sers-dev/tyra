@@ -7,7 +7,7 @@ use crate::prelude::{Actor, ActorResult, BulkActorMessage};
 use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
-use log::error;
+use log::{debug, error};
 use std::error::Error;
 
 pub struct RoundRobinRouter<A>
@@ -17,6 +17,8 @@ where
     route_index: usize,
     route_to: Vec<ActorWrapper<A>>,
     can_route: bool,
+    stop_on_system_stop: bool,
+    stop_on_empty_targets: bool,
 }
 
 /// implements [ActorFactory](../prelude/trait.ActorFactory.html) to spawn a RoundRobinRouter within an [ActorSystem](../prelude/struct.ActorSystem.html)
@@ -68,7 +70,7 @@ where
 ///     .unwrap();
 ///
 /// // create the router, fill it, and route a message
-/// let router_factory = RoundRobinRouterFactory::new();
+/// let router_factory = RoundRobinRouterFactory::new(true, true);
 /// let router = actor_system
 ///     .builder()
 ///     .spawn("router-hello-world", router_factory)
@@ -76,11 +78,20 @@ where
 /// router.send(AddActorMessage::new(actor.clone())).unwrap();
 /// router.send(FooBar{}).unwrap();
 /// ```
-pub struct RoundRobinRouterFactory {}
+pub struct RoundRobinRouterFactory {
+    /// defines if the actor should automatically be stopped when the system is stopped. If set to false it's up to the user to setup their own shutdown process if they want a quick and clean exit
+    stop_on_system_stop: bool,
+    /// defines if the actor should automatically be stopped if it receives a message after all targets have been automatically removed
+    /// this does not apply if the last target has been removed through a `RemoveActorMessage
+    stop_on_empty_targets: bool,
+}
 
 impl RoundRobinRouterFactory {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(stop_on_system_stop: bool, stop_on_empty_targets: bool) -> Self {
+        Self {
+            stop_on_system_stop,
+            stop_on_empty_targets,
+        }
     }
 }
 
@@ -92,7 +103,10 @@ where
         &mut self,
         _context: ActorContext<RoundRobinRouter<A>>,
     ) -> Result<RoundRobinRouter<A>, Box<dyn Error>> {
-        return Ok(RoundRobinRouter::new());
+        return Ok(RoundRobinRouter::new(
+            self.stop_on_system_stop,
+            self.stop_on_empty_targets,
+        ));
     }
 }
 
@@ -100,16 +114,33 @@ impl<A> RoundRobinRouter<A>
 where
     A: Actor,
 {
-    pub fn new() -> Self {
+    pub fn new(stop_on_system_stop: bool, stop_on_empty_targets: bool) -> Self {
         Self {
             route_index: 0,
             route_to: Vec::new(),
             can_route: false,
+            stop_on_system_stop,
+            stop_on_empty_targets,
         }
     }
 }
 
-impl<A> Actor for RoundRobinRouter<A> where A: Actor {}
+impl<A> Actor for RoundRobinRouter<A> where A: Actor {
+    fn on_system_stop(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+        if self.stop_on_system_stop {
+            let result = context.actor_ref.stop();
+            if result.is_err() {
+                error!(
+                    "Could not forward message ActorStopMessage to target {}",
+                    context.actor_ref.get_address().actor
+                );
+                return Ok(ActorResult::Stop);
+            }
+        }
+        return Ok(ActorResult::Ok);
+
+    }
+}
 
 impl<A> Handler<AddActorMessage<A>> for RoundRobinRouter<A>
 where
@@ -163,6 +194,28 @@ where
             return Ok(ActorResult::Ok);
         }
 
+
+        // skip/remove stopped actors
+        loop {
+            let route_index = self.route_index;
+            let target = self.route_to.get(self.route_index).unwrap();
+
+            if target.is_stopped() {
+                self.route_index += 1;
+                if self.route_index >= (self.route_to.len() - 1) {
+                    self.route_index = 0;
+                }
+                self.route_to.remove(route_index);
+                if self.route_to.len() == 0 && self.stop_on_empty_targets {
+                    debug!("Stopping router, because all targets have been removed");
+                    return Ok(ActorResult::Stop)
+                }
+            }
+            else {
+                break;
+            }
+        }
+
         self.route_index += 1;
         if self.route_index >= self.route_to.len() {
             self.route_index = 0;
@@ -192,6 +245,27 @@ where
     ) -> Result<ActorResult, Box<dyn Error>> {
         if !self.can_route {
             return Ok(ActorResult::Ok);
+        }
+
+        // skip/remove stopped actors
+        loop {
+            let route_index = self.route_index;
+            let target = self.route_to.get(self.route_index).unwrap();
+
+            if target.is_stopped() {
+                self.route_index += 1;
+                if self.route_index >= (self.route_to.len() - 1) {
+                    self.route_index = 0;
+                }
+                self.route_to.remove(route_index);
+                if self.route_to.len() == 0 && self.stop_on_empty_targets {
+                    debug!("Stopping router, because all targets have been removed");
+                    return Ok(ActorResult::Stop)
+                }
+            }
+            else {
+                break;
+            }
         }
 
         let total_messages = msg.data.len();

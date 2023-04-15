@@ -48,7 +48,7 @@ where
     fn handle(
         &mut self,
         _msg: ActorStopMessage,
-        context: &ActorContext<A>,
+        _context: &ActorContext<A>,
     ) -> Result<ActorResult, Box<dyn Error>> {
         return Ok(ActorResult::Stop);
     }

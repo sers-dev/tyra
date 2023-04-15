@@ -10,6 +10,7 @@ use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
 use dashmap::DashMap;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -22,6 +23,7 @@ pub struct ActorSystem {
     name: String,
     config: Arc<TyraConfig>,
     internal_actor_manager: InternalActorManager,
+    sigint_received: Arc<AtomicBool>,
 }
 
 impl ActorSystem {
@@ -74,9 +76,10 @@ impl ActorSystem {
             name: config.general.name.clone(),
             config: Arc::new(config.clone()),
             internal_actor_manager: InternalActorManager::new(),
+            sigint_received: Arc::new(AtomicBool::new(false)),
         };
 
-        if config.general.sigint_graceful_timeout_in_seconds > 0 {
+        if config.general.signal_graceful_timeout_in_seconds > 0 {
             let sys = system.clone();
             ctrlc::set_handler(move || {
                 sys.sigint_handler(Duration::from_secs(300));
@@ -100,14 +103,15 @@ impl ActorSystem {
     ///
     /// let mut actor_config = TyraConfig::new().unwrap();
     /// //disable automatic setup of sigint handling, so that we can set it manually
-    /// actor_config.general.sigint_graceful_timeout_in_seconds = 0;
+    /// actor_config.general.signal_graceful_timeout_in_seconds = 0;
     /// let actor_system = ActorSystem::new(actor_config);
     /// ctrlc::set_handler(move || {actor_system.sigint_handler(Duration::from_secs(60));}).unwrap();
     /// ```
     pub fn sigint_handler(&self, graceful_termination_timeout: Duration) {
-        if self.state.is_stopping() {
+        if self.sigint_received.load(Ordering::Relaxed) {
             self.force_stop();
         }
+        self.sigint_received.store(true, Ordering::Relaxed);
         self.stop(graceful_termination_timeout);
     }
     /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyra/blob/master/src/config/default.toml)

@@ -158,7 +158,7 @@ fn main() {
     let message_count = 10000000;
     let actor_count = 10;
 
-    let router_factory = RoundRobinRouterFactory::new();
+    let router_factory = RoundRobinRouterFactory::new(true, true);
     let router = actor_system
         .builder()
         .spawn("benchmark-router", router_factory)

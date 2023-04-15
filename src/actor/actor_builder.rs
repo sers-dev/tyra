@@ -118,34 +118,40 @@ where
     ///     }
     /// }
     ///
-    /// struct SecondActor {}
-    /// impl SecondActor {
+    /// struct BrokenActor {}
+    /// impl BrokenActor {
     ///     pub fn new() -> Self {
     ///         Self {}
     ///     }
     /// }
-    /// impl Actor for SecondActor {}
+    /// impl Actor for BrokenActor {}
     ///
-    /// struct SecondActorFactory {}
-    /// impl SecondActorFactory {
+    /// struct BrokenActorFactory {}
+    /// impl BrokenActorFactory {
     ///     pub fn new() -> Self {
     ///         Self {}
     ///     }
     /// }
-    /// impl ActorFactory<SecondActor> for SecondActorFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<SecondActor>) -> Result<SecondActor, Box<dyn Error>> {
+    /// impl ActorFactory<BrokenActor> for BrokenActorFactory {
+    ///     fn new_actor(&mut self, _context: ActorContext<BrokenActor>) -> Result<BrokenActor, Box<dyn Error>> {
     ///         let error = std::io::Error::from_raw_os_error(1337);
     ///         return Err(Box::new(error));
     ///     }
     /// }
     ///
-    /// #[ntest::timeout(10000)]
+    /// #[ntest::timeout(100000)]
     /// fn main() {
     ///     let mut actor_config = TyraConfig::new().unwrap();
     ///     actor_config.thread_pool.config.insert(String::from("default"), ThreadPoolConfig::new(1, 1, 1, 1.0));
     ///     let actor_system = ActorSystem::new(actor_config);
-    ///     let actor_name = "test";
     ///
+    ///     //this does not work, because although there's not yet an actor called `broken` on the pool the `new_actor` method returns an error
+    ///     let this_is_not_working = actor_system.builder().spawn("broken", BrokenActorFactory::new());
+    ///     assert!(this_is_not_working.is_err(), "The BrokenActor was spawned");
+    ///     let err = this_is_not_working.err().unwrap();
+    ///     assert_eq!(err, ActorError::InitError, "Error is not correct");
+    ///
+    ///     let actor_name = "test";
     ///     //this works, because there's no actor called `test` yet on the pool
     ///     let this_works = actor_system.builder().spawn(actor_name, TestActorFactory::new());
     ///     assert!(this_works.is_ok(), "The actor could not be spawned");
@@ -160,25 +166,19 @@ where
     ///     let err = pool_full.err().unwrap();
     ///     assert_eq!(err, ActorError::ThreadPoolHasTooManyActorsError, "Error is not correct");
     ///
-    ///     //this does not work, because the pool does not exist in the configuration
+    ///     ////this does not work, because the pool does not exist in the configuration
     ///     let invalid_pool = actor_system.builder().set_pool_name("invalid").spawn(actor_name, TestActorFactory::new());
     ///     assert!(invalid_pool.is_err(), "The Actor was spawned");
     ///     let err = invalid_pool.err().unwrap();
     ///     assert_eq!(err, ActorError::ThreadPoolDoesNotExistError, "Error is not correct");
     ///
-    ///     //this does not work, because although there's not yet an actor called `second` on the pool the `new_actor` method returns an error
-    ///     let this_is_not_working = actor_system.builder().spawn("second", SecondActorFactory::new());
-    ///     assert!(this_is_not_working.is_err(), "The SecondActor was spawned");
-    ///     let err = this_is_not_working.err().unwrap();
-    ///     assert_eq!(err, ActorError::InitError, "Error is not correct");
-    ///
-    ///     //this does not work, because there's already an actor called `test` with a different type on the pool
-    ///     let this_is_not_working_either = actor_system.builder().spawn(actor_name, SecondActorFactory::new());
+    ///     ////this does not work, because there's already an actor called `test` with a different type on the pool
+    ///     let this_is_not_working_either = actor_system.builder().spawn(actor_name, BrokenActorFactory::new());
     ///     assert!(this_is_not_working_either.is_err(), "Illegal Actor type conversion");
     ///     let err = this_is_not_working_either.err().unwrap();
     ///     assert_eq!(err, ActorError::InvalidActorTypeError, "Error is not correct");
     ///
-    ///     actor_system.stop(Duration::from_millis(1000));
+    ///     actor_system.stop(Duration::from_millis(3000));
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
     /// ```
@@ -197,6 +197,11 @@ where
             return self
                 .system_state
                 .get_actor_ref(actor_address, self.internal_actor_manager.clone());
+        }
+
+        let result = self.system_state.increase_pool_actor_count(&actor_address);
+        if result.is_err() {
+            return Err(result.unwrap_err());
         }
 
         let (sender, receiver) = if self.actor_config.mailbox_size == 0 {
@@ -230,21 +235,13 @@ where
 
         match actor_handler {
             Ok(a) => {
-                let result = self
-                    .system_state
-                    .add_mailbox(actor_address.clone(), mailbox);
-
-                if result.is_err() {
-                    return Err(result.unwrap_err());
-                }
-
-                self.wakeup_manager
-                    .add_inactive_actor(a.get_address(), Arc::new(RwLock::new(a)));
-
+                self.system_state.add_mailbox(actor_address.clone(), mailbox);
+                self.wakeup_manager.add_inactive_actor(a.get_address(), Arc::new(RwLock::new(a)));
                 self.existing.insert(actor_address, actor_ref.clone());
                 return Ok(actor_ref);
             }
             Err(e) => {
+                self.system_state.decrease_pool_actor_count(&actor_address);
                 return Err(e);
             }
         }
