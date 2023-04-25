@@ -1,7 +1,7 @@
-#[derive(Clone)]
+#[derive(Clone, Ord, Eq, PartialOrd, PartialEq, Copy)]
 pub enum NetProtocol {
+    TCP,
     UDP,
-    TCP
 }
 
 #[derive(Clone)]

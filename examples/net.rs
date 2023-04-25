@@ -9,9 +9,8 @@ fn main() {
     let actor_system = ActorSystem::new(actor_config);
     // create actor on the system
     let mut net_configs = Vec::new();
+    net_configs.push(NetConfig::new(NetProtocol::UDP, "0.0.0.0", 2023));
     net_configs.push(NetConfig::new(NetProtocol::TCP, "0.0.0.0", 2022));
-    //net_configs.push(NetConfig::new(NetProtocol::TCP, "10.0.10.10", 2022));
-    //net_configs.push(NetConfig::new(NetProtocol::UDP, "10.0.10.10", 2023));
 
 
     let _actor = actor_system

@@ -2,20 +2,22 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::io::Write;
 use std::net::{Shutdown, SocketAddr};
+use std::sync::Arc;
 use io_arc::IoArc;
 use log::{debug, warn};
-use mio::net::TcpStream;
+use mio::net::{TcpStream, UdpSocket};
 use crate::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, Handler};
 
 pub struct NetWorker {
     streams: HashMap<usize, (IoArc<TcpStream>, SocketAddr)>,
-
+    sockets: HashMap<usize, IoArc<UdpSocket>>,
 }
 
 impl NetWorker {
     pub fn new() -> Self {
         return Self {
             streams: HashMap::new(),
+            sockets: HashMap::new(),
         };
     }
 }
@@ -82,12 +84,12 @@ impl ActorMessage for RemoveTcpConnection {
     }
 }
 
-pub struct ReceivedTcpMessage {
+pub struct ReceiveTcpMessage {
     pub stream_id: usize,
     pub request: Vec<String>,
 }
 
-impl ReceivedTcpMessage {
+impl ReceiveTcpMessage {
     pub fn new(stream_id: usize, request: Vec<String>) -> Self {
         return Self {
             stream_id,
@@ -96,14 +98,55 @@ impl ReceivedTcpMessage {
     }
 }
 
-impl ActorMessage for ReceivedTcpMessage {
+impl ActorMessage for ReceiveTcpMessage {
     fn get_id(&self) -> usize {
         return self.stream_id;
     }
 }
 
-impl Handler<ReceivedTcpMessage> for NetWorker {
-    fn handle(&mut self, msg: ReceivedTcpMessage, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+pub struct AddUdpSocket {
+    socket_id: usize,
+    socket: IoArc<UdpSocket>,
+}
+impl AddUdpSocket {
+    pub fn new(socket_id: usize, socket: IoArc<UdpSocket>) -> Self {
+        return Self {
+            socket_id,
+            socket,
+        };
+    }
+}
+
+impl ActorMessage for AddUdpSocket {
+    fn get_id(&self) -> usize {
+        return 1;
+    }
+}
+
+pub struct ReceiveUdpMessage {
+    socket_id: usize,
+    source: SocketAddr,
+    request: String,
+}
+
+impl ReceiveUdpMessage {
+    pub fn new(socket_id: usize, source: SocketAddr, request: String) -> Self {
+        return Self {
+            socket_id,
+            source,
+            request,
+        };
+    }
+}
+
+impl ActorMessage for ReceiveUdpMessage {
+    fn get_id(&self) -> usize {
+        return 1;
+    }
+}
+
+impl Handler<ReceiveTcpMessage> for NetWorker {
+    fn handle(&mut self, msg: ReceiveTcpMessage, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let stream = self.streams.get_mut(&msg.stream_id);
         if stream.is_none() {
             // temporary implementation for our instant http response, later on we won't have to care here if the stream is active, we'll just forward the message
@@ -147,6 +190,34 @@ impl Handler<AddTcpConnection> for NetWorker {
 impl Handler<RemoveTcpConnection> for NetWorker {
     fn handle(&mut self, msg: RemoveTcpConnection, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let _ = self.streams.remove(&msg.stream_id);
+        return Ok(ActorResult::Ok);
+    }
+}
+
+impl Handler<ReceiveUdpMessage> for NetWorker {
+    fn handle(&mut self, msg: ReceiveUdpMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+        let socket = self.sockets.get_mut(&msg.socket_id);
+        if socket.is_none() {
+            // temporary implementation for our instant http response, later on we won't have to care here if the stream is active, we'll just forward the message
+            debug!("Socket ID no longer exists, can't reply to request");
+            return Ok(ActorResult::Ok);
+        }
+        let socket = socket.unwrap();
+        let _ = socket.as_ref().send_to(msg.request.as_bytes(), msg.source);
+
+        return Ok(ActorResult::Ok);
+    }
+}
+
+impl Handler<AddUdpSocket> for NetWorker {
+    fn handle(&mut self, msg: AddUdpSocket, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+        let key_already_exists = self.sockets.remove(&msg.socket_id);
+        if key_already_exists.is_some() {
+            warn!("Socket ID already exists, dropping old  one in favor of the new.");
+            let socket = key_already_exists.unwrap();
+        }
+
+        let _ = self.sockets.insert(msg.socket_id, msg.socket);
         return Ok(ActorResult::Ok);
     }
 }

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::io::{BufRead, BufReader};
 use std::net::Shutdown;
+use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -9,10 +10,10 @@ use std::thread::sleep;
 use std::time::Duration;
 use io_arc::IoArc;
 use log::{error, warn};
-use mio::net::{TcpListener, TcpStream};
+use mio::net::{TcpListener, TcpStream, UdpSocket};
 use mio::{Events, Interest, Poll, Token};
 use mio::event::Source;
-use crate::net::net_worker::{AddTcpConnection, NetWorker, NetWorkerFactory, ReceivedTcpMessage, RemoveTcpConnection};
+use crate::net::net_worker::{AddTcpConnection, AddUdpSocket, NetWorker, NetWorkerFactory, ReceiveTcpMessage, ReceiveUdpMessage, RemoveTcpConnection};
 use crate::prelude::{Actor, ActorContext, ActorFactory, ActorInitMessage, ActorResult, ActorWrapper, Handler, NetConfig, NetProtocol};
 use crate::router::{AddActorMessage, ShardedRouter, ShardedRouterFactory};
 
@@ -137,39 +138,47 @@ impl ActorFactory<NetManager> for NetManagerFactory {
 
 impl Handler<ActorInitMessage> for NetManager {
     fn handle(&mut self, _msg: ActorInitMessage, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-        let mut tcp_listeners :HashMap<Token, TcpListener> = HashMap::new();
-        //let mut udp_listeners :HashMap<Token, UdpSocket> = HashMap::new();
-
-        let mut poll = Poll::new().unwrap();
-        let mut i = 0;
-        for net_config in &self.net_configs {
-            let token = Token(i);
-            i += 1;
-
-            let address = format!("{}:{}", net_config.host, net_config.port);
-            match net_config.protocol {
-                NetProtocol::TCP => {
-                    let mut listener = TcpListener::bind(address.parse().unwrap()).unwrap();
-                    poll.registry().register(&mut listener, token, Interest::READABLE).unwrap();
-                    tcp_listeners.insert(token, listener);
-                },
-                NetProtocol::UDP => {
-                    //let mut listener = UdpSocket::bind(address.parse().unwrap()).unwrap();
-                    //poll.registry().register(&mut listener, Token(i + tcp_listeners.len()), Interest::READABLE).unwrap();
-                    //udp_listeners.insert(token, listener);
-                }
-            }
-        }
-
         let router = self.router.clone();
-        let num_listeners = self.net_configs.len();
         let is_stopping = self.is_stopping.clone();
         let is_stopped = self.is_stopped.clone();
+        let mut net_configs = self.net_configs.clone();
+
         thread::spawn(move || {
-            let mut i = num_listeners;
+            let mut tcp_listeners :HashMap<Token, TcpListener> = HashMap::new();
+            let mut udp_sockets:HashMap<Token, IoArc<UdpSocket>> = HashMap::new();
+            let mut poll = Poll::new().unwrap();
+
+            let mut i = 0;
+            net_configs.sort_by_key(|c| c.protocol);
+            for net_config in &net_configs {
+                let token = Token(i);
+                i += 1;
+
+                let address = format!("{}:{}", net_config.host, net_config.port).parse().unwrap();
+
+                match net_config.protocol {
+                    NetProtocol::TCP => {
+                        let mut listener = TcpListener::bind(address).unwrap();
+                        poll.registry().register(&mut listener, token, Interest::READABLE).unwrap();
+                        tcp_listeners.insert(token, listener);
+                    },
+                    NetProtocol::UDP => {
+                        let mut socket = UdpSocket::bind(address).unwrap();
+                        poll.registry().register(&mut socket, token, Interest::READABLE).unwrap();
+                        let socket = IoArc::new(socket);
+                        udp_sockets.insert(token, socket.clone());
+                        let _ = router.send(AddUdpSocket::new(token.0, socket));
+                    }
+                }
+            }
+            let num_tcp_listeners = tcp_listeners.len();
+            let num_total_listeners = net_configs.len();
+
+
             let mut events = Events::with_capacity(1024);
             let mut streams =  HashMap::new();
 
+            let mut buf = [0; 65535];
             loop {
 
                 if is_stopped.load(Ordering::Relaxed) {
@@ -178,16 +187,14 @@ impl Handler<ActorInitMessage> for NetManager {
 
                 poll.poll(&mut events, None).unwrap();
 
-
-
-                for event in &events {
+                for event in events.iter() {
                     let stopping = is_stopping.load(Ordering::Relaxed);
                     if stopping && streams.len() == 0  {
                         is_stopped.store(true, Ordering::Relaxed);
                         break;
                     }
                     let token = &event.token();
-                    if token.0 < num_listeners {
+                    if token.0 < num_tcp_listeners {
                         let listener = tcp_listeners.get(token).unwrap();
 
                         loop {
@@ -206,8 +213,8 @@ impl Handler<ActorInitMessage> for NetManager {
                                     let _ = router.send(AddTcpConnection::new(i, sock, address));
 
                                     i += 1;
-                                    if i < num_listeners {
-                                        i = num_listeners;
+                                    if i < num_total_listeners {
+                                        i = num_total_listeners;
                                     }
                                 }
                                 Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
@@ -219,6 +226,28 @@ impl Handler<ActorInitMessage> for NetManager {
                                 }
                             }
                         }
+                    }
+                    else if token.0 < num_total_listeners {
+                        //UDP handling
+                        let socket = udp_sockets.get(&token);
+                        if socket.is_none() {
+                            error!("Something went wrong with the UDP Socket.");
+                        }
+                        let socket = socket.unwrap();
+
+                        let (len, from) = match socket.as_ref().recv_from(&mut buf) {
+                            Ok(v) => v,
+
+                            Err(e) => {
+                                if e.kind() == std::io::ErrorKind::WouldBlock {
+                                    continue;
+                                }
+                                panic!("recv() failed: {:?}", e);
+                            },
+                        };
+                        let request = String::from_utf8_lossy(&buf[..len]);
+                        let _ = router.send(ReceiveUdpMessage::new(token.0, from, request.into_owned()));
+
                     }
                     else {
                         if event.is_read_closed() || event.is_write_closed() {
@@ -251,7 +280,7 @@ impl Handler<ActorInitMessage> for NetManager {
                                 .take_while(|line| !line.is_empty())
                                 .collect();
                             if !request.is_empty() {
-                                let _ = router.send(ReceivedTcpMessage::new(token.0, request));
+                                let _ = router.send(ReceiveTcpMessage::new(token.0, request));
                             }
 
                         }
