@@ -25,6 +25,7 @@
 //! impl Actor for HelloWorld {}
 //!
 //! // setup required Factory
+//! #[derive(Clone)]
 //! struct HelloWorldFactory {}
 //! impl ActorFactory<HelloWorld> for HelloWorldFactory {
 //!     fn new_actor(&mut self, _context: ActorContext<HelloWorld>) -> Result<HelloWorld, Box<dyn Error>> {

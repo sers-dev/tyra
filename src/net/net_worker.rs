@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::io::Write;
 use std::net::{Shutdown, SocketAddr};
-use std::sync::Arc;
 use io_arc::IoArc;
 use log::{debug, warn};
 use mio::net::{TcpStream, UdpSocket};
 use crate::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, Handler};
 
+#[derive(Clone)]
 pub struct NetWorker {
     streams: HashMap<usize, (IoArc<TcpStream>, SocketAddr)>,
     sockets: HashMap<usize, IoArc<UdpSocket>>,
@@ -29,6 +29,7 @@ impl Actor for NetWorker {
     }
 }
 
+#[derive(Clone)]
 pub struct NetWorkerFactory {}
 impl ActorFactory<NetWorker> for NetWorkerFactory {
     fn new_actor(&mut self, _context: ActorContext<NetWorker>) -> Result<NetWorker, Box<dyn Error>> {
@@ -195,7 +196,7 @@ impl Handler<RemoveTcpConnection> for NetWorker {
 }
 
 impl Handler<ReceiveUdpMessage> for NetWorker {
-    fn handle(&mut self, msg: ReceiveUdpMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(&mut self, msg: ReceiveUdpMessage, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let socket = self.sockets.get_mut(&msg.socket_id);
         if socket.is_none() {
             // temporary implementation for our instant http response, later on we won't have to care here if the stream is active, we'll just forward the message
@@ -210,11 +211,10 @@ impl Handler<ReceiveUdpMessage> for NetWorker {
 }
 
 impl Handler<AddUdpSocket> for NetWorker {
-    fn handle(&mut self, msg: AddUdpSocket, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(&mut self, msg: AddUdpSocket, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let key_already_exists = self.sockets.remove(&msg.socket_id);
         if key_already_exists.is_some() {
             warn!("Socket ID already exists, dropping old  one in favor of the new.");
-            let socket = key_already_exists.unwrap();
         }
 
         let _ = self.sockets.insert(msg.socket_id, msg.socket);

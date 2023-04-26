@@ -1,4 +1,4 @@
-use tyra::prelude::{ActorSystem, NetConfig, NetManagerFactory, NetProtocol, ThreadPoolConfig, TyraConfig};
+use tyra::prelude::{ActorSystem, NetConfig, NetManagerFactory, NetProtocol, NetWorkerFactory, ThreadPoolConfig, TyraConfig};
 
 fn main() {
     // generate config
@@ -13,10 +13,11 @@ fn main() {
     net_configs.push(NetConfig::new(NetProtocol::TCP, "0.0.0.0", 2022));
 
 
+    let worker_factory = NetWorkerFactory::new();
     let _actor = actor_system
         .builder()
         .set_pool_name("mio")
-        .spawn("test", NetManagerFactory::new(net_configs, 10))
+        .spawn("test", NetManagerFactory::new(net_configs, 10, worker_factory))
         .unwrap();
 
     // send a message to the actor

@@ -7,7 +7,8 @@ pub mod prelude {
     pub use crate::net::net_manager::NetManager;
     pub use crate::net::net_config::NetConfig;
     pub use crate::net::net_config::NetProtocol;
-
+    pub use crate::net::net_worker::NetWorkerFactory;
+    pub use crate::net::net_worker::NetWorker;
 
 
 }

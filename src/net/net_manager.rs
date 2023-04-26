@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{BufRead, BufReader};
+use std::marker::PhantomData;
 use std::net::Shutdown;
-use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -13,22 +13,31 @@ use log::{error, warn};
 use mio::net::{TcpListener, TcpStream, UdpSocket};
 use mio::{Events, Interest, Poll, Token};
 use mio::event::Source;
-use crate::net::net_worker::{AddTcpConnection, AddUdpSocket, NetWorker, NetWorkerFactory, ReceiveTcpMessage, ReceiveUdpMessage, RemoveTcpConnection};
+use crate::net::net_worker::{AddTcpConnection, AddUdpSocket, ReceiveTcpMessage, ReceiveUdpMessage, RemoveTcpConnection};
 use crate::prelude::{Actor, ActorContext, ActorFactory, ActorInitMessage, ActorResult, ActorWrapper, Handler, NetConfig, NetProtocol};
 use crate::router::{AddActorMessage, ShardedRouter, ShardedRouterFactory};
 
-pub struct NetManager {
+pub struct NetManager<T>
+    where
+        T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+{
     graceful_shutdown_time_in_seconds: usize,
-    router: ActorWrapper<ShardedRouter<NetWorker>>,
-    workers: Vec<ActorWrapper<NetWorker>>,
+    router: ActorWrapper<ShardedRouter<T>>,
+    workers: Vec<ActorWrapper<T>>,
     net_configs: Vec<NetConfig>,
     is_stopping: Arc<AtomicBool>,
     is_stopped: Arc<AtomicBool>,
 
+
 }
 
-impl NetManager {
-    pub fn new(context: ActorContext<Self>, net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: usize) -> Self {
+impl<T> NetManager<T>
+    where
+
+        T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+{
+    pub fn new<F>(context: ActorContext<Self>, net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: usize, worker_factory: F) -> Self
+    where F: ActorFactory<T> + Clone + 'static, {
 
         let pool_name = &context.actor_ref.get_address().pool;
 
@@ -37,7 +46,7 @@ impl NetManager {
         let router = context.system.builder().set_pool_name(pool_name).spawn("net-least-message", ShardedRouterFactory::new( false, false)).unwrap();
 
         for i in 0..worker_count - 1 {
-            let worker = context.system.builder().set_pool_name(pool_name).spawn(format!("net-worker-{}", i), NetWorkerFactory::new()).unwrap();
+            let worker = context.system.builder().set_pool_name(pool_name).spawn(format!("net-worker-{}", i), worker_factory.clone()).unwrap();
             router.send(AddActorMessage::new(worker.clone())).unwrap();
             workers.push(worker);
         }
@@ -55,7 +64,10 @@ impl NetManager {
         };
     }
 }
-impl Actor for NetManager {
+impl<T> Actor for NetManager<T>
+    where
+        T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+{
     fn pre_stop(&mut self, _context: &ActorContext<Self>) {
         if self.graceful_shutdown_time_in_seconds == 0 {
             self.is_stopping.store(true, Ordering::Relaxed);
@@ -115,28 +127,47 @@ impl Actor for NetManager {
     }
 }
 
-
-pub struct NetManagerFactory {
+pub struct NetManagerFactory<F, T>
+where
+    F: ActorFactory<T> + Clone + 'static,
+    T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+{
     net_configs: Vec<NetConfig>,
     graceful_shutdown_time_in_seconds: usize,
+    worker_factory: F,
+    phantom: PhantomData<T>,
 }
 
-impl NetManagerFactory {
-    pub fn new(net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: usize) -> Self {
+impl<F, T> NetManagerFactory<F, T>
+where
+    F: ActorFactory<T> + Clone + 'static,
+    T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+
+{
+    pub fn new(net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: usize, worker_factory: F) -> Self {
         return Self {
             net_configs,
             graceful_shutdown_time_in_seconds,
+            worker_factory,
+            phantom: PhantomData,
         };
     }
 }
-impl ActorFactory<NetManager> for NetManagerFactory {
-    fn new_actor(&mut self, context: ActorContext<NetManager>) -> Result<NetManager, Box<dyn Error>> {
+impl<F, T> ActorFactory<NetManager<T>> for NetManagerFactory<F, T>
+where
+    F: ActorFactory<T> + Clone + 'static,
+    T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+{
+    fn new_actor(&mut self, context: ActorContext<NetManager<T>>) -> Result<NetManager<T>, Box<dyn Error>> {
         context.actor_ref.send(ActorInitMessage::new()).unwrap();
-        return Ok(NetManager::new(context, self.net_configs.clone(), self.graceful_shutdown_time_in_seconds));
+        return Ok(NetManager::new(context, self.net_configs.clone(), self.graceful_shutdown_time_in_seconds, self.worker_factory.clone()));
     }
 }
 
-impl Handler<ActorInitMessage> for NetManager {
+impl<T> Handler<ActorInitMessage> for NetManager<T>
+    where
+        T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+{
     fn handle(&mut self, _msg: ActorInitMessage, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let router = self.router.clone();
         let is_stopping = self.is_stopping.clone();
