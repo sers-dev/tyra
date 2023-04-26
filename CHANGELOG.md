@@ -7,7 +7,9 @@
    - `stop_on_empty_targets` => automatically stops the router if there are no more targets to receive a message to be routed. This does not apply to manually removed targets
  - Routers now automatically remove stopped actors from their target pool if they have been stopped
  - Added `.is_mailbox_stopped()`, `is_stopped()` and `wait_for_stop()` to `ActorWrapper<A>`
- - Added `general.signal_graceful_timeout_in_seconds` to config 
+ - Added `general.signal_graceful_timeout_in_seconds` to config
+ - Added `ActorBuilder<A>.spawn_multiple()`
+ - All routers now support a `SendToAllTargetsMessage<M>` that will forward `M` to all active targets
 
 # 1.0.0
 

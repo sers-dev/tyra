@@ -10,6 +10,7 @@ use crate::routers::remove_actor_message::RemoveActorMessage;
 use log::{debug, error};
 use std::collections::HashMap;
 use std::error::Error;
+use crate::router::SendToAllTargetsMessage;
 
 pub struct ShardedRouter<A>
 where
@@ -272,6 +273,36 @@ where
                 );
             }
         }
+        return Ok(ActorResult::Ok);
+    }
+}
+
+impl<A, M> Handler<SendToAllTargetsMessage<M>> for ShardedRouter<A>
+    where
+        A: Actor + Handler<M> + 'static,
+        M: BaseActorMessage + Clone + 'static,
+{
+    fn handle(
+        &mut self,
+        msg: SendToAllTargetsMessage<M>,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
+        if !self.can_route {
+            return Ok(ActorResult::Ok);
+        }
+
+        for i in 0..self.route_to.len() {
+            let target = self.route_to.get(i).unwrap();
+            if target.is_stopped() {
+                self.route_to.remove(i);
+                self.recalculate_shards();
+            }
+        }
+
+        for target in &self.route_to {
+           let _ =  target.send(msg.msg.clone());
+        }
+
         return Ok(ActorResult::Ok);
     }
 }

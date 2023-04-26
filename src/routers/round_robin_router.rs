@@ -9,6 +9,7 @@ use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
 use log::{debug, error};
 use std::error::Error;
+use crate::router::SendToAllTargetsMessage;
 
 pub struct RoundRobinRouter<A>
 where
@@ -288,6 +289,49 @@ where
                 );
             }
         }
+        return Ok(ActorResult::Ok);
+    }
+}
+
+impl<A, M> Handler<SendToAllTargetsMessage<M>> for RoundRobinRouter<A>
+    where
+        A: Actor + Handler<M> + 'static,
+        M: BaseActorMessage + Clone + 'static,
+{
+    fn handle(
+        &mut self,
+        msg: SendToAllTargetsMessage<M>,
+        _context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
+        if !self.can_route {
+            return Ok(ActorResult::Ok);
+        }
+
+        // skip/remove stopped actors
+        loop {
+            let route_index = self.route_index;
+            let target = self.route_to.get(self.route_index).unwrap();
+
+            if target.is_stopped() {
+                self.route_index += 1;
+                if self.route_index >= (self.route_to.len() - 1) {
+                    self.route_index = 0;
+                }
+                self.route_to.remove(route_index);
+                if self.route_to.len() == 0 && self.stop_on_empty_targets {
+                    debug!("Stopping router, because all targets have been removed");
+                    return Ok(ActorResult::Stop)
+                }
+            }
+            else {
+                break;
+            }
+        }
+
+        for target in &self.route_to {
+            let _ =  target.send(msg.msg.clone());
+        }
+
         return Ok(ActorResult::Ok);
     }
 }
