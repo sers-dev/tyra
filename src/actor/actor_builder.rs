@@ -247,6 +247,72 @@ where
         }
     }
 
+    /// Creates N defined [Actor]s on the [ActorSystem]
+    ///
+    /// Requires [ActorFactory] to implement `Clone`
+    ///
+    /// # Returns
+    ///
+    /// `Ok(Vec<ActorWrapper<A>>)` if actors were created successfully
+    ///
+    /// `Ok(Vec<ActorWrapper<A>>)` if the actors are already running on the system
+    ///
+    /// `Err(ActorError)` see [ActorError](../prelude/enum.ActorError.html) for detailed information. Will also stop any actors that might already have been started
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tyra::prelude::*;
+    /// use std::error::Error;
+    /// use std::time::Duration;
+    ///
+    /// struct TestActor {}
+    /// impl TestActor {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl Actor for TestActor {}
+    ///
+    /// #[derive(Clone)]
+    /// struct TestActorFactory {}
+    /// impl TestActorFactory {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl ActorFactory<TestActor> for TestActorFactory {
+    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
+    ///         Ok(TestActor::new())
+    ///     }
+    /// }
+    ///
+    /// #[ntest::timeout(100000)]
+    /// fn main() {
+    ///     let mut actor_config = TyraConfig::new().unwrap();
+    ///     actor_config.thread_pool.config.insert(String::from("default"), ThreadPoolConfig::new(2, 1, 1, 1.0));
+    ///     let actor_system = ActorSystem::new(actor_config);
+    ///
+    ///     let actor_name = "test";
+    ///     //this works, because there's no actor called `test` yet on the pool
+    ///     let this_works = actor_system.builder().spawn_multiple(actor_name, TestActorFactory::new(), 2);
+    ///     assert!(this_works.is_ok(), "The actors could not be spawned");
+    ///
+    ///     //this works, because there's already an actor called `test` with type `TestActor` on the pool, therefore the result is the same actor that was created in the previous spawn command
+    ///     let this_works_as_well = actor_system.builder().spawn_multiple(actor_name, TestActorFactory::new(), 2);
+    ///     assert!(this_works_as_well.is_ok(), "The `ActorWrapper` could not be fetched");
+    ///
+    ///     //this does not work, because the pool is currently configured to only allow two actors
+    ///     let pool_full = actor_system.builder().spawn_multiple("full", TestActorFactory::new(), 10);
+    ///     assert!(pool_full.is_err(), "The actor could not be spawned");
+    ///     let err = pool_full.err().unwrap();
+    ///     assert_eq!(err, ActorError::ThreadPoolHasTooManyActorsError, "Error is not correct");
+    ///
+    ///     actor_system.stop(Duration::from_millis(3000));
+    ///     std::process::exit(actor_system.await_shutdown());
+    /// }
+    /// ```
     pub fn spawn_multiple<P>(&self, name: impl Into<String> + Clone + std::fmt::Display, props: P, spawn_count: usize) -> Result<Vec<ActorWrapper<A>>, ActorError>
         where
             P: ActorFactory<A> + 'static + Clone,
