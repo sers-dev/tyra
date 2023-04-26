@@ -41,14 +41,11 @@ impl<T> NetManager<T>
 
         let pool_name = &context.actor_ref.get_address().pool;
 
-        let worker_count = context.system.get_available_actor_count_for_pool(pool_name).unwrap();
-        let mut workers = Vec::new();
         let router = context.system.builder().set_pool_name(pool_name).spawn("net-least-message", ShardedRouterFactory::new( false, false)).unwrap();
-
-        for i in 0..worker_count - 1 {
-            let worker = context.system.builder().set_pool_name(pool_name).spawn(format!("net-worker-{}", i), worker_factory.clone()).unwrap();
+        let worker_count = context.system.get_available_actor_count_for_pool(pool_name).unwrap();
+        let workers = context.system.builder().set_pool_name(pool_name).spawn_multiple("net-worker", worker_factory.clone(), worker_count).unwrap();
+        for worker in &workers {
             router.send(AddActorMessage::new(worker.clone())).unwrap();
-            workers.push(worker);
         }
 
         let is_stopping = Arc::new(AtomicBool::new(false));

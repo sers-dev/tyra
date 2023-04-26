@@ -246,4 +246,30 @@ where
             }
         }
     }
+
+    pub fn spawn_multiple<P>(&self, name: impl Into<String> + Clone + std::fmt::Display, props: P, spawn_count: usize) -> Result<Vec<ActorWrapper<A>>, ActorError>
+        where
+            P: ActorFactory<A> + 'static + Clone,
+    {
+        let mut to_return = Vec::new();
+        for i in 0..spawn_count {
+            let name = format!("{}-{}", name.clone(), i);
+            let res = self.spawn(name, props.clone());
+            match res {
+                Ok(res) => {
+                    to_return.push(res);
+                }
+                Err(e) => {
+                    for actor in &to_return {
+                        let _ = actor.stop();
+                    }
+                    return Err(e);
+                }
+            }
+        }
+
+        return Ok(to_return);
+    }
+
+
 }
