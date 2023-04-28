@@ -88,6 +88,11 @@ impl<T> Actor for NetManager<T>
                         break;
                     }
                     NetProtocol::UDP => {
+                        let sock = UdpSocket::bind("127.0.0.1:0".parse().unwrap());
+                        if sock.is_ok() {
+                            let sock = sock.unwrap();
+                            let _ = sock.send_to(b"", address.parse().unwrap());
+                        }
                         break;
                     }
                 }
