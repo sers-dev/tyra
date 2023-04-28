@@ -203,7 +203,7 @@ where
             return Ok(ActorResult::Ok);
         }
 
-        let hash = msg.get_id();
+        let hash = msg.get_hash();
         let target;
         loop {
             let target_id = self.hash_ring.get(&hash);

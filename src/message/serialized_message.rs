@@ -8,6 +8,7 @@ use crate::message::actor_message::DefaultActorMessage;
 /// and it may also include some additional fields to make deserialization easier for end users
 ///
 /// [ActorSystem.send_to_address](../prelude/struct.ActorSystem.html#method.send_to_address) uses this object to send serialized messages to Actors
+#[derive(Hash)]
 pub struct SerializedMessage {
     pub content: Vec<u8>,
 }

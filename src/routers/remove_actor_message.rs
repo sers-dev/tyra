@@ -1,3 +1,4 @@
+use std::hash::{Hash, Hasher};
 use crate::actor::actor_wrapper::ActorWrapper;
 use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::Actor;
@@ -20,3 +21,9 @@ where
 }
 
 impl<A> BaseActorMessage for RemoveActorMessage<A> where A: Actor {}
+
+impl<A> Hash for RemoveActorMessage<A>
+    where
+        A: Actor {
+    fn hash<H: Hasher>(&self, _state: &mut H) {}
+}

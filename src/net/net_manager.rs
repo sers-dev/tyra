@@ -14,7 +14,7 @@ use log::{error, warn};
 use mio::net::{TcpListener, TcpStream, UdpSocket};
 use mio::{Events, Interest, Poll, Token};
 use mio::event::Source;
-use crate::net::net_worker::{AddTcpConnection, AddUdpSocket, ReceiveTcpMessage, ReceiveUdpMessage, RemoveTcpConnection};
+use crate::net::net_messages::{AddTcpConnection, AddUdpSocket, ReceiveTcpMessage, ReceiveUdpMessage, RemoveTcpConnection};
 use crate::prelude::{Actor, ActorContext, ActorFactory, ActorInitMessage, ActorResult, ActorWrapper, Handler, NetConfig, NetProtocol};
 use crate::router::{AddActorMessage, ShardedRouter, ShardedRouterFactory};
 

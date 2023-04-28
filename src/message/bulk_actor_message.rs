@@ -3,6 +3,7 @@
 use crate::message::actor_message::BaseActorMessage;
 
 /// Wraps multiple [ActorMessage](../prelude/trait.ActorMessage.html) to be sent to an Actor
+#[derive(Hash)]
 pub struct BulkActorMessage<M>
 where
     M: BaseActorMessage + 'static,

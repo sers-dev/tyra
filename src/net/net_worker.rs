@@ -5,7 +5,8 @@ use std::net::{Shutdown, SocketAddr};
 use io_arc::IoArc;
 use log::{debug, warn};
 use mio::net::{TcpStream, UdpSocket};
-use crate::prelude::{Actor, ActorContext, ActorFactory, ActorMessage, ActorResult, Handler};
+use crate::net::net_messages::{AddTcpConnection, AddUdpSocket, ReceiveTcpMessage, ReceiveUdpMessage, RemoveTcpConnection};
+use crate::prelude::{Actor, ActorContext, ActorFactory, ActorResult, Handler};
 
 #[derive(Clone)]
 pub struct NetWorker {
@@ -42,107 +43,6 @@ impl NetWorkerFactory {
         return Self {
 
         };
-    }
-}
-
-pub struct AddTcpConnection {
-    pub stream_id: usize,
-    pub stream: IoArc<TcpStream>,
-    pub address: SocketAddr,
-}
-
-impl AddTcpConnection {
-    pub fn new(stream_id: usize, stream: IoArc<TcpStream>, address: SocketAddr) -> Self {
-        return Self {
-            stream_id,
-            stream,
-            address,
-        };
-    }
-}
-
-pub struct RemoveTcpConnection {
-    pub stream_id: usize,
-}
-
-impl ActorMessage for AddTcpConnection {
-    fn get_id(&self) -> usize {
-        return self.stream_id;
-    }
-}
-
-impl RemoveTcpConnection {
-    pub fn new(stream_id: usize) -> Self {
-        return Self {
-            stream_id,
-        };
-    }
-}
-
-impl ActorMessage for RemoveTcpConnection {
-    fn get_id(&self) -> usize {
-        return self.stream_id;
-    }
-}
-
-pub struct ReceiveTcpMessage {
-    pub stream_id: usize,
-    pub request: Vec<String>,
-}
-
-impl ReceiveTcpMessage {
-    pub fn new(stream_id: usize, request: Vec<String>) -> Self {
-        return Self {
-            stream_id,
-            request,
-        };
-    }
-}
-
-impl ActorMessage for ReceiveTcpMessage {
-    fn get_id(&self) -> usize {
-        return self.stream_id;
-    }
-}
-
-pub struct AddUdpSocket {
-    socket_id: usize,
-    socket: IoArc<UdpSocket>,
-}
-impl AddUdpSocket {
-    pub fn new(socket_id: usize, socket: IoArc<UdpSocket>) -> Self {
-        return Self {
-            socket_id,
-            socket,
-        };
-    }
-}
-
-impl ActorMessage for AddUdpSocket {
-    fn get_id(&self) -> usize {
-        return 1;
-    }
-}
-
-pub struct ReceiveUdpMessage {
-    socket_id: usize,
-    source: SocketAddr,
-    request: String,
-}
-
-impl ReceiveUdpMessage {
-    pub fn new(socket_id: usize, source: SocketAddr, request: String) -> Self {
-        return Self {
-            socket_id,
-            source,
-            request,
-        };
-    }
-}
-
-impl ActorMessage for ReceiveUdpMessage {
-    fn get_id(&self) -> usize {
-        return 1;
     }
 }
 

@@ -1,6 +1,7 @@
 mod net_manager;
 mod net_config;
 mod net_worker;
+pub mod net_messages;
 
 pub mod prelude {
     pub use crate::net::net_manager::NetManagerFactory;

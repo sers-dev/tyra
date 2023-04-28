@@ -1,5 +1,6 @@
 use crate::message::actor_message::{DefaultActorMessage};
 
+#[derive(Hash)]
 pub struct ActorStopMessage {}
 
 impl ActorStopMessage {

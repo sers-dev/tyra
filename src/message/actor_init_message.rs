@@ -1,6 +1,7 @@
 use crate::prelude::ActorMessage;
 
 /// Can be implemented by an Actor through Handler<ActorInitMessage> to be used to init an Actor
+#[derive(Hash)]
 pub struct ActorInitMessage {}
 
 impl ActorInitMessage {

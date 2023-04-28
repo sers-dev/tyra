@@ -1,3 +1,4 @@
+use std::hash::{Hash, Hasher};
 use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::{Actor, ActorMessage, ActorWrapper};
 use std::time::{Duration, Instant};
@@ -34,5 +35,15 @@ where
             delay,
             started: Instant::now(),
         }
+    }
+}
+
+impl<A, M> Hash for DelayedMessage<A, M>
+    where
+        M: BaseActorMessage + 'static,
+        A: Actor,
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.msg.hash(state);
     }
 }

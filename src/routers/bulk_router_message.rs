@@ -1,3 +1,4 @@
+use std::hash::{Hash, Hasher};
 use crate::message::actor_message::BaseActorMessage;
 
 /// Wraps multiple [ActorMessage](../prelude/trait.ActorMessage.html) to be sent to a Router
@@ -16,5 +17,14 @@ where
 {
     pub fn new(data: Vec<M>) -> Self {
         Self { data }
+    }
+}
+
+impl<M> Hash for BulkRouterMessage<M>
+where
+    M: BaseActorMessage + 'static
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.data.hash(state);
     }
 }
