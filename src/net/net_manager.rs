@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use io_arc::IoArc;
 use log::{error, warn};
 use mio::net::{TcpListener, TcpStream, UdpSocket};
@@ -21,7 +21,8 @@ pub struct NetManager<T>
     where
         T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
 {
-    graceful_shutdown_time_in_seconds: usize,
+    graceful_shutdown_time_in_seconds: Duration,
+    on_stop_udp_timeout: Duration,
     router: ActorWrapper<ShardedRouter<T>>,
     workers: Vec<ActorWrapper<T>>,
     net_configs: Vec<NetConfig>,
@@ -36,7 +37,7 @@ impl<T> NetManager<T>
 
         T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
 {
-    pub fn new<F>(context: ActorContext<Self>, net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: usize, worker_factory: F) -> Self
+    pub fn new<F>(context: ActorContext<Self>, net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: Duration, on_stop_udp_timeout: Duration, worker_factory: F) -> Self
     where F: ActorFactory<T> + Clone + 'static, {
 
         let pool_name = &context.actor_ref.get_address().pool;
@@ -53,6 +54,7 @@ impl<T> NetManager<T>
 
         return Self {
             graceful_shutdown_time_in_seconds,
+            on_stop_udp_timeout,
             router,
             workers,
             net_configs,
@@ -66,16 +68,11 @@ impl<T> Actor for NetManager<T>
         T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
 {
     fn pre_stop(&mut self, _context: &ActorContext<Self>) {
-        if self.graceful_shutdown_time_in_seconds == 0 {
-            self.is_stopping.store(true, Ordering::Relaxed);
-            return;
-        }
-        let graceful_stop_in_millis = self.graceful_shutdown_time_in_seconds * 1000;
         let iterations = 10;
-        let iterate_graceful_stop_in_millis = graceful_stop_in_millis / iterations;
+        let iterate_graceful_stop = self.graceful_shutdown_time_in_seconds / iterations;
 
 
-        sleep(Duration::from_millis(iterate_graceful_stop_in_millis as u64));
+        sleep(iterate_graceful_stop);
 
         self.is_stopping.store(true, Ordering::Relaxed);
 
@@ -100,7 +97,7 @@ impl<T> Actor for NetManager<T>
             if self.is_stopped.load(Ordering::Relaxed) {
                 return;
             }
-            sleep(Duration::from_millis(iterate_graceful_stop_in_millis as u64));
+            sleep(iterate_graceful_stop);
 
         }
     }
@@ -135,7 +132,8 @@ where
     T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
 {
     net_configs: Vec<NetConfig>,
-    graceful_shutdown_time_in_seconds: usize,
+    graceful_shutdown_time_in_seconds: Duration,
+    on_stop_udp_timeout: Duration,
     worker_factory: F,
     phantom: PhantomData<T>,
 }
@@ -146,10 +144,11 @@ where
     T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
 
 {
-    pub fn new(net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: usize, worker_factory: F) -> Self {
+    pub fn new(net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: Duration, on_stop_udp_timeout: Duration, worker_factory: F) -> Self {
         return Self {
             net_configs,
             graceful_shutdown_time_in_seconds,
+            on_stop_udp_timeout,
             worker_factory,
             phantom: PhantomData,
         };
@@ -162,7 +161,7 @@ where
 {
     fn new_actor(&mut self, context: ActorContext<NetManager<T>>) -> Result<NetManager<T>, Box<dyn Error>> {
         context.actor_ref.send(ActorInitMessage::new()).unwrap();
-        return Ok(NetManager::new(context, self.net_configs.clone(), self.graceful_shutdown_time_in_seconds, self.worker_factory.clone()));
+        return Ok(NetManager::new(context, self.net_configs.clone(), self.graceful_shutdown_time_in_seconds, self.on_stop_udp_timeout, self.worker_factory.clone()));
     }
 }
 
@@ -175,7 +174,8 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
         let is_stopping = self.is_stopping.clone();
         let is_stopped = self.is_stopped.clone();
         let mut net_configs = self.net_configs.clone();
-
+        let mut last_udp_message_received = Instant::now();
+        let on_stop_udp_timeout  = self.on_stop_udp_timeout.clone();
         thread::spawn(move || {
             let mut tcp_listeners :HashMap<Token, TcpListener> = HashMap::new();
             let mut udp_sockets:HashMap<Token, IoArc<UdpSocket>> = HashMap::new();
@@ -222,7 +222,7 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
 
                 for event in events.iter() {
                     let stopping = is_stopping.load(Ordering::Relaxed);
-                    if stopping && streams.len() == 0  {
+                    if stopping && streams.len() == 0 && last_udp_message_received.elapsed() > on_stop_udp_timeout {
                         is_stopped.store(true, Ordering::Relaxed);
                         break;
                     }
@@ -280,7 +280,7 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                         };
                         let request = String::from_utf8_lossy(&buf[..len]);
                         let _ = router.send(ReceiveUdpMessage::new(token.0, from, request.into_owned()));
-
+                        last_udp_message_received = Instant::now();
                     }
                     else {
                         if event.is_read_closed() || event.is_write_closed() {

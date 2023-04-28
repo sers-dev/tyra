@@ -1,3 +1,4 @@
+use std::time::Duration;
 use tyra::prelude::{ActorSystem, NetConfig, NetManagerFactory, NetProtocol, NetWorkerFactory, ThreadPoolConfig, TyraConfig};
 
 fn main() {
@@ -17,10 +18,10 @@ fn main() {
     let _actor = actor_system
         .builder()
         .set_pool_name("mio")
-        .spawn("test", NetManagerFactory::new(net_configs, 10, worker_factory))
+        .spawn("test", NetManagerFactory::new(net_configs, Duration::from_secs(10), Duration::from_secs(3), worker_factory))
         .unwrap();
 
-    // send a message to the actor
+
 
     std::process::exit(actor_system.await_shutdown());
 }
