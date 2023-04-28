@@ -7,9 +7,10 @@ use crate::prelude::{Actor, ActorMessage, ActorResult, BulkActorMessage};
 use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;
-use log::{debug, error};
+use log::{debug, error, info, warn};
 use std::collections::HashMap;
 use std::error::Error;
+use hashring::HashRing;
 use crate::router::SendToAllTargetsMessage;
 
 pub struct ShardedRouter<A>
@@ -18,6 +19,7 @@ where
 {
     num_shards: usize,
     route_to: Vec<ActorWrapper<A>>,
+    hash_ring: HashRing<usize>,
     sharding: HashMap<usize, ActorWrapper<A>>,
     can_route: bool,
     stop_on_system_stop: bool,
@@ -121,20 +123,11 @@ where
         Self {
             num_shards: 0,
             route_to: Vec::new(),
+            hash_ring: HashRing::new(),
             sharding: HashMap::new(),
             can_route: false,
             stop_on_system_stop,
             stop_on_empty_targets,
-        }
-    }
-
-    fn recalculate_shards(&mut self) {
-        let num_routees = self.route_to.len();
-        self.num_shards = self.route_to.len() * 5;
-        self.sharding.clear();
-        for i in 0..self.num_shards {
-            let routee = self.route_to.get(i % num_routees).unwrap().clone();
-            self.sharding.insert(i, routee);
         }
     }
 }
@@ -165,9 +158,9 @@ where
         msg: AddActorMessage<A>,
         _context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
-        self.route_to.push(msg.actor);
+        self.hash_ring.add(self.route_to.len());
+        self.route_to.push(msg.actor.clone());
         self.can_route = true;
-        self.recalculate_shards();
         return Ok(ActorResult::Ok);
     }
 }
@@ -186,8 +179,8 @@ where
             .iter()
             .position(|x| x.get_address() == msg.actor.get_address())
         {
+            let _ = self.hash_ring.remove(&pos);
             self.route_to.remove(pos);
-            self.recalculate_shards();
         }
         if self.route_to.len() == 0 {
             self.can_route = false
@@ -210,27 +203,46 @@ where
             return Ok(ActorResult::Ok);
         }
 
-        let mut shard_id = msg.get_id() % self.num_shards;
-        let mut forward_to = self.sharding.get(&shard_id).unwrap();
+        let hash = msg.get_id();
+        let target;
         loop {
-            if !forward_to.is_stopped() {
+            let target_id = self.hash_ring.get(&hash);
+            if target_id.is_none() {
+                warn!("Can't find target for hash.");
+                return Ok(ActorResult::Ok);
+            }
+            let target_id = target_id.unwrap();
+
+            let potential_target = self.route_to.get(target_id.clone());
+            if potential_target.is_none() {
+                warn!("Target does not exist.");
+                return Ok(ActorResult::Ok);
+            }
+            let potential_target = potential_target.unwrap();
+            if !potential_target.is_stopped() {
+                target = potential_target;
                 break;
             }
-            self.route_to.remove(shard_id);
-           if self.route_to.len() == 0 && self.stop_on_empty_targets {
-               debug!("Stopping router, because all targets have been removed");
-               return Ok(ActorResult::Stop)
-           }
-            self.recalculate_shards();
-            shard_id = msg.get_id() % self.num_shards;
-            forward_to = self.sharding.get(&shard_id).unwrap();
+
+            let target_id = target_id.clone();
+            self.route_to.remove(target_id.clone());
+            self.hash_ring.remove(&target_id);
+            if self.route_to.len() == 0 {
+                if self.stop_on_empty_targets {
+                    debug!("Stopping router, because all targets have been stopped");
+                    return Ok(ActorResult::Stop)
+                }
+                self.can_route = false;
+                info!("Router has no valid targets to route to. Dropping message.");
+                return Ok(ActorResult::Ok);
+            }
         }
 
-        let result = forward_to.send(msg);
+        let result = target.send(msg);
         if result.is_err() {
             error!(
                 "Could not forward message to target {}",
-                forward_to.get_address().actor
+                target.get_address().actor
             );
         }
         return Ok(ActorResult::Ok);
@@ -255,7 +267,6 @@ where
             let target = self.route_to.get(i).unwrap();
             if target.is_stopped() {
                 self.route_to.remove(i);
-                self.recalculate_shards();
             }
         }
 
@@ -295,7 +306,6 @@ impl<A, M> Handler<SendToAllTargetsMessage<M>> for ShardedRouter<A>
             let target = self.route_to.get(i).unwrap();
             if target.is_stopped() {
                 self.route_to.remove(i);
-                self.recalculate_shards();
             }
         }
 
