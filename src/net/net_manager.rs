@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{BufRead, BufReader};
@@ -37,13 +38,14 @@ impl<T> NetManager<T>
 
         T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
 {
-    pub fn new<F>(context: ActorContext<Self>, net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: Duration, on_stop_udp_timeout: Duration, worker_factory: F) -> Self
+    pub fn new<F>(context: ActorContext<Self>, net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: Duration, on_stop_udp_timeout: Duration, worker_factory: F, max_worker_count: usize) -> Self
     where F: ActorFactory<T> + Clone + 'static, {
 
         let pool_name = &context.actor_ref.get_address().pool;
 
         let router = context.system.builder().set_pool_name(pool_name).spawn("net-least-message", ShardedRouterFactory::new( false, false)).unwrap();
-        let worker_count = context.system.get_available_actor_count_for_pool(pool_name).unwrap();
+        let max_pool_count = context.system.get_available_actor_count_for_pool(pool_name).unwrap();
+        let worker_count = min(max_worker_count, max_pool_count);
         let workers = context.system.builder().set_pool_name(pool_name).spawn_multiple("net-worker", worker_factory.clone(), worker_count).unwrap();
         for worker in &workers {
             router.send(AddActorMessage::new(worker.clone())).unwrap();
@@ -135,6 +137,7 @@ where
     graceful_shutdown_time_in_seconds: Duration,
     on_stop_udp_timeout: Duration,
     worker_factory: F,
+    max_worker_count: usize,
     phantom: PhantomData<T>,
 }
 
@@ -144,12 +147,13 @@ where
     T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
 
 {
-    pub fn new(net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: Duration, on_stop_udp_timeout: Duration, worker_factory: F) -> Self {
+    pub fn new(net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: Duration, on_stop_udp_timeout: Duration, worker_factory: F, max_worker_count: usize) -> Self {
         return Self {
             net_configs,
             graceful_shutdown_time_in_seconds,
             on_stop_udp_timeout,
             worker_factory,
+            max_worker_count,
             phantom: PhantomData,
         };
     }
@@ -161,7 +165,7 @@ where
 {
     fn new_actor(&mut self, context: ActorContext<NetManager<T>>) -> Result<NetManager<T>, Box<dyn Error>> {
         context.actor_ref.send(ActorInitMessage::new()).unwrap();
-        return Ok(NetManager::new(context, self.net_configs.clone(), self.graceful_shutdown_time_in_seconds, self.on_stop_udp_timeout, self.worker_factory.clone()));
+        return Ok(NetManager::new(context, self.net_configs.clone(), self.graceful_shutdown_time_in_seconds, self.on_stop_udp_timeout, self.worker_factory.clone(), self.max_worker_count));
     }
 }
 

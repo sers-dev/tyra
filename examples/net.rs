@@ -18,7 +18,7 @@ fn main() {
     let _actor = actor_system
         .builder()
         .set_pool_name("mio")
-        .spawn("test", NetManagerFactory::new(net_configs, Duration::from_secs(10), Duration::from_secs(3), worker_factory))
+        .spawn("test", NetManagerFactory::new(net_configs, Duration::from_secs(10), Duration::from_secs(3), worker_factory, 3))
         .unwrap();
 
 
