@@ -10,7 +10,7 @@ use std::thread;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use io_arc::IoArc;
-use log::{error, warn};
+use log::{debug, error, warn};
 use mio::net::{TcpListener, TcpStream, UdpSocket};
 use mio::{Events, Interest, Poll, Token};
 use mio::event::Source;
@@ -121,6 +121,11 @@ impl<T> Actor for NetManager<T>
                     break;
                 }
                 NetProtocol::UDP => {
+                    let sock = UdpSocket::bind("127.0.0.1:0".parse().unwrap());
+                    if sock.is_ok() {
+                        let sock = sock.unwrap();
+                        let _ = sock.send_to(b"", address.parse().unwrap());
+                    }
                     break;
                 }
             }
@@ -173,17 +178,26 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
     where
         T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
 {
-    fn handle(&mut self, _msg: ActorInitMessage, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         let router = self.router.clone();
         let is_stopping = self.is_stopping.clone();
         let is_stopped = self.is_stopped.clone();
         let mut net_configs = self.net_configs.clone();
         let mut last_udp_message_received = Instant::now();
         let on_stop_udp_timeout  = self.on_stop_udp_timeout.clone();
+        let context = context.clone();
         thread::spawn(move || {
+
             let mut tcp_listeners :HashMap<Token, TcpListener> = HashMap::new();
             let mut udp_sockets:HashMap<Token, IoArc<UdpSocket>> = HashMap::new();
-            let mut poll = Poll::new().unwrap();
+            let poll = Poll::new();
+            if poll.is_err() {
+                error!("Can't start Poll Port: {:?}", poll.err());
+                is_stopped.store(true, Ordering::Relaxed);
+                let _ = context.actor_ref.stop();
+                return;
+            }
+            let mut poll = poll.unwrap();
 
             let mut i = 0;
             net_configs.sort_by_key(|c| c.protocol);
@@ -195,13 +209,39 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
 
                 match net_config.protocol {
                     NetProtocol::TCP => {
-                        let mut listener = TcpListener::bind(address).unwrap();
-                        poll.registry().register(&mut listener, token, Interest::READABLE).unwrap();
+                        let listener = TcpListener::bind(address);
+                        if listener.is_err() {
+                            error!("Can't open TCP Port: {:?}", listener.err());
+                            is_stopped.store(true, Ordering::Relaxed);
+                            let _ = context.actor_ref.stop();
+                            return;
+                        }
+                        let mut listener = listener.unwrap();
+                        let res = poll.registry().register(&mut listener, token, Interest::READABLE);
+                        if res.is_err() {
+                            error!("Can't register TCP listener: {:?}", res.err());
+                            is_stopped.store(true, Ordering::Relaxed);
+                            let _ = context.actor_ref.stop();
+                            return;
+                        }
                         tcp_listeners.insert(token, listener);
                     },
                     NetProtocol::UDP => {
-                        let mut socket = UdpSocket::bind(address).unwrap();
-                        poll.registry().register(&mut socket, token, Interest::READABLE).unwrap();
+                        let socket = UdpSocket::bind(address);
+                        if socket.is_err() {
+                            error!("Can't open TCP Port: {:?}", socket.err());
+                            is_stopped.store(true, Ordering::Relaxed);
+                            let _ = context.actor_ref.stop();
+                            return;
+                        }
+                        let mut socket = socket.unwrap();
+                        let res = poll.registry().register(&mut socket, token, Interest::READABLE);
+                        if res.is_err() {
+                            error!("Can't register UDP Socket: {:?}", res.err());
+                            is_stopped.store(true, Ordering::Relaxed);
+                            let _ = context.actor_ref.stop();
+                            return;
+                        }
                         let socket = IoArc::new(socket);
                         udp_sockets.insert(token, socket.clone());
                         let _ = router.send(AddUdpSocket::new(token.0, socket));
@@ -222,7 +262,11 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                     return;
                 }
 
-                poll.poll(&mut events, None).unwrap();
+                let res = poll.poll(&mut events, None);
+                if res.is_err() {
+                    debug!("Can't poll Network Events");
+                    continue
+                }
 
                 for event in events.iter() {
                     let stopping = is_stopping.load(Ordering::Relaxed);
@@ -232,7 +276,12 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                     }
                     let token = &event.token();
                     if token.0 < num_tcp_listeners {
-                        let listener = tcp_listeners.get(token).unwrap();
+                        let listener = tcp_listeners.get(token);
+                        if listener.is_none() {
+                            warn!("Can't find TcpListener for {:?}", token);
+                            continue;
+                        }
+                        let listener = listener.unwrap();
 
                         loop {
                             match listener.accept() {
