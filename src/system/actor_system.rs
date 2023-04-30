@@ -184,6 +184,7 @@ impl ActorSystem {
     ///
     /// struct TestActor {}
     ///
+    /// #[derive(Hash)]
     /// struct HelloWorld {}
     /// impl ActorMessage for HelloWorld {}
     /// impl Actor for TestActor {

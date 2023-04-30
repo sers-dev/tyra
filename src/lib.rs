@@ -17,6 +17,7 @@
 //! use std::error::Error;
 //!
 //! // define message
+//! #[derive(Hash)]
 //! struct FooBar {}
 //! impl ActorMessage for FooBar {}
 //!

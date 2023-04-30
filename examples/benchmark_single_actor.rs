@@ -3,6 +3,7 @@ use std::process::exit;
 use std::time::{Duration, Instant};
 use tyra::prelude::*;
 
+#[derive(Hash)]
 struct MessageA {}
 
 impl ActorMessage for MessageA {}

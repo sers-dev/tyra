@@ -35,6 +35,7 @@ where
 /// use std::time::Duration;
 /// use tyra::router::{LeastMessageRouterFactory, AddActorMessage};
 /// // define message
+/// #[derive(Hash)]
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
 ///

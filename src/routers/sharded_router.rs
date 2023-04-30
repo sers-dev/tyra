@@ -40,6 +40,7 @@ where
 /// use tyra::router::{ShardedRouterFactory, AddActorMessage};
 ///
 /// // define message
+/// #[derive(Hash)]
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
 ///

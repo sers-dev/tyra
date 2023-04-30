@@ -4,7 +4,7 @@ use std::process::exit;
 use std::time::{Duration, Instant};
 use tyra::prelude::*;
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Hash)]
 struct TestMsg {
     content: String,
 }

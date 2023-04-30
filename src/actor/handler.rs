@@ -20,6 +20,7 @@ use std::error::Error;
 /// struct TestActor {}
 /// impl Actor for TestActor {}
 ///
+/// #[derive(Hash)]
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
 ///

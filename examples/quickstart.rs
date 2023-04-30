@@ -3,6 +3,8 @@ use std::time::Duration;
 use tyra::prelude::*;
 
 // define an `ActorMessage` that can be sent to `Actors` that implement the corresponding `Handler<T>`
+
+#[derive(Hash)]
 struct TestMessage {}
 impl TestMessage {
     pub fn new() -> Self {

@@ -4,14 +4,17 @@ use std::time::{Duration, Instant};
 use tyra::prelude::*;
 use tyra::router::{AddActorMessage, RoundRobinRouterFactory};
 
+#[derive(Hash)]
 struct MessageA {}
 
 impl ActorMessage for MessageA {}
 
+#[derive(Hash)]
 struct Finish {}
 
 impl ActorMessage for Finish {}
 
+#[derive(Hash)]
 struct Start {}
 
 impl ActorMessage for Start {}

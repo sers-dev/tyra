@@ -36,6 +36,7 @@ where
 /// use tyra::router::{RoundRobinRouterFactory, AddActorMessage};
 ///
 /// // define message
+/// #[derive(Hash)]
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
 ///
