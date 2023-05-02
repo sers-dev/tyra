@@ -7,7 +7,6 @@ pub mod actor_panic_source;
 pub mod actor_result;
 pub mod actor_send_error;
 pub mod actor_state;
-pub mod actor_wrapper;
 pub mod context;
 pub mod executor;
 pub mod handler;
@@ -20,7 +19,6 @@ pub mod prelude {
     pub use crate::actor::actor_panic_source::ActorPanicSource;
     pub use crate::actor::actor_result::ActorResult;
     pub use crate::actor::actor_send_error::ActorSendError;
-    pub use crate::actor::actor_wrapper::ActorWrapper;
     pub use crate::actor::context::ActorContext;
     pub use crate::actor::handler::Handler;
 }

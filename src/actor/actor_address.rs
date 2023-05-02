@@ -1,4 +1,6 @@
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Serialize, Deserialize)]
 pub struct ActorAddress {
     pub remote: String,
     pub system: String,

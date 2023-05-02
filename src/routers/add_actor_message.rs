@@ -1,7 +1,7 @@
 use std::hash::{Hash, Hasher};
-use crate::actor::actor_wrapper::ActorWrapper;
+
 use crate::message::actor_message::BaseActorMessage;
-use crate::prelude::Actor;
+use crate::prelude::{Actor, ActorWrapper};
 
 /// Adds an Actor to the Router
 pub struct AddActorMessage<A>

@@ -1,9 +1,9 @@
 use crate::actor::actor_factory::ActorFactory;
-use crate::actor::actor_wrapper::ActorWrapper;
+
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::message::actor_message::{ActorMessage, BaseActorMessage};
-use crate::prelude::{Actor, ActorResult, BulkActorMessage};
+use crate::prelude::{Actor, ActorResult, BulkActorMessage, ActorWrapper};
 use crate::routers::add_actor_message::AddActorMessage;
 use crate::routers::bulk_router_message::BulkRouterMessage;
 use crate::routers::remove_actor_message::RemoveActorMessage;

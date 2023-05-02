@@ -2,14 +2,14 @@ use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_config::ActorConfig;
 use crate::actor::actor_factory::ActorFactory;
 use crate::actor::actor_state::ActorState;
-use crate::actor::actor_wrapper::ActorWrapper;
+
 use crate::actor::context::ActorContext;
 use crate::actor::handler::Handler;
 use crate::actor::mailbox::Mailbox;
 use crate::message::actor_message::BaseActorMessage;
 use crate::message::envelope::{MessageEnvelope, MessageEnvelopeTrait};
 use crate::message::system_stop_message::SystemStopMessage;
-use crate::prelude::{Actor, ActorPanicSource, ActorResult};
+use crate::prelude::{Actor, ActorPanicSource, ActorResult, ActorWrapper};
 use crate::system::actor_error::ActorError;
 use crate::system::actor_system::ActorSystem;
 use log::debug;

@@ -112,6 +112,7 @@ mod message;
 mod routers;
 mod system;
 mod net;
+mod wrapper;
 
 /// core components
 pub mod prelude {
@@ -120,6 +121,7 @@ pub mod prelude {
     pub use crate::message::prelude::*;
     pub use crate::system::prelude::*;
     pub use crate::net::prelude::*;
+    pub use crate::wrapper::prelude::*;
 }
 
 /// collection of different router implementations

@@ -1,5 +1,5 @@
-use crate::actor::actor_wrapper::ActorWrapper;
-use crate::prelude::Actor;
+
+use crate::prelude::{Actor, ActorWrapper};
 use crate::system::actor_system::ActorSystem;
 use std::panic::UnwindSafe;
 

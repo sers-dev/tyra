@@ -1,11 +1,10 @@
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_config::ActorConfig;
 use crate::actor::actor_factory::ActorFactory;
-use crate::actor::actor_wrapper::ActorWrapper;
 use crate::actor::executor::{Executor, ExecutorTrait};
 use crate::actor::mailbox::Mailbox;
 use crate::config::tyra_config::DEFAULT_POOL;
-use crate::prelude::{Actor, Handler, SerializedMessage};
+use crate::prelude::{Actor, Handler, ActorWrapper, SerializedMessage};
 use crate::system::actor_error::ActorError;
 use crate::system::actor_system::ActorSystem;
 use crate::system::internal_actor_manager::InternalActorManager;
@@ -196,7 +195,7 @@ where
         if self.system_state.is_mailbox_active(&actor_address) {
             return self
                 .system_state
-                .get_actor_ref(actor_address, self.internal_actor_manager.clone());
+                .get_actor_ref(actor_address, self.internal_actor_manager.clone(), self.system.clone());
         }
 
         let result = self.system_state.increase_pool_actor_count(&actor_address);
@@ -221,6 +220,7 @@ where
             actor_address.clone(),
             self.wakeup_manager.clone(),
             self.internal_actor_manager.clone(),
+            self.system_state.clone(),
         );
 
         let actor_handler = Executor::new(

@@ -1,7 +1,7 @@
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::mailbox::{BaseMailbox, Mailbox};
 use crate::message::serialized_message::SerializedMessage;
-use crate::prelude::{ActorWrapper, Handler};
+use crate::prelude::{ActorSystem, ActorWrapper, Handler};
 use crate::system::actor_error::ActorError;
 use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::wakeup_manager::WakeupManager;
@@ -198,6 +198,7 @@ impl SystemState {
         &self,
         address: ActorAddress,
         internal_actor_manager: InternalActorManager,
+        system: ActorSystem,
     ) -> Result<ActorWrapper<A>, ActorError>
     where
         A: Handler<SerializedMessage> + 'static,
@@ -209,6 +210,7 @@ impl SystemState {
                 address,
                 self.wakeup_manager.clone(),
                 internal_actor_manager,
+                self.clone(),
             )),
             None => Err(ActorError::InvalidActorTypeError),
         };
