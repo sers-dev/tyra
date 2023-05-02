@@ -2,20 +2,21 @@ use std::error::Error;
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
+use serde::Serialize;
 use tyra::prelude::*;
 use tyra::router::{AddActorMessage, BulkRouterMessage, RoundRobinRouterFactory};
 
-#[derive(Hash)]
+#[derive(Hash, Serialize)]
 struct MessageA {}
 
 impl ActorMessage for MessageA {}
 
-#[derive(Hash)]
+#[derive(Hash, Serialize)]
 struct Finish {}
 
 impl ActorMessage for Finish {}
 
-#[derive(Hash)]
+#[derive(Hash, Serialize)]
 struct Start {}
 
 impl ActorMessage for Start {}

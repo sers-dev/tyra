@@ -1,9 +1,10 @@
 use std::error::Error;
 use std::process::exit;
 use std::time::{Duration, Instant};
+use serde::Serialize;
 use tyra::prelude::*;
 
-#[derive(Hash)]
+#[derive(Hash, Serialize)]
 struct MessageA {}
 
 impl ActorMessage for MessageA {}

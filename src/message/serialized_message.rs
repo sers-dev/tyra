@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use crate::message::actor_message::DefaultActorMessage;
 
 /// For Remote message handling
@@ -8,7 +9,7 @@ use crate::message::actor_message::DefaultActorMessage;
 /// and it may also include some additional fields to make deserialization easier for end users
 ///
 /// [ActorSystem.send_to_address](../prelude/struct.ActorSystem.html#method.send_to_address) uses this object to send serialized messages to Actors
-#[derive(Hash)]
+#[derive(Hash, Serialize, Deserialize)]
 pub struct SerializedMessage {
     pub content: Vec<u8>,
 }

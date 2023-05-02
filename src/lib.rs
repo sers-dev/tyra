@@ -15,9 +15,10 @@
 //! use std::process::exit;
 //! use std::time::Duration;
 //! use std::error::Error;
+//! use serde::Serialize;
 //!
 //! // define message
-//! #[derive(Hash)]
+//! #[derive(Hash, Serialize)]
 //! struct FooBar {}
 //! impl ActorMessage for FooBar {}
 //!

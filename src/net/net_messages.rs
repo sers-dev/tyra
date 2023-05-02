@@ -2,10 +2,13 @@ use std::hash::{Hash, Hasher};
 use std::net::SocketAddr;
 use io_arc::IoArc;
 use mio::net::{TcpStream, UdpSocket};
+use serde::Serialize;
 use crate::prelude::ActorMessage;
 
+#[derive(Serialize)]
 pub struct AddTcpConnection {
     pub stream_id: usize,
+    #[serde(skip)]
     pub stream: IoArc<TcpStream>,
     pub address: SocketAddr,
 }
@@ -27,6 +30,7 @@ impl AddTcpConnection {
     }
 }
 
+#[derive(Serialize)]
 pub struct RemoveTcpConnection {
     pub stream_id: usize,
 }
@@ -50,6 +54,7 @@ impl RemoveTcpConnection {
 
 impl ActorMessage for RemoveTcpConnection {}
 
+#[derive(Serialize)]
 pub struct ReceiveTcpMessage {
     pub stream_id: usize,
     pub request: Vec<String>,
@@ -73,8 +78,10 @@ impl ReceiveTcpMessage {
 
 impl ActorMessage for ReceiveTcpMessage {}
 
+#[derive(Serialize)]
 pub struct AddUdpSocket {
     pub socket_id: usize,
+    #[serde(skip)]
     pub socket: IoArc<UdpSocket>,
 }
 
@@ -96,8 +103,10 @@ impl AddUdpSocket {
 
 impl ActorMessage for AddUdpSocket {}
 
+#[derive(Serialize)]
 pub struct ReceiveUdpMessage {
     pub socket_id: usize,
+    #[serde(skip)]
     pub source: SocketAddr,
     pub request: String,
 }

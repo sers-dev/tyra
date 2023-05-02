@@ -1,7 +1,9 @@
 use std::hash::{Hash, Hasher};
+use serde::Serialize;
 use crate::message::actor_message::BaseActorMessage;
 
 /// Wraps multiple [ActorMessage](../prelude/trait.ActorMessage.html) to be sent to a Router
+#[derive(Serialize)]
 pub struct BulkRouterMessage<M>
 where
     M: BaseActorMessage + 'static,

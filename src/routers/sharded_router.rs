@@ -37,10 +37,11 @@ where
 /// use tyra::prelude::*;
 /// use std::process::exit;
 /// use std::time::Duration;
+/// use serde::Serialize;
 /// use tyra::router::{ShardedRouterFactory, AddActorMessage};
 ///
 /// // define message
-/// #[derive(Hash)]
+/// #[derive(Hash, Serialize)]
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
 ///
@@ -160,7 +161,7 @@ where
         _context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
         self.hash_ring.add(self.route_to.len());
-        self.route_to.push(msg.actor.clone());
+        self.route_to.push(msg.actor);
         self.can_route = true;
         return Ok(ActorResult::Ok);
     }

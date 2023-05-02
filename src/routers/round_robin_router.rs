@@ -33,10 +33,11 @@ where
 /// use tyra::prelude::*;
 /// use std::process::exit;
 /// use std::time::Duration;
+/// use serde::Serialize;
 /// use tyra::router::{RoundRobinRouterFactory, AddActorMessage};
 ///
 /// // define message
-/// #[derive(Hash)]
+/// #[derive(Hash, Serialize)]
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
 ///

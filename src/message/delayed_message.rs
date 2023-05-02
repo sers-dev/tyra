@@ -2,16 +2,20 @@ use std::hash::{Hash, Hasher};
 use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::{Actor, ActorMessage, ActorWrapper};
 use std::time::{Duration, Instant};
+use serde::Serialize;
 
 /// Wraps an [ActorMessage](../prelude/trait.ActorMessage.html) to be sent at a later time
+#[derive(Serialize)]
 pub struct DelayedMessage<A, M>
 where
     M: BaseActorMessage + 'static,
     A: Actor,
 {
     pub msg: M,
+    #[serde(skip)]
     pub destination: ActorWrapper<A>,
     pub delay: Duration,
+    #[serde(skip)]
     pub started: Instant,
 }
 

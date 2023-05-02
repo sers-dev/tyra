@@ -15,12 +15,13 @@ use std::error::Error;
 ///
 /// ```rust
 /// use std::error::Error;
+/// use serde::Serialize;
 /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorResult, ActorMessage};
 ///
 /// struct TestActor {}
 /// impl Actor for TestActor {}
 ///
-/// #[derive(Hash)]
+/// #[derive(Hash, Serialize)]
 /// struct FooBar {}
 /// impl ActorMessage for FooBar {}
 ///

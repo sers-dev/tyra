@@ -180,11 +180,12 @@ impl ActorSystem {
     ///
     /// ```rust
     /// use std::error::Error;
+    /// use serde::Serialize;
     /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorResult, ActorMessage};
     ///
     /// struct TestActor {}
     ///
-    /// #[derive(Hash)]
+    /// #[derive(Hash, Serialize)]
     /// struct HelloWorld {}
     /// impl ActorMessage for HelloWorld {}
     /// impl Actor for TestActor {

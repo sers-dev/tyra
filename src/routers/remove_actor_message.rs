@@ -1,13 +1,16 @@
 use std::hash::{Hash, Hasher};
+use serde::Serialize;
 
 use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::{Actor, ActorWrapper};
 
 /// Removes an Actor from the Router
+#[derive(Serialize)]
 pub struct RemoveActorMessage<A>
 where
     A: Actor,
 {
+    #[serde(skip)]
     pub actor: ActorWrapper<A>,
 }
 

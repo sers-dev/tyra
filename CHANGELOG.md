@@ -10,6 +10,9 @@
  - `ActorMessage` now needs to implement `Hash` and no longer need to explicitly implement `ActorMessage.get_id()` to be able to properly make use of the `ShardedRouter`
    - renamed `ActorMessage.get_id()` to `ActorMessage.get_hash()` and changed return type to u64
    - changed default implementation to `ActorMessage.get_hash()` to make use of `Hash` implementation
+ - `ActorMessage` now needs to implement `Serialize` 
+   - this requirement comes from the fact, that all messages need to be serializable in theory to be able to be sent to other actor systems
+   - if a message is really intended to be sent it should obviously also implement `Deserialize`
  - Added `.is_mailbox_stopped()`, `is_stopped()` and `wait_for_stop()` to `ActorWrapper<A>`
  - Added `general.signal_graceful_timeout_in_seconds` to config
  - Added `ActorBuilder<A>.spawn_multiple()`

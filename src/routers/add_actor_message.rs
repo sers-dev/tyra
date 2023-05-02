@@ -1,13 +1,16 @@
 use std::hash::{Hash, Hasher};
+use serde::{Deserialize, Serialize};
 
 use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::{Actor, ActorWrapper};
 
 /// Adds an Actor to the Router
+#[derive(Serialize)]
 pub struct AddActorMessage<A>
 where
     A: Actor,
 {
+    #[serde(skip)]
     pub actor: ActorWrapper<A>,
 }
 
@@ -16,7 +19,9 @@ where
     A: Actor,
 {
     pub fn new(actor: ActorWrapper<A>) -> Self {
-        Self { actor }
+        return Self {
+            actor
+        };
     }
 }
 

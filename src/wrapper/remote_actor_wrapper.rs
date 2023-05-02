@@ -8,6 +8,7 @@ use crate::message::actor_stop_message::ActorStopMessage;
 use crate::actor::actor_send_error::ActorSendError;
 use crate::actor::actor::Actor;
 use crate::actor::handler::Handler;
+use crate::prelude::SerializedMessage;
 use crate::system::system_state::SystemState;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -34,7 +35,8 @@ impl RemoteActorWrapper
         //todo this needs to forward to the NetWorker
         //the Networker should then forward this to the remote actor system
         //the remote actor system should then forward the message using system_state
-        //self.system_state.as_ref().unwrap().send_to_address(address, msg );
+        let serialized = bincode::serialize(&msg).unwrap();
+        self.system_state.as_ref().unwrap().send_to_address(address, SerializedMessage::new(serialized));
         return Ok(());
     }
 
