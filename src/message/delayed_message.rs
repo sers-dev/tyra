@@ -6,13 +6,16 @@ use std::time::{Duration, Instant};
 
 /// Wraps an [ActorMessage](../prelude/trait.ActorMessage.html) to be sent at a later time
 #[derive(Serialize)]
+#[serde(bound(
+serialize = "A: Actor",
+deserialize = "A: Actor",
+))]
 pub struct DelayedMessage<A, M>
 where
     M: BaseActorMessage + 'static,
     A: Actor,
 {
     pub msg: M,
-    #[serde(skip)]
     pub destination: ActorWrapper<A>,
     pub delay: Duration,
     #[serde(skip)]

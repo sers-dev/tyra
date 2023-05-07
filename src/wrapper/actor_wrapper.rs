@@ -16,6 +16,10 @@ use std::panic::UnwindSafe;
 use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
+#[serde(bound(
+serialize = "A: Actor",
+deserialize = "A: Actor",
+))]
 pub struct ActorWrapper<A>
 where
     A: Actor,

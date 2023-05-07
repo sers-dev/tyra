@@ -6,11 +6,14 @@ use crate::prelude::{Actor, ActorWrapper};
 
 /// Removes an Actor from the Router
 #[derive(Serialize)]
+#[serde(bound(
+serialize = "A: Actor",
+deserialize = "A: Actor",
+))]
 pub struct RemoveActorMessage<A>
 where
     A: Actor,
 {
-    #[serde(skip)]
     pub actor: ActorWrapper<A>,
 }
 

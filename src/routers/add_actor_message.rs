@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
 use crate::message::actor_message::BaseActorMessage;
@@ -7,8 +7,8 @@ use crate::prelude::{Actor, ActorWrapper};
 /// Adds an Actor to the Router
 #[derive(Serialize, Deserialize)]
 #[serde(bound(
-serialize = "ActorWrapper::<A>: Serialize",
-deserialize = "ActorWrapper::<A>: Deserialize<'de>",
+serialize = "A: Actor",
+deserialize = "A: Actor",
 ))]
 pub struct AddActorMessage<A>
 where
