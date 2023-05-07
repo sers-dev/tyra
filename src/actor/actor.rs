@@ -91,7 +91,7 @@ use std::panic::UnwindSafe;
 ///   └─◄─┴──────────────────────────────◄─┴──────────────────────◄─┴─────────────────────────────────────────────────────┘            └─────────────────────────────────────────────┘
 ///
 /// ```
-pub trait Actor: Send + Sync + UnwindSafe + Sized {
+pub trait Actor: Send + Sync + UnwindSafe + Sized + 'static {
     /// executed whenever Actor receives a [SerializedMessage](../prelude/struct.SerializedMessage.html)
     /// panic triggers `self.on_panic()` with `source = ActorPanicSource::Message`
     fn handle_serialized_message(

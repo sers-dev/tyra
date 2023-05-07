@@ -195,7 +195,7 @@ where
         if self.system_state.is_mailbox_active(&actor_address) {
             return self
                 .system_state
-                .get_actor_ref(actor_address, self.internal_actor_manager.clone());
+                .get_actor_ref(&actor_address, self.internal_actor_manager.clone());
         }
 
         let result = self.system_state.increase_pool_actor_count(&actor_address);
@@ -315,7 +315,7 @@ where
     ///     let address = ActorAddress::new("local", actor_system.get_name(), pool_name, actor_name);
     ///
     ///     //this does not work, because the actor does not exist yet
-    ///     let this_is_not_working :Result<ActorWrapper<BrokenActor>, ActorError> = actor_system.builder().get_existing(address.clone());
+    ///     let this_is_not_working :Result<ActorWrapper<BrokenActor>, ActorError> = actor_system.builder().get_existing(&address);
     ///     assert!(this_is_not_working.is_err(), "The BrokenActor existed");
     ///     let err = this_is_not_working.err().unwrap();
     ///     assert_eq!(err, ActorError::DoesNotExistError, "Error is not correct");
@@ -325,26 +325,82 @@ where
     ///     assert!(this_works.is_ok(), "The actor could not be spawned");
     ///
     ///     //this does not work, because the actor type does not match
-    ///     let this_is_not_working :Result<ActorWrapper<BrokenActor>, ActorError> = actor_system.builder().get_existing(address.clone());
+    ///     let this_is_not_working :Result<ActorWrapper<BrokenActor>, ActorError> = actor_system.builder().get_existing(&address);
     ///     assert!(this_is_not_working.is_err(), "The BrokenActor existed");
     ///     let err = this_is_not_working.err().unwrap();
     ///     assert_eq!(err, ActorError::InvalidActorTypeError, "Error is not correct");
     ///
     ///     //this does work, because the actor type matches
-    ///     let this_works :Result<ActorWrapper<TestActor>, ActorError> = actor_system.builder().get_existing(address.clone());
+    ///     let this_works :Result<ActorWrapper<TestActor>, ActorError> = actor_system.builder().get_existing(&address);
     ///     assert!(this_works.is_ok(), "The TestActor did not exist");
     ///
     ///     actor_system.stop(Duration::from_millis(3000));
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
     /// ```
-    pub fn get_existing(&self, actor_address: ActorAddress) -> Result<ActorWrapper<A>, ActorError> {
-        if self.system_state.is_mailbox_active(&actor_address) {
+    pub fn get_existing(&self, actor_address: &ActorAddress) -> Result<ActorWrapper<A>, ActorError> {
+        if self.system_state.is_mailbox_active(actor_address) {
             return self
                 .system_state
                 .get_actor_ref(actor_address, self.internal_actor_manager.clone());
         }
         return Err(ActorError::DoesNotExistError);
+    }
+
+    /// Always returns a ActorWrapper<A>, even if it does not exist on the current ActorSystem
+    ///
+    /// # Returns
+    ///
+    /// `ActorWrapper<A>`
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tyra::prelude::*;
+    /// use std::error::Error;
+    /// use std::time::Duration;
+    ///
+    /// struct TestActor {}
+    /// impl TestActor {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl Actor for TestActor {}
+    ///
+    /// #[derive(Clone)]
+    /// struct TestActorFactory {}
+    /// impl TestActorFactory {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl ActorFactory<TestActor> for TestActorFactory {
+    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
+    ///         Ok(TestActor::new())
+    ///     }
+    /// }
+    ///
+    /// #[ntest::timeout(100000)]
+    /// fn main() {
+    ///     let mut actor_config = TyraConfig::new().unwrap();
+    ///     actor_config.thread_pool.config.insert(String::from("default"), ThreadPoolConfig::new(2, 1, 1, 1.0));
+    ///     let actor_system = ActorSystem::new(actor_config);
+    ///
+    ///     let address = ActorAddress::new("remote", "system", "pool", "actor");
+    ///     let actor_wrapper :ActorWrapper<TestActor> = actor_system.builder().init_after_deserialize(&address);
+    ///
+    ///     actor_system.stop(Duration::from_millis(3000));
+    ///     std::process::exit(actor_system.await_shutdown());
+    /// }
+    /// ```
+    pub fn init_after_deserialize(&self, actor_address: &ActorAddress) -> ActorWrapper<A> {
+        let result = self.get_existing(actor_address);
+        if result.is_ok() {
+            let result = result.unwrap();
+            return result;
+        }
+        return ActorWrapper::from_address(actor_address.clone(), self.system_state.clone());
     }
 
     /// Creates N defined [Actor]s on the [ActorSystem]

@@ -14,6 +14,7 @@
    - this requirement comes from the fact, that all messages need to be serializable in theory to be able to be sent to other actor systems
    - if a message is really intended to be sent it should obviously also implement `Deserialize`
  - Added `.is_mailbox_stopped()`, `is_stopped()` and `wait_for_stop()` to `ActorWrapper<A>`
+ - Added ability to re-initialize `ActorWrapper<A>` after deserializing
  - Added `general.signal_graceful_timeout_in_seconds` to config
  - Added `ActorBuilder<A>.spawn_multiple()`
  - All routers now support a `SendToAllTargetsMessage<M>` that will forward `M` to all active targets

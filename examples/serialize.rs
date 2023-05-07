@@ -4,14 +4,14 @@ use std::process::exit;
 use std::time::Duration;
 use tyra::prelude::*;
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Hash, Clone)]
 struct TestMsg {
     content: String,
+    actor_wrapper: ActorWrapper<RemoteActor>,
 }
 
 impl ActorMessage for TestMsg {}
 
-#[derive(Clone)]
 struct RemoteActor {}
 
 impl Actor for RemoteActor {
@@ -24,10 +24,9 @@ impl Actor for RemoteActor {
         if result.is_err() {
             return Ok(ActorResult::Ok);
         }
-        let decoded: TestMsg = result.unwrap();
-        context
-            .actor_ref
-            .send_after(decoded, Duration::from_millis(50))?;
+        let mut deserialized: TestMsg = result.unwrap();
+        deserialized.actor_wrapper.init_after_deserialize(&context.system);
+        deserialized.actor_wrapper.send_after(deserialized.clone(), Duration::from_millis(50))?;
         Ok(ActorResult::Ok)
     }
 }
@@ -60,12 +59,13 @@ fn main() {
     let actor_system = ActorSystem::new(actor_config);
 
     let hw = RemoteActorFactory {};
-    let x = actor_system.builder().spawn("hello-world", hw).unwrap();
+    let remote_actor = actor_system.builder().spawn("hello-world", hw).unwrap();
     let msg = TestMsg {
         content: String::from("Hello World!"),
+        actor_wrapper: remote_actor.clone(),
     };
     let serialized = bincode::serialize(&msg).unwrap();
-    actor_system.send_to_address(x.get_address(), SerializedMessage::new(serialized));
+    actor_system.send_to_address(remote_actor.get_address(), SerializedMessage::new(serialized));
 
     let result = actor_system.await_shutdown();
 

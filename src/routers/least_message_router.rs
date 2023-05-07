@@ -122,7 +122,7 @@ where
 
 impl<A> LeastMessageRouter<A>
 where
-    A: Actor,
+    A: Actor + 'static,
 {
     pub fn new(
         min_mailbox_size: usize,
@@ -142,7 +142,7 @@ where
 
 impl<A> Actor for LeastMessageRouter<A>
 where
-    A: Actor,
+    A: Actor + 'static,
 {
     fn on_system_stop(
         &mut self,
@@ -164,7 +164,7 @@ where
 
 impl<A> Handler<AddActorMessage<A>> for LeastMessageRouter<A>
 where
-    A: Actor,
+    A: Actor + 'static,
 {
     fn handle(
         &mut self,
@@ -179,7 +179,7 @@ where
 
 impl<A> Handler<RemoveActorMessage<A>> for LeastMessageRouter<A>
 where
-    A: Actor,
+    A: Actor + 'static,
 {
     fn handle(
         &mut self,

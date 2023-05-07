@@ -119,7 +119,7 @@ where
 
 impl<A> ShardedRouter<A>
 where
-    A: Actor,
+    A: Actor + 'static,
 {
     pub fn new(stop_on_system_stop: bool, stop_on_empty_targets: bool) -> Self {
         Self {
@@ -136,7 +136,7 @@ where
 
 impl<A> Actor for ShardedRouter<A>
 where
-    A: Actor,
+    A: Actor + 'static,
 {
     fn on_system_stop(
         &mut self,
@@ -158,7 +158,7 @@ where
 
 impl<A> Handler<AddActorMessage<A>> for ShardedRouter<A>
 where
-    A: Actor,
+    A: Actor + 'static,
 {
     fn handle(
         &mut self,
@@ -174,7 +174,7 @@ where
 
 impl<A> Handler<RemoveActorMessage<A>> for ShardedRouter<A>
 where
-    A: Actor,
+    A: Actor + 'static,
 {
     fn handle(
         &mut self,

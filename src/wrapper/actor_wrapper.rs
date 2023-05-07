@@ -14,6 +14,7 @@ use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::panic::UnwindSafe;
 use std::time::Duration;
+use crate::prelude::ActorSystem;
 
 #[derive(Serialize, Deserialize)]
 #[serde(bound(
@@ -43,7 +44,7 @@ impl<A> UnwindSafe for ActorWrapper<A> where A: Actor {}
 
 impl<A> ActorWrapper<A>
 where
-    A: Actor + UnwindSafe,
+    A: Actor + UnwindSafe + 'static,
 {
     /// Automatically called by the [ActorBuilder.spawn](../prelude/struct.ActorBuilder.html#method.spawn)
     pub fn new(
@@ -173,6 +174,27 @@ where
         }
         return self.remote.wait_for_stop();
     }
+
+    /// This function is required after deserializing any ActorWrapper<A>
+    /// If the actor is a local actor it will restore the LocalActorWrapper and any message can be sent directly to the actor again
+    /// If the actor is a remote actor it will add the SystemState to it, so that the messages can be forwarded to the destination
+    /// It is technically impossible to deserialize a working LocalActor<A> or a RemoteActor directly, which is why this helper is required to feed the unserializable information back into it
+    pub fn init_after_deserialize(&mut self, system: &ActorSystem) {
+        let actor_wrapper = system.builder::<A>().init_after_deserialize(self.get_address());
+        self.local = actor_wrapper.local;
+        self.remote = actor_wrapper.remote;
+    }
+
+    /// Returns an ActorWrapper<A> that will be handled as a remote actor.
+    /// If the actor exists locally tru `init_after_deserialize` or `ActorBuilder<A>::get_existing()` instead
+    pub fn from_address(address: ActorAddress, system_state: SystemState) -> Self {
+        return Self {
+            address,
+            remote: RemoteActorWrapper::new(system_state),
+            local: None,
+        }
+    }
+
 }
 
 impl<A> Clone for ActorWrapper<A>

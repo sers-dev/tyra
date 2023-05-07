@@ -190,17 +190,17 @@ impl SystemState {
 
     pub fn get_actor_ref<A>(
         &self,
-        address: ActorAddress,
+        address: &ActorAddress,
         internal_actor_manager: InternalActorManager,
     ) -> Result<ActorWrapper<A>, ActorError>
     where
         A: Handler<SerializedMessage> + 'static,
     {
-        let mb = self.mailboxes.get(&address).unwrap().value().clone();
+        let mb = self.mailboxes.get(address).unwrap().value().clone();
         return match mb.as_any().downcast_ref::<Mailbox<A>>() {
             Some(m) => Ok(ActorWrapper::new(
                 m.clone(),
-                address,
+                address.clone(),
                 self.wakeup_manager.clone(),
                 internal_actor_manager,
                 self.clone(),
