@@ -46,7 +46,7 @@ impl<A> ActorWrapper<A>
     where
         A: Actor + UnwindSafe,
 {
-    /// Automatically called by the [ActorBuilder.build](../prelude/struct.ActorBuilder.html#method.build)
+    /// Automatically called by the [ActorBuilder.spawn](../prelude/struct.ActorBuilder.html#method.spawn)
     pub fn new(
         mailbox: Mailbox<A>,
         address: ActorAddress,
