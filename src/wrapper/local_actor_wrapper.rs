@@ -1,31 +1,30 @@
-use std::panic::UnwindSafe;
-use std::thread::sleep;
-use std::time::Duration;
+use crate::actor::actor::Actor;
 use crate::actor::actor_address::ActorAddress;
+use crate::actor::actor_send_error::ActorSendError;
+use crate::actor::handler::Handler;
 use crate::actor::mailbox::Mailbox;
 use crate::message::actor_message::BaseActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::message::sleep_message::SleepMessage;
-use crate::actor::actor_send_error::ActorSendError;
-use crate::actor::actor::Actor;
-use crate::actor::handler::Handler;
 use crate::prelude::ActorWrapper;
 use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::wakeup_manager::WakeupManager;
+use std::panic::UnwindSafe;
+use std::thread::sleep;
+use std::time::Duration;
 
 pub struct LocalActorWrapper<A>
-    where
-        A: Actor,
+where
+    A: Actor,
 {
     mailbox: Mailbox<A>,
     wakeup_manager: WakeupManager,
     internal_actor_manager: Box<InternalActorManager>,
 }
 
-
 impl<A> LocalActorWrapper<A>
-    where
-        A: Actor + UnwindSafe,
+where
+    A: Actor + UnwindSafe,
 {
     pub fn new(
         mailbox: Mailbox<A>,
@@ -40,9 +39,9 @@ impl<A> LocalActorWrapper<A>
     }
 
     pub fn send<M>(&self, msg: M, address: ActorAddress) -> Result<(), ActorSendError>
-        where
-            A: Handler<M>,
-            M: BaseActorMessage + 'static,
+    where
+        A: Handler<M>,
+        M: BaseActorMessage + 'static,
     {
         if self.mailbox.is_stopped() {
             return Err(ActorSendError::AlreadyStoppedError);
@@ -61,10 +60,15 @@ impl<A> LocalActorWrapper<A>
         return Ok(());
     }
 
-    pub fn send_timeout<M>(&self, msg: M, timeout: Duration, address: ActorAddress) -> Result<(), ActorSendError>
-        where
-            A: Handler<M>,
-            M: BaseActorMessage + 'static,
+    pub fn send_timeout<M>(
+        &self,
+        msg: M,
+        timeout: Duration,
+        address: ActorAddress,
+    ) -> Result<(), ActorSendError>
+    where
+        A: Handler<M>,
+        M: BaseActorMessage + 'static,
     {
         if self.mailbox.is_stopped() {
             return Err(ActorSendError::AlreadyStoppedError);
@@ -83,10 +87,15 @@ impl<A> LocalActorWrapper<A>
         return Ok(());
     }
 
-    pub fn send_after<M>(&self, msg: M, delay: Duration, destination: ActorWrapper<A>) -> Result<(), ActorSendError>
-        where
-            A: Handler<M> + 'static,
-            M: BaseActorMessage + 'static,
+    pub fn send_after<M>(
+        &self,
+        msg: M,
+        delay: Duration,
+        destination: ActorWrapper<A>,
+    ) -> Result<(), ActorSendError>
+    where
+        A: Handler<M> + 'static,
+        M: BaseActorMessage + 'static,
     {
         if self.mailbox.is_stopped() {
             return Err(ActorSendError::AlreadyStoppedError);
@@ -111,11 +120,11 @@ impl<A> LocalActorWrapper<A>
     }
 
     pub fn is_mailbox_stopped(&self) -> bool {
-        return self.mailbox.is_stopped()
+        return self.mailbox.is_stopped();
     }
 
     pub fn is_stopped(&self) -> bool {
-        return self.get_mailbox_size() == 0 && self.mailbox.is_stopped()
+        return self.get_mailbox_size() == 0 && self.mailbox.is_stopped();
     }
 
     pub fn wait_for_stop(&self, address: ActorAddress) {
@@ -127,8 +136,8 @@ impl<A> LocalActorWrapper<A>
 }
 
 impl<A> Clone for LocalActorWrapper<A>
-    where
-        A: Actor + UnwindSafe,
+where
+    A: Actor + UnwindSafe,
 {
     fn clone(&self) -> Self {
         Self {

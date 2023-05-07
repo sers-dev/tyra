@@ -1,6 +1,6 @@
-use std::hash::{Hash, Hasher};
-use serde::Serialize;
 use crate::message::actor_message::BaseActorMessage;
+use serde::Serialize;
+use std::hash::{Hash, Hasher};
 
 /// Wraps multiple [ActorMessage](../prelude/trait.ActorMessage.html) to be sent to a Router
 #[derive(Serialize)]
@@ -24,7 +24,7 @@ where
 
 impl<M> Hash for BulkRouterMessage<M>
 where
-    M: BaseActorMessage + 'static
+    M: BaseActorMessage + 'static,
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.data.hash(state);

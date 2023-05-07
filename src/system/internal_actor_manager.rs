@@ -1,10 +1,10 @@
+use crate::message::actor_message::BaseActorMessage;
 use crate::message::delayed_message::DelayedMessage;
 use crate::prelude::{ActorSystem, ActorWrapper, Handler};
 use crate::router::{AddActorMessage, RoundRobinRouter, RoundRobinRouterFactory};
 use crate::system::delay_actor::{DelayActor, DelayActorFactory};
 use log::error;
 use std::time::Duration;
-use crate::message::actor_message::BaseActorMessage;
 
 #[derive(Clone)]
 pub struct InternalActorManager {
@@ -44,15 +44,11 @@ impl InternalActorManager {
         M: BaseActorMessage + 'static,
         A: Handler<M> + 'static,
     {
-        let result =
-            self.delay_router
-                .as_ref()
-                .unwrap()
-                .send(DelayedMessage::new(
-                    msg,
-                    destination,
-                    duration,
-                ));
+        let result = self
+            .delay_router
+            .as_ref()
+            .unwrap()
+            .send(DelayedMessage::new(msg, destination, duration));
         if result.is_err() {
             error!("Could not send message to delay router");
         }

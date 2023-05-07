@@ -1,8 +1,8 @@
+use serde::Serialize;
 use std::error::Error;
 use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use serde::Serialize;
 use tyra::prelude::*;
 use tyra::router::{AddActorMessage, BulkRouterMessage, RoundRobinRouterFactory};
 

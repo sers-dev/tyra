@@ -4,7 +4,7 @@ use crate::actor::actor_factory::ActorFactory;
 use crate::actor::executor::{Executor, ExecutorTrait};
 use crate::actor::mailbox::Mailbox;
 use crate::config::tyra_config::DEFAULT_POOL;
-use crate::prelude::{Actor, Handler, ActorWrapper, SerializedMessage};
+use crate::prelude::{Actor, ActorWrapper, Handler, SerializedMessage};
 use crate::system::actor_error::ActorError;
 use crate::system::actor_system::ActorSystem;
 use crate::system::internal_actor_manager::InternalActorManager;
@@ -185,7 +185,12 @@ where
     where
         P: ActorFactory<A> + 'static,
     {
-        let actor_address = ActorAddress::new("local", self.system.get_name(), self.actor_config.pool_name.clone(), name);
+        let actor_address = ActorAddress::new(
+            "local",
+            self.system.get_name(),
+            self.actor_config.pool_name.clone(),
+            name,
+        );
 
         if self.system_state.is_mailbox_active(&actor_address) {
             return self
@@ -230,8 +235,10 @@ where
 
         match actor_handler {
             Ok(a) => {
-                self.system_state.add_mailbox(actor_address.clone(), mailbox);
-                self.wakeup_manager.add_inactive_actor(a.get_address(), Arc::new(RwLock::new(a)));
+                self.system_state
+                    .add_mailbox(actor_address.clone(), mailbox);
+                self.wakeup_manager
+                    .add_inactive_actor(a.get_address(), Arc::new(RwLock::new(a)));
                 self.existing.insert(actor_address, actor_ref.clone());
                 return Ok(actor_ref);
             }
@@ -331,8 +338,7 @@ where
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
     /// ```
-    pub fn get_existing(&self, actor_address: ActorAddress) -> Result<ActorWrapper<A>, ActorError>
-     {
+    pub fn get_existing(&self, actor_address: ActorAddress) -> Result<ActorWrapper<A>, ActorError> {
         if self.system_state.is_mailbox_active(&actor_address) {
             return self
                 .system_state
@@ -407,9 +413,14 @@ where
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
     /// ```
-    pub fn spawn_multiple<P>(&self, name: impl Into<String> + Clone + std::fmt::Display, props: P, spawn_count: usize) -> Result<Vec<ActorWrapper<A>>, ActorError>
-        where
-            P: ActorFactory<A> + 'static + Clone,
+    pub fn spawn_multiple<P>(
+        &self,
+        name: impl Into<String> + Clone + std::fmt::Display,
+        props: P,
+        spawn_count: usize,
+    ) -> Result<Vec<ActorWrapper<A>>, ActorError>
+    where
+        P: ActorFactory<A> + 'static + Clone,
     {
         let mut to_return = Vec::new();
         for i in 0..spawn_count {
@@ -430,6 +441,4 @@ where
 
         return Ok(to_return);
     }
-
-
 }

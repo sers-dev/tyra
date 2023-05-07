@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::message::actor_message::DefaultActorMessage;
+use serde::{Deserialize, Serialize};
 
 /// For Remote message handling
 ///

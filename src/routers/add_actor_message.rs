@@ -1,5 +1,5 @@
+use serde::Serialize;
 use std::hash::{Hash, Hasher};
-use serde::{Serialize};
 
 use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::{Actor, ActorWrapper};
@@ -19,9 +19,7 @@ where
     A: Actor,
 {
     pub fn new(actor: ActorWrapper<A>) -> Self {
-        return Self {
-            actor
-        };
+        return Self { actor };
     }
 }
 
@@ -29,6 +27,7 @@ impl<A> BaseActorMessage for AddActorMessage<A> where A: Actor {}
 
 impl<A> Hash for AddActorMessage<A>
 where
-    A: Actor {
+    A: Actor,
+{
     fn hash<H: Hasher>(&self, _state: &mut H) {}
 }

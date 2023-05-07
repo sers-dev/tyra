@@ -62,7 +62,6 @@ impl SystemState {
         let now = Instant::now();
 
         while self.get_actor_count() != 0 {
-
             if now.elapsed() >= timeout || self.is_force_stopped.load(Ordering::Relaxed) {
                 self.is_force_stopped.store(true, Ordering::Relaxed);
                 self.mailboxes.clear();
@@ -144,7 +143,6 @@ impl SystemState {
                 v.fetch_sub(1, Ordering::Relaxed);
             });
         self.total_actor_count.fetch_sub(1, Ordering::Relaxed);
-
     }
 
     pub fn remove_mailbox(&self, address: &ActorAddress) {
@@ -152,11 +150,7 @@ impl SystemState {
         self.mailboxes.remove(address);
     }
 
-    pub fn add_mailbox<A>(
-        &self,
-        address: ActorAddress,
-        mailbox: Mailbox<A>,
-    )
+    pub fn add_mailbox<A>(&self, address: ActorAddress, mailbox: Mailbox<A>)
     where
         A: Handler<SerializedMessage> + 'static,
     {

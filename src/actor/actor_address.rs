@@ -9,12 +9,17 @@ pub struct ActorAddress {
 }
 
 impl ActorAddress {
-    pub fn new(remote: impl Into<String>, system: impl Into<String>, pool: impl Into<String>, actor: impl Into<String>) -> Self {
+    pub fn new(
+        remote: impl Into<String>,
+        system: impl Into<String>,
+        pool: impl Into<String>,
+        actor: impl Into<String>,
+    ) -> Self {
         return Self {
             remote: remote.into(),
             system: system.into(),
             pool: pool.into(),
             actor: actor.into(),
-        }
+        };
     }
 }

@@ -1,9 +1,9 @@
-use std::hash::{Hash, Hasher};
-use std::net::SocketAddr;
+use crate::prelude::ActorMessage;
 use io_arc::IoArc;
 use mio::net::{TcpStream, UdpSocket};
 use serde::Serialize;
-use crate::prelude::ActorMessage;
+use std::hash::{Hash, Hasher};
+use std::net::SocketAddr;
 
 #[derive(Serialize)]
 pub struct AddTcpConnection {
@@ -13,8 +13,7 @@ pub struct AddTcpConnection {
     pub address: SocketAddr,
 }
 
-impl Hash for AddTcpConnection
-{
+impl Hash for AddTcpConnection {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.stream_id.hash(state);
     }
@@ -35,8 +34,7 @@ pub struct RemoveTcpConnection {
     pub stream_id: usize,
 }
 
-impl Hash for RemoveTcpConnection
-{
+impl Hash for RemoveTcpConnection {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.stream_id.hash(state);
     }
@@ -46,9 +44,7 @@ impl ActorMessage for AddTcpConnection {}
 
 impl RemoveTcpConnection {
     pub fn new(stream_id: usize) -> Self {
-        return Self {
-            stream_id,
-        };
+        return Self { stream_id };
     }
 }
 
@@ -60,8 +56,7 @@ pub struct ReceiveTcpMessage {
     pub request: Vec<String>,
 }
 
-impl Hash for ReceiveTcpMessage
-{
+impl Hash for ReceiveTcpMessage {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.stream_id.hash(state);
     }
@@ -69,10 +64,7 @@ impl Hash for ReceiveTcpMessage
 
 impl ReceiveTcpMessage {
     pub fn new(stream_id: usize, request: Vec<String>) -> Self {
-        return Self {
-            stream_id,
-            request,
-        };
+        return Self { stream_id, request };
     }
 }
 
@@ -85,8 +77,7 @@ pub struct AddUdpSocket {
     pub socket: IoArc<UdpSocket>,
 }
 
-impl Hash for AddUdpSocket
-{
+impl Hash for AddUdpSocket {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.socket_id.hash(state);
     }
@@ -94,10 +85,7 @@ impl Hash for AddUdpSocket
 
 impl AddUdpSocket {
     pub fn new(socket_id: usize, socket: IoArc<UdpSocket>) -> Self {
-        return Self {
-            socket_id,
-            socket,
-        };
+        return Self { socket_id, socket };
     }
 }
 
@@ -111,8 +99,7 @@ pub struct ReceiveUdpMessage {
     pub request: String,
 }
 
-impl Hash for ReceiveUdpMessage
-{
+impl Hash for ReceiveUdpMessage {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.socket_id.hash(state);
     }

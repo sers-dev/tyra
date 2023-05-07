@@ -1,7 +1,7 @@
+use serde::Serialize;
 use std::error::Error;
 use std::process::exit;
 use std::time::{Duration, Instant};
-use serde::Serialize;
 use tyra::prelude::*;
 use tyra::router::{AddActorMessage, RoundRobinRouterFactory};
 

@@ -9,8 +9,8 @@ use crate::system::system_state::SystemState;
 use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
 use dashmap::DashMap;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -83,7 +83,8 @@ impl ActorSystem {
             let sys = system.clone();
             ctrlc::set_handler(move || {
                 sys.sigint_handler(Duration::from_secs(300));
-            }).unwrap();
+            })
+            .unwrap();
         }
 
         system.internal_actor_manager.init(system.clone());

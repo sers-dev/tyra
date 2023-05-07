@@ -110,9 +110,9 @@
 mod actor;
 mod config;
 mod message;
+mod net;
 mod routers;
 mod system;
-mod net;
 mod wrapper;
 
 /// core components
@@ -120,8 +120,8 @@ pub mod prelude {
     pub use crate::actor::prelude::*;
     pub use crate::config::prelude::*;
     pub use crate::message::prelude::*;
-    pub use crate::system::prelude::*;
     pub use crate::net::prelude::*;
+    pub use crate::system::prelude::*;
     pub use crate::wrapper::prelude::*;
 }
 

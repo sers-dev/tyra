@@ -1,8 +1,8 @@
-use std::hash::{Hash, Hasher};
 use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::{Actor, ActorMessage, ActorWrapper};
-use std::time::{Duration, Instant};
 use serde::Serialize;
+use std::hash::{Hash, Hasher};
+use std::time::{Duration, Instant};
 
 /// Wraps an [ActorMessage](../prelude/trait.ActorMessage.html) to be sent at a later time
 #[derive(Serialize)]
@@ -43,9 +43,9 @@ where
 }
 
 impl<A, M> Hash for DelayedMessage<A, M>
-    where
-        M: BaseActorMessage + 'static,
-        A: Actor,
+where
+    M: BaseActorMessage + 'static,
+    A: Actor,
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.msg.hash(state);

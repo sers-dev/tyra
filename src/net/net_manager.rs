@@ -1,26 +1,36 @@
+use crate::net::net_messages::{
+    AddTcpConnection, AddUdpSocket, ReceiveTcpMessage, ReceiveUdpMessage, RemoveTcpConnection,
+};
+use crate::prelude::{
+    Actor, ActorContext, ActorFactory, ActorInitMessage, ActorResult, ActorWrapper, Handler,
+    NetConfig, NetProtocol,
+};
+use crate::router::{AddActorMessage, ShardedRouter, ShardedRouterFactory};
+use io_arc::IoArc;
+use log::{debug, error, warn};
+use mio::event::Source;
+use mio::net::{TcpListener, TcpStream, UdpSocket};
+use mio::{Events, Interest, Poll, Token};
 use std::cmp::min;
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{BufRead, BufReader};
 use std::marker::PhantomData;
 use std::net::Shutdown;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::thread;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use io_arc::IoArc;
-use log::{debug, error, warn};
-use mio::net::{TcpListener, TcpStream, UdpSocket};
-use mio::{Events, Interest, Poll, Token};
-use mio::event::Source;
-use crate::net::net_messages::{AddTcpConnection, AddUdpSocket, ReceiveTcpMessage, ReceiveUdpMessage, RemoveTcpConnection};
-use crate::prelude::{Actor, ActorContext, ActorFactory, ActorInitMessage, ActorResult, ActorWrapper, Handler, NetConfig, NetProtocol};
-use crate::router::{AddActorMessage, ShardedRouter, ShardedRouterFactory};
 
 pub struct NetManager<T>
-    where
-        T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+where
+    T: Handler<AddUdpSocket>
+        + Handler<ReceiveUdpMessage>
+        + Handler<AddTcpConnection>
+        + Handler<RemoveTcpConnection>
+        + Handler<ReceiveTcpMessage>
+        + 'static,
 {
     graceful_shutdown_time_in_seconds: Duration,
     on_stop_udp_timeout: Duration,
@@ -29,24 +39,47 @@ pub struct NetManager<T>
     net_configs: Vec<NetConfig>,
     is_stopping: Arc<AtomicBool>,
     is_stopped: Arc<AtomicBool>,
-
-
 }
 
 impl<T> NetManager<T>
-    where
-
-        T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+where
+    T: Handler<AddUdpSocket>
+        + Handler<ReceiveUdpMessage>
+        + Handler<AddTcpConnection>
+        + Handler<RemoveTcpConnection>
+        + Handler<ReceiveTcpMessage>
+        + 'static,
 {
-    pub fn new<F>(context: ActorContext<Self>, net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: Duration, on_stop_udp_timeout: Duration, worker_factory: F, max_worker_count: usize) -> Self
-    where F: ActorFactory<T> + Clone + 'static, {
-
+    pub fn new<F>(
+        context: ActorContext<Self>,
+        net_configs: Vec<NetConfig>,
+        graceful_shutdown_time_in_seconds: Duration,
+        on_stop_udp_timeout: Duration,
+        worker_factory: F,
+        max_worker_count: usize,
+    ) -> Self
+    where
+        F: ActorFactory<T> + Clone + 'static,
+    {
         let pool_name = &context.actor_ref.get_address().pool;
 
-        let router = context.system.builder().set_pool_name(pool_name).spawn("net-least-message", ShardedRouterFactory::new( false, false)).unwrap();
-        let max_pool_count = context.system.get_available_actor_count_for_pool(pool_name).unwrap();
+        let router = context
+            .system
+            .builder()
+            .set_pool_name(pool_name)
+            .spawn("net-least-message", ShardedRouterFactory::new(false, false))
+            .unwrap();
+        let max_pool_count = context
+            .system
+            .get_available_actor_count_for_pool(pool_name)
+            .unwrap();
         let worker_count = min(max_worker_count, max_pool_count);
-        let workers = context.system.builder().set_pool_name(pool_name).spawn_multiple("net-worker", worker_factory.clone(), worker_count).unwrap();
+        let workers = context
+            .system
+            .builder()
+            .set_pool_name(pool_name)
+            .spawn_multiple("net-worker", worker_factory.clone(), worker_count)
+            .unwrap();
         for worker in &workers {
             router.send(AddActorMessage::new(worker.clone())).unwrap();
         }
@@ -66,13 +99,17 @@ impl<T> NetManager<T>
     }
 }
 impl<T> Actor for NetManager<T>
-    where
-        T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+where
+    T: Handler<AddUdpSocket>
+        + Handler<ReceiveUdpMessage>
+        + Handler<AddTcpConnection>
+        + Handler<RemoveTcpConnection>
+        + Handler<ReceiveTcpMessage>
+        + 'static,
 {
     fn pre_stop(&mut self, _context: &ActorContext<Self>) {
         let iterations = 10;
         let iterate_graceful_stop = self.graceful_shutdown_time_in_seconds / iterations;
-
 
         sleep(iterate_graceful_stop);
 
@@ -100,7 +137,6 @@ impl<T> Actor for NetManager<T>
                 return;
             }
             sleep(iterate_graceful_stop);
-
         }
     }
     fn post_stop(&mut self, _context: &ActorContext<Self>) {
@@ -136,7 +172,12 @@ impl<T> Actor for NetManager<T>
 pub struct NetManagerFactory<F, T>
 where
     F: ActorFactory<T> + Clone + 'static,
-    T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+    T: Handler<AddUdpSocket>
+        + Handler<ReceiveUdpMessage>
+        + Handler<AddTcpConnection>
+        + Handler<RemoveTcpConnection>
+        + Handler<ReceiveTcpMessage>
+        + 'static,
 {
     net_configs: Vec<NetConfig>,
     graceful_shutdown_time_in_seconds: Duration,
@@ -149,10 +190,20 @@ where
 impl<F, T> NetManagerFactory<F, T>
 where
     F: ActorFactory<T> + Clone + 'static,
-    T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
-
+    T: Handler<AddUdpSocket>
+        + Handler<ReceiveUdpMessage>
+        + Handler<AddTcpConnection>
+        + Handler<RemoveTcpConnection>
+        + Handler<ReceiveTcpMessage>
+        + 'static,
 {
-    pub fn new(net_configs: Vec<NetConfig>, graceful_shutdown_time_in_seconds: Duration, on_stop_udp_timeout: Duration, worker_factory: F, max_worker_count: usize) -> Self {
+    pub fn new(
+        net_configs: Vec<NetConfig>,
+        graceful_shutdown_time_in_seconds: Duration,
+        on_stop_udp_timeout: Duration,
+        worker_factory: F,
+        max_worker_count: usize,
+    ) -> Self {
         return Self {
             net_configs,
             graceful_shutdown_time_in_seconds,
@@ -166,30 +217,53 @@ where
 impl<F, T> ActorFactory<NetManager<T>> for NetManagerFactory<F, T>
 where
     F: ActorFactory<T> + Clone + 'static,
-    T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+    T: Handler<AddUdpSocket>
+        + Handler<ReceiveUdpMessage>
+        + Handler<AddTcpConnection>
+        + Handler<RemoveTcpConnection>
+        + Handler<ReceiveTcpMessage>
+        + 'static,
 {
-    fn new_actor(&mut self, context: ActorContext<NetManager<T>>) -> Result<NetManager<T>, Box<dyn Error>> {
+    fn new_actor(
+        &mut self,
+        context: ActorContext<NetManager<T>>,
+    ) -> Result<NetManager<T>, Box<dyn Error>> {
         context.actor_ref.send(ActorInitMessage::new()).unwrap();
-        return Ok(NetManager::new(context, self.net_configs.clone(), self.graceful_shutdown_time_in_seconds, self.on_stop_udp_timeout, self.worker_factory.clone(), self.max_worker_count));
+        return Ok(NetManager::new(
+            context,
+            self.net_configs.clone(),
+            self.graceful_shutdown_time_in_seconds,
+            self.on_stop_udp_timeout,
+            self.worker_factory.clone(),
+            self.max_worker_count,
+        ));
     }
 }
 
 impl<T> Handler<ActorInitMessage> for NetManager<T>
-    where
-        T: Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage> + 'static,
+where
+    T: Handler<AddUdpSocket>
+        + Handler<ReceiveUdpMessage>
+        + Handler<AddTcpConnection>
+        + Handler<RemoveTcpConnection>
+        + Handler<ReceiveTcpMessage>
+        + 'static,
 {
-    fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    fn handle(
+        &mut self,
+        _msg: ActorInitMessage,
+        context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
         let router = self.router.clone();
         let is_stopping = self.is_stopping.clone();
         let is_stopped = self.is_stopped.clone();
         let mut net_configs = self.net_configs.clone();
         let mut last_udp_message_received = Instant::now();
-        let on_stop_udp_timeout  = self.on_stop_udp_timeout.clone();
+        let on_stop_udp_timeout = self.on_stop_udp_timeout.clone();
         let context = context.clone();
         thread::spawn(move || {
-
-            let mut tcp_listeners :HashMap<Token, TcpListener> = HashMap::new();
-            let mut udp_sockets:HashMap<Token, IoArc<UdpSocket>> = HashMap::new();
+            let mut tcp_listeners: HashMap<Token, TcpListener> = HashMap::new();
+            let mut udp_sockets: HashMap<Token, IoArc<UdpSocket>> = HashMap::new();
             let poll = Poll::new();
             if poll.is_err() {
                 error!("Can't start Poll Port: {:?}", poll.err());
@@ -205,7 +279,9 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                 let token = Token(i);
                 i += 1;
 
-                let address = format!("{}:{}", net_config.host, net_config.port).parse().unwrap();
+                let address = format!("{}:{}", net_config.host, net_config.port)
+                    .parse()
+                    .unwrap();
 
                 match net_config.protocol {
                     NetProtocol::TCP => {
@@ -217,7 +293,9 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                             return;
                         }
                         let mut listener = listener.unwrap();
-                        let res = poll.registry().register(&mut listener, token, Interest::READABLE);
+                        let res =
+                            poll.registry()
+                                .register(&mut listener, token, Interest::READABLE);
                         if res.is_err() {
                             error!("Can't register TCP listener: {:?}", res.err());
                             is_stopped.store(true, Ordering::Relaxed);
@@ -225,7 +303,7 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                             return;
                         }
                         tcp_listeners.insert(token, listener);
-                    },
+                    }
                     NetProtocol::UDP => {
                         let socket = UdpSocket::bind(address);
                         if socket.is_err() {
@@ -235,7 +313,9 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                             return;
                         }
                         let mut socket = socket.unwrap();
-                        let res = poll.registry().register(&mut socket, token, Interest::READABLE);
+                        let res = poll
+                            .registry()
+                            .register(&mut socket, token, Interest::READABLE);
                         if res.is_err() {
                             error!("Can't register UDP Socket: {:?}", res.err());
                             is_stopped.store(true, Ordering::Relaxed);
@@ -251,13 +331,11 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
             let num_tcp_listeners = tcp_listeners.len();
             let num_total_listeners = net_configs.len();
 
-
             let mut events = Events::with_capacity(1024);
-            let mut streams =  HashMap::new();
+            let mut streams = HashMap::new();
 
             let mut buf = [0; 65535];
             loop {
-
                 if is_stopped.load(Ordering::Relaxed) {
                     return;
                 }
@@ -265,12 +343,15 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                 let res = poll.poll(&mut events, None);
                 if res.is_err() {
                     debug!("Can't poll Network Events");
-                    continue
+                    continue;
                 }
 
                 for event in events.iter() {
                     let stopping = is_stopping.load(Ordering::Relaxed);
-                    if stopping && streams.len() == 0 && last_udp_message_received.elapsed() > on_stop_udp_timeout {
+                    if stopping
+                        && streams.len() == 0
+                        && last_udp_message_received.elapsed() > on_stop_udp_timeout
+                    {
                         is_stopped.store(true, Ordering::Relaxed);
                         break;
                     }
@@ -290,7 +371,11 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                                         let _ = socket.shutdown(Shutdown::Both);
                                         continue;
                                     }
-                                    let res = socket.register(poll.registry(), Token(i), Interest::READABLE);
+                                    let res = socket.register(
+                                        poll.registry(),
+                                        Token(i),
+                                        Interest::READABLE,
+                                    );
                                     if res.is_err() {
                                         error!("Could not register TcpStream. {:?}", res.err());
                                     }
@@ -312,8 +397,7 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                                 }
                             }
                         }
-                    }
-                    else if token.0 < num_total_listeners {
+                    } else if token.0 < num_total_listeners {
                         //UDP handling
                         let socket = udp_sockets.get(&token);
                         if socket.is_none() {
@@ -329,19 +413,20 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                                     continue;
                                 }
                                 panic!("recv() failed: {:?}", e);
-                            },
+                            }
                         };
                         let request = String::from_utf8_lossy(&buf[..len]);
-                        let _ = router.send(ReceiveUdpMessage::new(token.0, from, request.into_owned()));
+                        let _ = router.send(ReceiveUdpMessage::new(
+                            token.0,
+                            from,
+                            request.into_owned(),
+                        ));
                         last_udp_message_received = Instant::now();
-                    }
-                    else {
+                    } else {
                         if event.is_read_closed() || event.is_write_closed() {
                             let _ = streams.remove(&token.0);
                             let _ = router.send(RemoveTcpConnection::new(token.0));
-
-                        }
-                        else if event.is_readable() {
+                        } else if event.is_readable() {
                             let stream = streams.get(&token.0);
                             if stream.is_none() {
                                 let _ = streams.remove(&token.0);
@@ -352,15 +437,13 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                             let buf_reader = BufReader::new(stream.clone());
                             let request: Vec<String> = buf_reader
                                 .lines()
-                                .map(|result| {
-                                    match result {
-                                        Ok(res) => {
-                                            return res;
-                                        }
-                                        Err(err) => {
-                                            warn!("Could not read from stream: {:?}", err);
-                                            return String::from("");
-                                        }
+                                .map(|result| match result {
+                                    Ok(res) => {
+                                        return res;
+                                    }
+                                    Err(err) => {
+                                        warn!("Could not read from stream: {:?}", err);
+                                        return String::from("");
                                     }
                                 })
                                 .take_while(|line| !line.is_empty())
@@ -368,7 +451,6 @@ impl<T> Handler<ActorInitMessage> for NetManager<T>
                             if !request.is_empty() {
                                 let _ = router.send(ReceiveTcpMessage::new(token.0, request));
                             }
-
                         }
                     }
                 }

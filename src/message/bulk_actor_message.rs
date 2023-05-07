@@ -1,7 +1,7 @@
-use serde::Serialize;
 /// Bulk Actor Message, that can wrap and send multiple [ActorMessage](../prelude/trait.ActorMessage.html) at once
 ///
 use crate::message::actor_message::BaseActorMessage;
+use serde::Serialize;
 
 /// Wraps multiple [ActorMessage](../prelude/trait.ActorMessage.html) to be sent to an Actor
 #[derive(Hash, Serialize)]

@@ -1,35 +1,34 @@
-use std::fmt::{Debug, Formatter};
-use std::hash::{Hash, Hasher};
-use std::panic::UnwindSafe;
-use std::time::Duration;
-use serde::{Deserialize, Serialize};
+use crate::actor::actor::Actor;
 use crate::actor::actor_address::ActorAddress;
+use crate::actor::actor_send_error::ActorSendError;
+use crate::actor::handler::Handler;
 use crate::actor::mailbox::Mailbox;
 use crate::message::actor_message::BaseActorMessage;
-use crate::actor::actor_send_error::ActorSendError;
-use crate::actor::actor::Actor;
-use crate::actor::handler::Handler;
 use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::system_state::SystemState;
 use crate::system::wakeup_manager::WakeupManager;
 use crate::wrapper::local_actor_wrapper::LocalActorWrapper;
 use crate::wrapper::remote_actor_wrapper::RemoteActorWrapper;
+use serde::{Deserialize, Serialize};
+use std::fmt::{Debug, Formatter};
+use std::hash::{Hash, Hasher};
+use std::panic::UnwindSafe;
+use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
 pub struct ActorWrapper<A>
-    where
-        A: Actor,
+where
+    A: Actor,
 {
     address: ActorAddress,
     remote: RemoteActorWrapper,
     #[serde(skip)]
     local: Option<LocalActorWrapper<A>>,
-
 }
 
 impl<A> Debug for ActorWrapper<A>
-    where
-        A: Actor,
+where
+    A: Actor,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "")
@@ -39,8 +38,8 @@ impl<A> Debug for ActorWrapper<A>
 impl<A> UnwindSafe for ActorWrapper<A> where A: Actor {}
 
 impl<A> ActorWrapper<A>
-    where
-        A: Actor + UnwindSafe,
+where
+    A: Actor + UnwindSafe,
 {
     /// Automatically called by the [ActorBuilder.spawn](../prelude/struct.ActorBuilder.html#method.spawn)
     pub fn new(
@@ -50,7 +49,11 @@ impl<A> ActorWrapper<A>
         internal_actor_manager: InternalActorManager,
         system_state: SystemState,
     ) -> Self {
-        let local = Some(LocalActorWrapper::new(mailbox, wakeup_manager, internal_actor_manager));
+        let local = Some(LocalActorWrapper::new(
+            mailbox,
+            wakeup_manager,
+            internal_actor_manager,
+        ));
         let remote = RemoteActorWrapper::new(system_state);
         Self {
             address,
@@ -63,9 +66,9 @@ impl<A> ActorWrapper<A>
     /// Blocks until message has been sent, or fails if the target has been stopped
     /// It is NOT recommended to use this to send messages to Actors with a limited mailbox. Use send_timeout() or send_after() for these cases
     pub fn send<M>(&self, msg: M) -> Result<(), ActorSendError>
-        where
-            A: Handler<M>,
-            M: BaseActorMessage + 'static,
+    where
+        A: Handler<M>,
+        M: BaseActorMessage + 'static,
     {
         if self.local.is_some() {
             return self.local.as_ref().unwrap().send(msg, self.address.clone());
@@ -75,24 +78,32 @@ impl<A> ActorWrapper<A>
 
     /// Same as send, but with a user defined timeout
     pub fn send_timeout<M>(&self, msg: M, timeout: Duration) -> Result<(), ActorSendError>
-        where
-            A: Handler<M>,
-            M: BaseActorMessage + 'static,
+    where
+        A: Handler<M>,
+        M: BaseActorMessage + 'static,
     {
         if self.local.is_some() {
-            return self.local.as_ref().unwrap().send_timeout(msg, timeout, self.address.clone());
+            return self
+                .local
+                .as_ref()
+                .unwrap()
+                .send_timeout(msg, timeout, self.address.clone());
         }
         return self.remote.send_timeout(msg, timeout, self.address.clone());
     }
 
     /// Sends a message to the actor after a specified delay
     pub fn send_after<M>(&self, msg: M, delay: Duration) -> Result<(), ActorSendError>
-        where
-            A: Handler<M> + 'static,
-            M: BaseActorMessage + 'static,
+    where
+        A: Handler<M> + 'static,
+        M: BaseActorMessage + 'static,
     {
         if self.local.is_some() {
-            return self.local.as_ref().unwrap().send_after(msg, delay, self.clone());
+            return self
+                .local
+                .as_ref()
+                .unwrap()
+                .send_after(msg, delay, self.clone());
         }
         return self.remote.send_after(msg, delay, self.address.clone());
     }
@@ -108,7 +119,11 @@ impl<A> ActorWrapper<A>
     /// Tells the actor to sleep for the specified duration
     pub fn sleep(&self, duration: Duration) -> Result<(), ActorSendError> {
         if self.local.is_some() {
-            return self.local.as_ref().unwrap().sleep(duration, self.address.clone());
+            return self
+                .local
+                .as_ref()
+                .unwrap()
+                .sleep(duration, self.address.clone());
         }
         return self.remote.sleep(duration, self.address.clone());
     }
@@ -146,15 +161,19 @@ impl<A> ActorWrapper<A>
     /// Blocks until the actor has been stopped
     pub fn wait_for_stop(&self) {
         if self.local.is_some() {
-            return self.local.as_ref().unwrap().wait_for_stop(self.address.clone());
+            return self
+                .local
+                .as_ref()
+                .unwrap()
+                .wait_for_stop(self.address.clone());
         }
         return self.remote.wait_for_stop();
     }
 }
 
 impl<A> Clone for ActorWrapper<A>
-    where
-        A: Actor + UnwindSafe,
+where
+    A: Actor + UnwindSafe,
 {
     fn clone(&self) -> Self {
         Self {
@@ -166,8 +185,8 @@ impl<A> Clone for ActorWrapper<A>
 }
 
 impl<A> Hash for ActorWrapper<A>
-    where
-        A: Actor + UnwindSafe,
+where
+    A: Actor + UnwindSafe,
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.address.hash(state);

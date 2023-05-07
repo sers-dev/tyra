@@ -1,24 +1,19 @@
+use serde::Serialize;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use serde::Serialize;
 
 /// This trait is used internally by the `ActorSystem` and builds the base for all messaging
 /// It's automatically implemented by the `ActorMessage` trait that should be used
 ///
 /// It is used by Messages defined in the system
 /// All messages that use this trait directly should also implement a dynamic `Handler<M>` that applies to any `Actor`
-pub trait BaseActorMessage: Send + Sync + Hash + Serialize {
-}
+pub trait BaseActorMessage: Send + Sync + Hash + Serialize {}
 
 /// This trait is used by Messages defined by the system
 /// All messages that use this trait should also implement a dynamic `Handler<M>` that applies to any `Actor`
-pub trait DefaultActorMessage: Send + Sync + Hash + Serialize {
-}
+pub trait DefaultActorMessage: Send + Sync + Hash + Serialize {}
 
-impl<A> BaseActorMessage for A
-where
-    A: DefaultActorMessage
-{}
+impl<A> BaseActorMessage for A where A: DefaultActorMessage {}
 
 /// Core trait to define Messages
 ///
@@ -44,7 +39,4 @@ pub trait ActorMessage: Send + Sync + Hash + Serialize {
 }
 
 /// this should be `BaseActorMessage` but it's currently not possible because of https://github.com/rust-lang/rust/issues/20400
-impl<A> DefaultActorMessage for A
-    where
-        A: ActorMessage + Serialize
-{}
+impl<A> DefaultActorMessage for A where A: ActorMessage + Serialize {}
