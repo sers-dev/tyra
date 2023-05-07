@@ -36,10 +36,11 @@ impl Handler<TestMsg> for RemoteActor {
     fn handle(
         &mut self,
         msg: TestMsg,
-        _context: &ActorContext<Self>,
+        context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
         println!("{}", msg.content);
-        Ok(ActorResult::Ok)
+        context.system.stop(Duration::from_secs(10));
+        Ok(ActorResult::Stop)
     }
 }
 
@@ -65,13 +66,8 @@ fn main() {
     };
     let serialized = bincode::serialize(&msg).unwrap();
     actor_system.send_to_address(x.get_address(), SerializedMessage::new(serialized));
-    let start = Instant::now();
 
-    actor_system.stop(Duration::from_secs(10));
     let result = actor_system.await_shutdown();
-
-    let duration = start.elapsed();
-    println!("It took {:?} to send stop", duration);
 
     exit(result);
 }

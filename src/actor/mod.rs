@@ -14,6 +14,7 @@ pub mod mailbox;
 
 pub mod prelude {
     pub use crate::actor::actor::Actor;
+    pub use crate::actor::actor_address::ActorAddress;
     pub use crate::actor::actor_builder::ActorBuilder;
     pub use crate::actor::actor_factory::ActorFactory;
     pub use crate::actor::actor_panic_source::ActorPanicSource;

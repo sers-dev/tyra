@@ -17,4 +17,8 @@ pub enum ActorError {
     /// Triggered by [ActorBuilder.spawn](../prelude/struct.ActorBuilder.html#method.spawn) if the actor can't be spawned, because the thread-pool does not exist
     #[error("Actor could not be started, because thread-pool does not exist")]
     ThreadPoolDoesNotExistError,
+
+    /// Triggered by [ActorBuilder.get_existing](../prelude/struct.ActorBuilder.html#method.get_existing) if the provided ActorAddress does not exist
+    #[error("Actor does not exist")]
+    DoesNotExistError,
 }

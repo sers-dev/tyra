@@ -11,6 +11,7 @@ use crate::message::sleep_message::SleepMessage;
 use crate::actor::actor_send_error::ActorSendError;
 use crate::actor::actor::Actor;
 use crate::actor::handler::Handler;
+use crate::prelude::ActorWrapper;
 use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::wakeup_manager::WakeupManager;
 
@@ -84,7 +85,7 @@ impl<A> LocalActorWrapper<A>
         return Ok(());
     }
 
-    pub fn send_after<M>(&self, msg: M, delay: Duration) -> Result<(), ActorSendError>
+    pub fn send_after<M>(&self, msg: M, delay: Duration, destination: ActorWrapper<A>) -> Result<(), ActorSendError>
         where
             A: Handler<M> + 'static,
             M: BaseActorMessage + 'static,
@@ -93,8 +94,8 @@ impl<A> LocalActorWrapper<A>
             return Err(ActorSendError::AlreadyStoppedError);
         }
 
-        //self.internal_actor_manager
-        //    .send_after(msg, self.clone(), delay);
+        self.internal_actor_manager
+            .send_after(msg, destination, delay);
 
         return Ok(());
     }

@@ -102,7 +102,7 @@ impl<A> ActorWrapper<A>
             M: BaseActorMessage + 'static,
     {
         if self.is_local && self.local.is_some() {
-            return self.local.as_ref().unwrap().send_after(msg, delay);
+            return self.local.as_ref().unwrap().send_after(msg, delay, self.clone());
         }
         else {
             return self.remote.send_after(msg, delay, self.address.clone());

@@ -185,12 +185,7 @@ where
     where
         P: ActorFactory<A> + 'static,
     {
-        let actor_address = ActorAddress {
-            actor: name.into(),
-            system: String::from(self.system.get_name()),
-            pool: self.actor_config.pool_name.clone(),
-            remote: String::from("local"),
-        };
+        let actor_address = ActorAddress::new("local", self.system.get_name(), self.actor_config.pool_name.clone(), name);
 
         if self.system_state.is_mailbox_active(&actor_address) {
             return self
@@ -245,6 +240,105 @@ where
                 return Err(e);
             }
         }
+    }
+
+    /// Gets the defined [Actor] for the [ActorAddress] on the [ActorSystem]
+    ///
+    /// # Returns
+    ///
+    /// `Ok(ActorWrapper<A>)` if actor already exists on the system
+    ///
+    /// `Err(ActorError)` see [ActorError](../prelude/enum.ActorError.html) for detailed information
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tyra::prelude::*;
+    /// use std::error::Error;
+    /// use std::time::Duration;
+    ///
+    /// struct TestActor {}
+    /// impl TestActor {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl Actor for TestActor {}
+    ///
+    /// struct TestActorFactory {}
+    /// impl TestActorFactory {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl ActorFactory<TestActor> for TestActorFactory {
+    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
+    ///         Ok(TestActor::new())
+    ///     }
+    /// }
+    ///
+    /// struct BrokenActor {}
+    /// impl BrokenActor {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl Actor for BrokenActor {}
+    ///
+    /// struct BrokenActorFactory {}
+    /// impl BrokenActorFactory {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl ActorFactory<BrokenActor> for BrokenActorFactory {
+    ///     fn new_actor(&mut self, _context: ActorContext<BrokenActor>) -> Result<BrokenActor, Box<dyn Error>> {
+    ///         let error = std::io::Error::from_raw_os_error(1337);
+    ///         return Err(Box::new(error));
+    ///     }
+    /// }
+    ///
+    /// #[ntest::timeout(100000)]
+    /// fn main() {
+    ///     let mut actor_config = TyraConfig::new().unwrap();
+    ///     let actor_system = ActorSystem::new(actor_config);
+    ///
+    ///     let pool_name = "default";
+    ///     let actor_name = "test";
+    ///     let address = ActorAddress::new("local", actor_system.get_name(), pool_name, actor_name);
+    ///
+    ///     //this does not work, because the actor does not exist yet
+    ///     let this_is_not_working :Result<ActorWrapper<BrokenActor>, ActorError> = actor_system.builder().get_existing(address.clone());
+    ///     assert!(this_is_not_working.is_err(), "The BrokenActor existed");
+    ///     let err = this_is_not_working.err().unwrap();
+    ///     assert_eq!(err, ActorError::DoesNotExistError, "Error is not correct");
+    ///
+    ///     //this works, because there's no actor called `test` yet on the pool
+    ///     let this_works = actor_system.builder().set_pool_name(pool_name).spawn(actor_name, TestActorFactory::new());
+    ///     assert!(this_works.is_ok(), "The actor could not be spawned");
+    ///
+    ///     //this does not work, because the actor type does not match
+    ///     let this_is_not_working :Result<ActorWrapper<BrokenActor>, ActorError> = actor_system.builder().get_existing(address.clone());
+    ///     assert!(this_is_not_working.is_err(), "The BrokenActor existed");
+    ///     let err = this_is_not_working.err().unwrap();
+    ///     assert_eq!(err, ActorError::InvalidActorTypeError, "Error is not correct");
+    ///
+    ///     //this does work, because the actor type matches
+    ///     let this_works :Result<ActorWrapper<TestActor>, ActorError> = actor_system.builder().get_existing(address.clone());
+    ///     assert!(this_works.is_ok(), "The TestActor did not exist");
+    ///
+    ///     actor_system.stop(Duration::from_millis(3000));
+    ///     std::process::exit(actor_system.await_shutdown());
+    /// }
+    /// ```
+    pub fn get_existing(&self, actor_address: ActorAddress) -> Result<ActorWrapper<A>, ActorError>
+     {
+        if self.system_state.is_mailbox_active(&actor_address) {
+            return self
+                .system_state
+                .get_actor_ref(actor_address, self.internal_actor_manager.clone(), self.system.clone());
+        }
+        return Err(ActorError::DoesNotExistError);
     }
 
     /// Creates N defined [Actor]s on the [ActorSystem]
