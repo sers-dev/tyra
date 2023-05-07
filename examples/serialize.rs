@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::process::exit;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tyra::prelude::*;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Hash)]

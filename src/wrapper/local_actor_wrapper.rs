@@ -1,8 +1,6 @@
-use std::marker::PhantomData;
 use std::panic::UnwindSafe;
 use std::thread::sleep;
 use std::time::Duration;
-use serde::{Deserialize, Serialize};
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::mailbox::Mailbox;
 use crate::message::actor_message::BaseActorMessage;

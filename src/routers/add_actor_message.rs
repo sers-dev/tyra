@@ -1,5 +1,5 @@
 use std::hash::{Hash, Hasher};
-use serde::{Deserialize, Serialize};
+use serde::{Serialize};
 
 use crate::message::actor_message::BaseActorMessage;
 use crate::prelude::{Actor, ActorWrapper};

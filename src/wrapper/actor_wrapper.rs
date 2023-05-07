@@ -1,17 +1,14 @@
-use std::fmt::{Debug, Formatter, Pointer};
+use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
-use std::marker::PhantomData;
 use std::panic::UnwindSafe;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::mailbox::Mailbox;
 use crate::message::actor_message::BaseActorMessage;
-use crate::message::sleep_message::SleepMessage;
 use crate::actor::actor_send_error::ActorSendError;
 use crate::actor::actor::Actor;
 use crate::actor::handler::Handler;
-use crate::prelude::ActorSystem;
 use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::system_state::SystemState;
 use crate::system::wakeup_manager::WakeupManager;
@@ -111,9 +108,9 @@ impl<A> ActorWrapper<A>
     /// Tells the actor to sleep for the specified duration
     pub fn sleep(&self, duration: Duration) -> Result<(), ActorSendError> {
         if self.local.is_some() {
-            return self.local.as_ref().unwrap().send(SleepMessage{ duration}, self.address.clone());
+            return self.local.as_ref().unwrap().sleep(duration, self.address.clone());
         }
-        return self.remote.send(SleepMessage{ duration}, &self.address);
+        return self.remote.sleep(duration, self.address.clone());
     }
 
     /// Returns a reference to the address of the actor

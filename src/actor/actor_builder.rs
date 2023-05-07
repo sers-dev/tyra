@@ -190,7 +190,7 @@ where
         if self.system_state.is_mailbox_active(&actor_address) {
             return self
                 .system_state
-                .get_actor_ref(actor_address, self.internal_actor_manager.clone(), self.system.clone());
+                .get_actor_ref(actor_address, self.internal_actor_manager.clone());
         }
 
         let result = self.system_state.increase_pool_actor_count(&actor_address);
@@ -336,7 +336,7 @@ where
         if self.system_state.is_mailbox_active(&actor_address) {
             return self
                 .system_state
-                .get_actor_ref(actor_address, self.internal_actor_manager.clone(), self.system.clone());
+                .get_actor_ref(actor_address, self.internal_actor_manager.clone());
         }
         return Err(ActorError::DoesNotExistError);
     }
