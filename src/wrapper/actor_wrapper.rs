@@ -23,7 +23,6 @@ pub struct ActorWrapper<A>
     where
         A: Actor,
 {
-    is_local: bool,
     address: ActorAddress,
     remote: RemoteActorWrapper,
     #[serde(skip)]
@@ -54,11 +53,9 @@ impl<A> ActorWrapper<A>
         internal_actor_manager: InternalActorManager,
         system_state: SystemState,
     ) -> Self {
-        let is_local = true;
         let local = Some(LocalActorWrapper::new(mailbox, wakeup_manager, internal_actor_manager));
         let remote = RemoteActorWrapper::new(system_state);
         Self {
-            is_local,
             address,
             remote,
             local,
@@ -73,12 +70,10 @@ impl<A> ActorWrapper<A>
             A: Handler<M>,
             M: BaseActorMessage + 'static,
     {
-        if self.is_local && self.local.is_some() {
+        if self.local.is_some() {
             return self.local.as_ref().unwrap().send(msg, self.address.clone());
         }
-        else {
-            return self.remote.send(msg, &self.address);
-        }
+        return self.remote.send(msg, &self.address);
     }
 
     /// Same as send, but with a user defined timeout
@@ -87,12 +82,10 @@ impl<A> ActorWrapper<A>
             A: Handler<M>,
             M: BaseActorMessage + 'static,
     {
-        if self.is_local && self.local.is_some() {
+        if self.local.is_some() {
             return self.local.as_ref().unwrap().send_timeout(msg, timeout, self.address.clone());
         }
-        else {
-            return self.remote.send_timeout(msg, timeout, self.address.clone());
-        }
+        return self.remote.send_timeout(msg, timeout, self.address.clone());
     }
 
     /// Sends a message to the actor after a specified delay
@@ -101,32 +94,26 @@ impl<A> ActorWrapper<A>
             A: Handler<M> + 'static,
             M: BaseActorMessage + 'static,
     {
-        if self.is_local && self.local.is_some() {
+        if self.local.is_some() {
             return self.local.as_ref().unwrap().send_after(msg, delay, self.clone());
         }
-        else {
-            return self.remote.send_after(msg, delay, self.address.clone());
-        }
+        return self.remote.send_after(msg, delay, self.address.clone());
     }
 
     /// Tells the actor to stop accepting message and to shutdown after all existing messages have been processed
     pub fn stop(&self) -> Result<(), ActorSendError> {
-        if self.is_local && self.local.is_some() {
+        if self.local.is_some() {
             return self.local.as_ref().unwrap().stop(self.address.clone());
         }
-        else {
-            return self.remote.stop();
-        }
+        return self.remote.stop();
     }
 
     /// Tells the actor to sleep for the specified duration
     pub fn sleep(&self, duration: Duration) -> Result<(), ActorSendError> {
-        if self.is_local && self.local.is_some() {
+        if self.local.is_some() {
             return self.local.as_ref().unwrap().send(SleepMessage{ duration}, self.address.clone());
         }
-        else {
-            return self.remote.send(SleepMessage{ duration}, &self.address);
-        }
+        return self.remote.send(SleepMessage{ duration}, &self.address);
     }
 
     /// Returns a reference to the address of the actor
@@ -137,42 +124,34 @@ impl<A> ActorWrapper<A>
 
     /// Returns the current mailbox size
     pub fn get_mailbox_size(&self) -> usize {
-        if self.is_local && self.local.is_some() {
+        if self.local.is_some() {
             return self.local.as_ref().unwrap().get_mailbox_size();
         }
-        else {
-            return self.remote.get_mailbox_size();
-        }
+        return self.remote.get_mailbox_size();
     }
 
     /// Returns true if an actor is no longer accepting messages
     pub fn is_mailbox_stopped(&self) -> bool {
-        if self.is_local && self.local.is_some() {
+        if self.local.is_some() {
             return self.local.as_ref().unwrap().is_mailbox_stopped();
         }
-        else {
-            return self.remote.is_mailbox_stopped();
-        }
+        return self.remote.is_mailbox_stopped();
     }
 
     /// Returns true if an actor has been completely stopped after processing all messages that are still within the queue
     pub fn is_stopped(&self) -> bool {
-        if self.is_local && self.local.is_some() {
+        if self.local.is_some() {
             return self.local.as_ref().unwrap().is_stopped();
         }
-        else {
-            return self.remote.is_stopped();
-        }
+        return self.remote.is_stopped();
     }
 
     /// Blocks until the actor has been stopped
     pub fn wait_for_stop(&self) {
-        if self.is_local && self.local.is_some() {
+        if self.local.is_some() {
             return self.local.as_ref().unwrap().wait_for_stop(self.address.clone());
         }
-        else {
-            return self.remote.wait_for_stop();
-        }
+        return self.remote.wait_for_stop();
     }
 }
 
@@ -182,7 +161,6 @@ impl<A> Clone for ActorWrapper<A>
 {
     fn clone(&self) -> Self {
         Self {
-            is_local: self.is_local.clone(),
             remote: self.remote.clone(),
             local: self.local.clone(),
             address: self.address.clone(),
