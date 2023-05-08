@@ -63,22 +63,24 @@ where
     {
         let pool_name = &context.actor_ref.get_address().pool;
 
+        let router_name = format!("{}-net-router", context.actor_ref.get_address().actor);
         let router = context
             .system
             .builder()
             .set_pool_name(pool_name)
-            .spawn("net-least-message", ShardedRouterFactory::new(false, false))
+            .spawn(router_name, ShardedRouterFactory::new(false, false))
             .unwrap();
         let max_pool_count = context
             .system
             .get_available_actor_count_for_pool(pool_name)
             .unwrap();
         let worker_count = min(max_worker_count, max_pool_count);
+        let worker_name = format!("{}-net-worker", context.actor_ref.get_address().actor);
         let workers = context
             .system
             .builder()
             .set_pool_name(pool_name)
-            .spawn_multiple("net-worker", worker_factory.clone(), worker_count)
+            .spawn_multiple(worker_name, worker_factory.clone(), worker_count)
             .unwrap();
         for worker in &workers {
             router.send(AddActorMessage::new(worker.clone())).unwrap();
