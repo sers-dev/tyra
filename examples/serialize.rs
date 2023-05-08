@@ -65,7 +65,7 @@ fn main() {
         actor_wrapper: remote_actor.clone(),
     };
     let serialized = bincode::serialize(&msg).unwrap();
-    actor_system.send_to_address(remote_actor.get_address(), SerializedMessage::new(serialized));
+    actor_system.send_to_address(remote_actor.get_address(), serialized);
 
     let result = actor_system.await_shutdown();
 

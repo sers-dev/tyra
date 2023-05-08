@@ -1,5 +1,6 @@
 use crate::message::actor_message::DefaultActorMessage;
 use serde::{Deserialize, Serialize};
+use crate::prelude::ActorAddress;
 
 /// For Remote message handling
 ///
@@ -11,12 +12,16 @@ use serde::{Deserialize, Serialize};
 /// [ActorSystem.send_to_address](../prelude/struct.ActorSystem.html#method.send_to_address) uses this object to send serialized messages to Actors
 #[derive(Hash, Serialize, Deserialize)]
 pub struct SerializedMessage {
+    pub destination_address: ActorAddress,
     pub content: Vec<u8>,
 }
 
 impl SerializedMessage {
-    pub fn new(content: Vec<u8>) -> Self {
-        Self { content }
+    pub fn new(destination_address: ActorAddress, content: Vec<u8>) -> Self {
+        Self {
+            destination_address,
+            content,
+        }
     }
 }
 

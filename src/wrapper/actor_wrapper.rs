@@ -134,7 +134,6 @@ where
     }
 
     /// Returns a reference to the address of the actor
-    /// Returns a reference to the address of the actor
     pub fn get_address(&self) -> &ActorAddress {
         &self.address
     }

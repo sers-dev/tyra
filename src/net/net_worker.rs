@@ -1,7 +1,7 @@
 use crate::net::net_messages::{
     AddTcpConnection, AddUdpSocket, ReceiveTcpMessage, ReceiveUdpMessage, RemoveTcpConnection,
 };
-use crate::prelude::{Actor, ActorContext, ActorFactory, ActorResult, Handler};
+use crate::prelude::{Actor, ActorContext, ActorFactory, ActorResult, Handler, SerializedMessage};
 use io_arc::IoArc;
 use log::{debug, warn};
 use mio::net::{TcpStream, UdpSocket};
@@ -32,6 +32,11 @@ impl Actor for NetWorker {
         //we intentionally ignore if the actor system is stopped
         //we only react if the actor is explicitly stopped by the manager, because there might still be open connections that we don't want to drop
         Ok(ActorResult::Ok)
+    }
+
+    fn handle_serialized_message(&mut self, _msg: SerializedMessage, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+        //handle all outgoing messages here
+        return Ok(ActorResult::Ok);
     }
 }
 

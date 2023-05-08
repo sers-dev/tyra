@@ -55,7 +55,12 @@ impl ActorSystem {
             thread_pool_manager.add_pool_with_config(key, value.clone());
             thread_pool_max_actors.insert(key.clone(), value.actor_limit);
         }
-        let state = SystemState::new(wakeup_manager.clone(), Arc::new(thread_pool_max_actors));
+
+        //start the net_manager and provide the net_worker_lb_address to the systemstate
+        //also properly fill out remote_name in ActorAddress. hostname of the system is probably a good choice, will in most cases be equal to the system_name but that's okay
+        let net_worker_lb_address = ActorAddress::new("", "", "", "");
+        let remote_name = "todo".into();
+        let state = SystemState::new(wakeup_manager.clone(), Arc::new(thread_pool_max_actors), net_worker_lb_address, config.general.name.clone(), remote_name);
 
         let s = state.clone();
         let t = thread_pool_manager.clone();
@@ -216,9 +221,9 @@ impl ActorSystem {
     /// let actor_system = ActorSystem::new(actor_config);
     /// let actor_wrapper = actor_system.builder().spawn("test", TestFactory{}).unwrap();
     /// let address = actor_wrapper.get_address();
-    /// actor_system.send_to_address(address, SerializedMessage::new(Vec::new()));
+    /// actor_system.send_to_address(address, Vec::new());
     /// ```
-    pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
+    pub fn send_to_address<>(&self, address: &ActorAddress, msg: Vec<u8>) {
         self.state.send_to_address(address, msg);
     }
 

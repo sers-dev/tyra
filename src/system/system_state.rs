@@ -23,12 +23,18 @@ pub struct SystemState {
     is_force_stopped: Arc<AtomicBool>,
     forced_exit_code: Arc<AtomicI32>,
     use_forced_exit_code: Arc<AtomicBool>,
+    net_worker_lb_address: ActorAddress,
+    system_name: String,
+    remote_name: String,
 }
 
 impl SystemState {
     pub fn new(
         wakeup_manager: WakeupManager,
         max_actors_per_pool: Arc<DashMap<String, usize>>,
+        net_worker_lb_address: ActorAddress,
+        system_name: String,
+        remote_name: String,
     ) -> Self {
         Self {
             mailboxes: Arc::new(DashMap::new()),
@@ -41,6 +47,9 @@ impl SystemState {
             is_force_stopped: Arc::new(AtomicBool::new(false)),
             forced_exit_code: Arc::new(AtomicI32::new(0)),
             use_forced_exit_code: Arc::new(AtomicBool::new(false)),
+            net_worker_lb_address,
+            system_name,
+            remote_name,
         }
     }
 
@@ -100,11 +109,17 @@ impl SystemState {
         self.total_actor_count.load(Ordering::Relaxed)
     }
 
-    pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
-        let target = self.mailboxes.get(address);
+    pub fn send_to_address(&self, address: &ActorAddress, msg: Vec<u8>) {
+        let target = if address.system == self.system_name && address.remote == self.remote_name
+        {
+            self.mailboxes.get(address)
+        } else {
+            self.mailboxes.get(&self.net_worker_lb_address)
+        };
+
         if target.is_some() {
             let target = target.unwrap();
-            target.send_serialized(msg);
+            target.send_serialized(SerializedMessage::new(address.clone(), msg));
             if target.is_sleeping() {
                 self.wakeup_manager.wakeup(target.key().clone());
             }
