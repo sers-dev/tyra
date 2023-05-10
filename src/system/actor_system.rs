@@ -59,7 +59,7 @@ impl ActorSystem {
         //start the net_manager and provide the net_worker_lb_address to the systemstate
         //also properly fill out remote_name in ActorAddress. hostname of the system is probably a good choice, will in most cases be equal to the system_name but that's okay
         let net_worker_lb_address = ActorAddress::new("", "", "", "");
-        let remote_name = "todo".into();
+        let remote_name = "local".into();
         let state = SystemState::new(wakeup_manager.clone(), Arc::new(thread_pool_max_actors), net_worker_lb_address, config.general.name.clone(), remote_name);
 
         let s = state.clone();
