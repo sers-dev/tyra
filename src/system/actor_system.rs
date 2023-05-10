@@ -21,6 +21,7 @@ pub struct ActorSystem {
     thread_pool_manager: ThreadPoolManager,
     wakeup_manager: WakeupManager,
     name: String,
+    hostname: String,
     config: Arc<TyraConfig>,
     internal_actor_manager: InternalActorManager,
     sigint_received: Arc<AtomicBool>,
@@ -58,9 +59,8 @@ impl ActorSystem {
 
         //start the net_manager and provide the net_worker_lb_address to the systemstate
         //also properly fill out remote_name in ActorAddress. hostname of the system is probably a good choice, will in most cases be equal to the system_name but that's okay
-        let net_worker_lb_address = ActorAddress::new("", "", "", "");
-        let remote_name = "local".into();
-        let state = SystemState::new(wakeup_manager.clone(), Arc::new(thread_pool_max_actors), net_worker_lb_address, config.general.name.clone(), remote_name);
+        let net_worker_lb_address = ActorAddress::new(config.general.hostname.clone(), config.general.name.clone(), "", "");
+        let state = SystemState::new(wakeup_manager.clone(), Arc::new(thread_pool_max_actors), net_worker_lb_address, config.general.name.clone(), config.general.hostname.clone());
 
         let s = state.clone();
         let t = thread_pool_manager.clone();
@@ -79,6 +79,7 @@ impl ActorSystem {
             thread_pool_manager,
             wakeup_manager,
             name: config.general.name.clone(),
+            hostname: config.general.hostname.clone(),
             config: Arc::new(config.clone()),
             internal_actor_manager: InternalActorManager::new(),
             sigint_received: Arc::new(AtomicBool::new(false)),
@@ -378,5 +379,24 @@ impl ActorSystem {
     /// ```
     pub fn get_name(&self) -> &str {
         &self.name
+    }
+
+    /// Returns the configured hostname of the system
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ThreadPoolConfig};
+    /// use std::time::Duration;
+    /// use std::process::exit;
+    ///
+    /// let actor_config = TyraConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// let name = actor_system.get_hostname();
+    /// ```
+    pub fn get_hostname(&self) -> &str {
+        &self.hostname
     }
 }

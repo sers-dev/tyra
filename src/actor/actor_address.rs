@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Serialize, Deserialize)]
 pub struct ActorAddress {
-    pub remote: String,
+    pub hostname: String,
     pub system: String,
     pub pool: String,
     pub actor: String,
@@ -10,13 +10,13 @@ pub struct ActorAddress {
 
 impl ActorAddress {
     pub fn new(
-        remote: impl Into<String>,
+        hostname: impl Into<String>,
         system: impl Into<String>,
         pool: impl Into<String>,
         actor: impl Into<String>,
     ) -> Self {
         return Self {
-            remote: remote.into(),
+            hostname: hostname.into(),
             system: system.into(),
             pool: pool.into(),
             actor: actor.into(),

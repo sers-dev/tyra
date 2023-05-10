@@ -20,6 +20,9 @@
  - All routers now support a `SendToAllTargetsMessage<M>` that will forward `M` to all active targets
  - Users can now use `ActorBuilder.get_existing(address: ActorAddress)` to get an `ActorWrapper<A>` for an already existing `Actor`
    - `ActorBuilder.spawn()` will continue to return the `ActorWrapper<A>` for already existing actors
+ - renamed config `global.name` to `global.hostname`
+     - also renamed `ActorAddress.remote` to `ActorAddress.hostname`
+     - added new config `global.name` that defaults to the cargo package name or `tyra` if the application is not built using cargo
 
 # 1.0.0
 

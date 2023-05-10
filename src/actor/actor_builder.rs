@@ -186,7 +186,7 @@ where
         P: ActorFactory<A> + 'static,
     {
         let actor_address = ActorAddress::new(
-            "local",
+            self.system.get_hostname(),
             self.system.get_name(),
             self.actor_config.pool_name.clone(),
             name,

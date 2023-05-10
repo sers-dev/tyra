@@ -2,8 +2,11 @@
 # general actor settings
 [general]
 # name of the actor system
+# magic default: name of the cargo package; defaults to "tyra" if not built with cargo
+name = "$CARGO_PKG_NAME"
+# hostname of the actor system
 # magic default: system hostname
-name = "$HOSTNAME"
+hostname = "$HOSTNAME"
 # default mailbox size for every actor if no explicit size is set
 # 0 is treated as unlimited
 default_mailbox_size = 0

@@ -25,7 +25,7 @@ pub struct SystemState {
     use_forced_exit_code: Arc<AtomicBool>,
     net_worker_lb_address: ActorAddress,
     system_name: String,
-    remote_name: String,
+    hostname: String,
 }
 
 impl SystemState {
@@ -34,7 +34,7 @@ impl SystemState {
         max_actors_per_pool: Arc<DashMap<String, usize>>,
         net_worker_lb_address: ActorAddress,
         system_name: String,
-        remote_name: String,
+        hostname: String,
     ) -> Self {
         Self {
             mailboxes: Arc::new(DashMap::new()),
@@ -49,7 +49,7 @@ impl SystemState {
             use_forced_exit_code: Arc::new(AtomicBool::new(false)),
             net_worker_lb_address,
             system_name,
-            remote_name,
+            hostname,
         }
     }
 
@@ -110,7 +110,7 @@ impl SystemState {
     }
 
     pub fn send_to_address(&self, address: &ActorAddress, msg: Vec<u8>) {
-        let target = if address.system == self.system_name && address.remote == self.remote_name
+        let target = if address.system == self.system_name && address.hostname == self.hostname
         {
             self.mailboxes.get(address)
         } else {

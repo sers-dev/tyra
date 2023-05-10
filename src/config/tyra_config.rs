@@ -46,8 +46,11 @@ impl TyraConfig {
 
         let conf = config.build().expect("Could not fetch Config");
         let mut parsed: TyraConfig = conf.try_deserialize().expect("Could not parse Config");
-        if parsed.general.name == "$HOSTNAME" {
-            parsed.general.name = String::from(hostname::get().unwrap().to_str().unwrap());
+        if parsed.general.hostname == "$HOSTNAME" {
+            parsed.general.hostname = String::from(hostname::get().unwrap().to_str().unwrap());
+        }
+        if parsed.general.name == "$CARGO_PKG_NAME" {
+            parsed.general.name = option_env!("CARGO_PKG_NAME").unwrap_or("tyra").into();
         }
 
         Ok(parsed)
