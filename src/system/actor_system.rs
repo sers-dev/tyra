@@ -224,7 +224,7 @@ impl ActorSystem {
     /// let address = actor_wrapper.get_address();
     /// actor_system.send_to_address(address, Vec::new());
     /// ```
-    pub fn send_to_address<>(&self, address: &ActorAddress, msg: Vec<u8>) {
+    pub fn send_to_address(&self, address: &ActorAddress, msg: Vec<u8>) {
         self.state.send_to_address(address, msg);
     }
 
