@@ -13,6 +13,12 @@ use log::{debug, error, info, warn};
 use std::collections::HashMap;
 use std::error::Error;
 
+pub trait Router<A: Actor>: Actor + Handler<AddActorMessage<A>>{}
+
+impl<A> Router<A> for ShardedRouter<A>
+    where
+        A: Actor {}
+
 pub struct ShardedRouter<A>
 where
     A: Actor,
@@ -85,6 +91,7 @@ where
 /// router.send(AddActorMessage::new(actor.clone())).unwrap();
 /// router.send(FooBar{}).unwrap();
 /// ```
+#[derive(Clone)]
 pub struct ShardedRouterFactory {
     /// defines if the actor should automatically be stopped when the system is stopped. If set to false it's up to the user to setup their own shutdown process if they want a quick and clean exit
     stop_on_system_stop: bool,

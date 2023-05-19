@@ -17,4 +17,5 @@ pub mod prelude {
     pub use crate::routers::send_to_all_targets_message::SendToAllTargetsMessage;
     pub use crate::routers::sharded_router::ShardedRouter;
     pub use crate::routers::sharded_router::ShardedRouterFactory;
+    pub use crate::routers::sharded_router::Router;
 }

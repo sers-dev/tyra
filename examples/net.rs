@@ -3,6 +3,7 @@ use tyra::prelude::{
     ActorSystem, NetConfig, NetManagerFactory, NetProtocol, NetWorkerFactory, ThreadPoolConfig,
     TyraConfig,
 };
+use tyra::router::ShardedRouterFactory;
 
 fn main() {
     // generate config
@@ -20,6 +21,7 @@ fn main() {
     net_configs.push(NetConfig::new(NetProtocol::TCP, "0.0.0.0", 2022));
 
     let worker_factory = NetWorkerFactory::new();
+    let router_factory =  ShardedRouterFactory::new(false, false);
     let _actor = actor_system
         .builder()
         .set_pool_name("mio")
@@ -30,6 +32,7 @@ fn main() {
                 Duration::from_secs(10),
                 Duration::from_secs(3),
                 worker_factory,
+                router_factory,
                 3,
             ),
         )
