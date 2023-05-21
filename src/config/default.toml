@@ -41,6 +41,27 @@ threads_max = 3
 # num_cpu * factor = amount of threads to spawn for this pool
 threads_factor = 1
 
+# cluster pool settings
+# only enabled if `cluster.enabled` is set to `true`
+[thread_pool.config.cluster]
+# amount of actors that this thread_pool can handle
+# 0 is treated as unlimited
+actor_limit = 5
+# minimum amount of threads to spawn for this pool
+threads_min = 2
+# maximum amount of threads to spawn for this pool
+threads_max = 5
+# num_cpu * factor = amount of threads to spawn for this pool
+threads_factor = 1
+
+# cluster configuration
+[cluster]
+# defines if cluster functionality should be enabled
+enabled = false
+## addresses and port used by the cluster.
+## if port is omitted, the default of 2022 is used
+## if port is set to 0, a port will automatically be assigned
+hosts = ["tcp://0.0.0.0:2022", "udp://0.0.0.0:2023"]
 
 ##WIP: How cluster config could look like
 #####
@@ -48,9 +69,7 @@ threads_factor = 1
 #
 ## default cluster settings
 #[cluster]
-## addresses and port used by the cluster.
-## if port is omitted, the default of 2022 is used
-## if port is set to 0, a port will automatically be assigned
+
 #hosts = ["tcp://127.0.0.1:2022", "tcp://192.168.0.1:2022", "udp://0.0.0.0:2023"]
 #
 ## cluster groups the node should be part of. Valid values are "server", "client" and "proxy"

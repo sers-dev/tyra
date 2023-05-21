@@ -5,13 +5,12 @@ use crate::prelude::{
     Actor, ActorContext, ActorFactory, ActorInitMessage, ActorResult, ActorWrapper, Handler,
     NetConfig, NetProtocol,
 };
-use crate::router::{AddActorMessage, Router};
+use crate::router::Router;
 use io_arc::IoArc;
 use log::{debug, error, warn};
 use mio::event::Source;
 use mio::net::{TcpListener, TcpStream, UdpSocket};
 use mio::{Events, Interest, Poll, Token};
-use std::cmp::min;
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{BufRead, BufReader};
@@ -52,45 +51,14 @@ where
         + 'static,
     R: Router<T> + Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage>,
 {
-    pub fn new<F, FF>(
-        context: ActorContext<Self>,
+    pub fn new(
         net_configs: Vec<NetConfig>,
         graceful_shutdown_time_in_seconds: Duration,
         on_stop_udp_timeout: Duration,
-        worker_factory: F,
-        router_factory: FF,
-        max_worker_count: usize,
+        workers: Vec<ActorWrapper<T>>,
+        router: ActorWrapper<R>,
     ) -> Self
-    where
-        F: ActorFactory<T> + Clone + 'static,
-        FF: ActorFactory<R> + Clone + 'static,
-        R: Router<T> + Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage>,
     {
-        let pool_name = &context.actor_ref.get_address().pool;
-
-        let router_name = format!("{}-net-router", context.actor_ref.get_address().actor);
-        let router = context
-            .system
-            .builder()
-            .set_pool_name(pool_name)
-            .spawn(router_name, router_factory)
-            .unwrap();
-        let max_pool_count = context
-            .system
-            .get_available_actor_count_for_pool(pool_name)
-            .unwrap();
-        let worker_count = min(max_worker_count, max_pool_count);
-        let worker_name = format!("{}-net-worker", context.actor_ref.get_address().actor);
-        let workers = context
-            .system
-            .builder()
-            .set_pool_name(pool_name)
-            .spawn_multiple(worker_name, worker_factory.clone(), worker_count)
-            .unwrap();
-        for worker in &workers {
-            router.send(AddActorMessage::new(worker.clone())).unwrap();
-        }
-
         let is_stopping = Arc::new(AtomicBool::new(false));
         let is_stopped = Arc::new(AtomicBool::new(false));
 
@@ -178,71 +146,60 @@ where
     }
 }
 
-pub struct NetManagerFactory<F, T, FF, R>
+pub struct NetManagerFactory<T, R>
 where
 
-    F: ActorFactory<T> + Clone + 'static,
     T: Handler<AddUdpSocket>
         + Handler<ReceiveUdpMessage>
         + Handler<AddTcpConnection>
         + Handler<RemoveTcpConnection>
         + Handler<ReceiveTcpMessage>
         + 'static,
-    FF: ActorFactory<R> + Clone + 'static,
     R: Router<T> + Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage>,
 {
     net_configs: Vec<NetConfig>,
     graceful_shutdown_time_in_seconds: Duration,
     on_stop_udp_timeout: Duration,
-    worker_factory: F,
-    router_factory: FF,
-    max_worker_count: usize,
-    phantom: PhantomData<T>,
-    phantom_two: PhantomData<R>
+    workers: Vec<ActorWrapper<T>>,
+    router: ActorWrapper<R>,
+    phantom: PhantomData<R>
 }
 
-impl<F, T, FF, R> NetManagerFactory<F, T, FF, R>
+impl<T, R> NetManagerFactory<T, R>
 where
-    F: ActorFactory<T> + Clone + 'static,
     T: Handler<AddUdpSocket>
         + Handler<ReceiveUdpMessage>
         + Handler<AddTcpConnection>
         + Handler<RemoveTcpConnection>
         + Handler<ReceiveTcpMessage>
         + 'static,
-    FF: ActorFactory<R> + Clone + 'static,
     R: Router<T> + Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage>,
 {
     pub fn new(
         net_configs: Vec<NetConfig>,
         graceful_shutdown_time_in_seconds: Duration,
         on_stop_udp_timeout: Duration,
-        worker_factory: F,
-        router_factory: FF,
-        max_worker_count: usize,
+        workers: Vec<ActorWrapper<T>>,
+        router: ActorWrapper<R>,
     ) -> Self {
         return Self {
             net_configs,
             graceful_shutdown_time_in_seconds,
             on_stop_udp_timeout,
-            worker_factory,
-            router_factory,
-            max_worker_count,
+            workers,
+            router,
             phantom: PhantomData,
-            phantom_two: PhantomData
         };
     }
 }
-impl<F, T, FF, R> ActorFactory<NetManager<T, R>> for NetManagerFactory<F, T, FF, R>
+impl<T, R> ActorFactory<NetManager<T, R>> for NetManagerFactory<T, R>
 where
-    F: ActorFactory<T> + Clone + 'static,
     T: Handler<AddUdpSocket>
         + Handler<ReceiveUdpMessage>
         + Handler<AddTcpConnection>
         + Handler<RemoveTcpConnection>
         + Handler<ReceiveTcpMessage>
         + 'static,
-    FF: ActorFactory<R> + Clone + 'static,
     R: Router<T> + Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage>,
 {
     fn new_actor(
@@ -251,13 +208,11 @@ where
     ) -> Result<NetManager<T, R>, Box<dyn Error>> {
         context.actor_ref.send(ActorInitMessage::new()).unwrap();
         return Ok(NetManager::new(
-            context,
             self.net_configs.clone(),
             self.graceful_shutdown_time_in_seconds,
             self.on_stop_udp_timeout,
-            self.worker_factory.clone(),
-            self.router_factory.clone(),
-            self.max_worker_count,
+            self.workers.clone(),
+            self.router.clone(),
         ));
     }
 }

@@ -1,3 +1,4 @@
+use std::hash::{Hash, Hasher};
 use crate::message::actor_message::DefaultActorMessage;
 use serde::{Deserialize, Serialize};
 use crate::prelude::ActorAddress;
@@ -10,10 +11,16 @@ use crate::prelude::ActorAddress;
 /// and it may also include some additional fields to make deserialization easier for end users
 ///
 /// [ActorSystem.send_to_address](../prelude/struct.ActorSystem.html#method.send_to_address) uses this object to send serialized messages to Actors
-#[derive(Hash, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct SerializedMessage {
     pub destination_address: ActorAddress,
     pub content: Vec<u8>,
+}
+
+impl Hash for SerializedMessage {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.destination_address.hash(state);
+    }
 }
 
 impl SerializedMessage {

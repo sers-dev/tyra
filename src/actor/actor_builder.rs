@@ -312,7 +312,7 @@ where
     ///
     ///     let pool_name = "default";
     ///     let actor_name = "test";
-    ///     let address = ActorAddress::new("local", actor_system.get_name(), pool_name, actor_name);
+    ///     let address = ActorAddress::new(actor_system.get_hostname(), actor_system.get_name(), pool_name, actor_name);
     ///
     ///     //this does not work, because the actor does not exist yet
     ///     let this_is_not_working :Result<ActorWrapper<BrokenActor>, ActorError> = actor_system.builder().get_existing(&address);
