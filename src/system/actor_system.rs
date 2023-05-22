@@ -3,7 +3,7 @@ use crate::actor::actor_builder::ActorBuilder;
 use crate::config::pool_config::ThreadPoolConfig;
 use crate::config::tyra_config::{TyraConfig, DEFAULT_POOL, NET_CLUSTER_POOL, NET_CLUSTER_LB};
 use crate::message::serialized_message::SerializedMessage;
-use crate::prelude::{Actor, ActorError, Handler, NetConfig, NetManagerFactory, NetProtocol, NetWorkerFactory};
+use crate::prelude::{Actor, ActorError, Handler};
 use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::system_state::SystemState;
 use crate::system::thread_pool_manager::ThreadPoolManager;
@@ -13,8 +13,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use regex::Regex;
-use crate::router::{AddActorMessage, ShardedRouterFactory};
+use crate::system::cluster::Cluster;
 
 /// Manages thread pools and actors
 #[derive(Clone)]
@@ -99,69 +98,10 @@ impl ActorSystem {
 
         system.internal_actor_manager.init(system.clone());
         if config.cluster.enabled {
-            system.init_cluster();
+            Cluster::init(&system, &config.cluster);
         }
 
         system
-    }
-
-    fn init_cluster(&self) {
-        let mut net_configs = Vec::new();
-        let regex = Regex::new("(tcp|udp):\\/\\/(.*):(.*)").unwrap();
-        for host in &self.config.cluster.hosts {
-            let captures = regex.captures(host);
-            if captures.is_none() {
-                return;
-            }
-            let captures = captures.unwrap();
-            if captures.len() < 3 {
-                return;
-            }
-            let protocol = if &captures[1] == "tcp" {
-                NetProtocol::TCP
-            } else {
-                NetProtocol::UDP
-            };
-
-            let port = if captures.len() == 4 {
-                captures[3].parse::<usize>().unwrap()
-            } else {
-                0 as usize
-            };
-
-            net_configs.push(NetConfig::new(protocol, &captures[2], port));
-
-        }
-
-        let worker_factory = NetWorkerFactory::new();
-        let router_factory =  ShardedRouterFactory::new(false, false);
-        let router = self.builder().set_pool_name(NET_CLUSTER_POOL).spawn(NET_CLUSTER_LB, router_factory).unwrap();
-
-        let worker_count = self
-            .get_available_actor_count_for_pool(NET_CLUSTER_POOL)
-            .unwrap() - 1;
-        let workers = self
-            .builder()
-            .set_pool_name(NET_CLUSTER_POOL)
-            .spawn_multiple("cluster-worker", worker_factory.clone(), worker_count)
-            .unwrap();
-        for worker in &workers {
-            router.send(AddActorMessage::new(worker.clone())).unwrap();
-        }
-        let _actor = self
-            .builder()
-            .set_pool_name(NET_CLUSTER_POOL)
-            .spawn(
-                "cluster-manager",
-                NetManagerFactory::new(
-                    net_configs,
-                    Duration::from_secs(10),
-                    Duration::from_secs(3),
-                    workers,
-                    router,
-                ),
-            )
-            .unwrap();
     }
 
     /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyra/blob/master/src/config/default.toml)

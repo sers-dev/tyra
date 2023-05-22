@@ -1,10 +1,7 @@
 use crate::net::net_messages::{
     AddTcpConnection, AddUdpSocket, ReceiveTcpMessage, ReceiveUdpMessage, RemoveTcpConnection,
 };
-use crate::prelude::{
-    Actor, ActorContext, ActorFactory, ActorInitMessage, ActorResult, ActorWrapper, Handler,
-    NetConfig, NetProtocol,
-};
+use crate::prelude::{Actor, ActorContext, ActorFactory, ActorInitMessage, ActorResult, ActorWrapper, Handler, NetConfig, NetConnectionType, NetProtocol};
 use crate::router::Router;
 use io_arc::IoArc;
 use log::{debug, error, warn};
@@ -255,6 +252,10 @@ where
             let mut i = 0;
             net_configs.sort_by_key(|c| c.protocol);
             for net_config in &net_configs {
+                if net_config.connection_type == NetConnectionType::CLIENT {
+                    println!("TEST: {:?}", net_config);
+                    continue;
+                }
                 let token = Token(i);
                 i += 1;
 

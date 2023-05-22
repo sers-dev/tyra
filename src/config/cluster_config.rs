@@ -4,4 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct ClusterConfig {
     pub enabled: bool,
     pub hosts: Vec<String>,
+    pub members: Vec<String>,
 }

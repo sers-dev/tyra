@@ -62,6 +62,14 @@ enabled = false
 ## if port is omitted, the default of 2022 is used
 ## if port is set to 0, a port will automatically be assigned
 hosts = ["tcp://0.0.0.0:2022", "udp://0.0.0.0:2023"]
+## list of cluster members, entries can include IPs and DNS records, multi A records are supported as well
+## if the same node is listed multiple times with different ip addresses, only the first working occurence will be used as a connection
+## if port is omitted, the default of 2022 is used
+members = [
+    "tcp://registry.git.sers.dev",
+    "tcp://git.sers.dev",
+    "tcp://abc.sers.dev:1234",
+]
 
 ##WIP: How cluster config could look like
 #####
