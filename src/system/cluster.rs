@@ -71,12 +71,7 @@ impl Cluster {
 
     }
 
-    pub fn init(system: &ActorSystem, cluster_config: &ClusterConfig) {
-
-        let server_configs = Self::generate_net_config(&cluster_config.hosts, NetConnectionType::SERVER);
-        let client_configs = Self::generate_net_config(&cluster_config.members, NetConnectionType::CLIENT);
-        let client_configs = Self::resolve_dns(&client_configs);
-
+    fn setup_actors(system: &ActorSystem, server_configs: Vec<NetConfig>, client_configs: Vec<NetConfig>) {
         let worker_factory = NetWorkerFactory::new();
         let router_factory =  ShardedRouterFactory::new(false, false);
         let router = system.builder().set_pool_name(NET_CLUSTER_POOL).spawn(NET_CLUSTER_LB, router_factory).unwrap();
@@ -106,5 +101,16 @@ impl Cluster {
                 ),
             )
             .unwrap();
+    }
+
+    pub fn init(system: &ActorSystem, cluster_config: &ClusterConfig) {
+
+        let server_configs = Self::generate_net_config(&cluster_config.hosts, NetConnectionType::SERVER);
+        let client_configs = Self::generate_net_config(&cluster_config.members, NetConnectionType::CLIENT);
+        let client_configs = Self::resolve_dns(&client_configs);
+
+        Self::setup_actors(system, server_configs, client_configs);
+
+
     }
 }
