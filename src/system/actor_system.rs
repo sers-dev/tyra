@@ -1,7 +1,7 @@
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_builder::ActorBuilder;
 use crate::config::pool_config::ThreadPoolConfig;
-use crate::config::tyra_config::{TyraConfig, DEFAULT_POOL, NET_CLUSTER_POOL, NET_CLUSTER_LB};
+use crate::config::tyra_config::{TyraConfig, DEFAULT_POOL};
 use crate::message::serialized_message::SerializedMessage;
 use crate::prelude::{Actor, ActorError, Handler};
 use crate::system::internal_actor_manager::InternalActorManager;
@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use crate::system::cluster::Cluster;
+use crate::system::cluster::{Cluster, CLUSTER_LB, CLUSTER_POOL};
 
 /// Manages thread pools and actors
 #[derive(Clone)]
@@ -61,7 +61,7 @@ impl ActorSystem {
             thread_pool_max_actors.insert(key.clone(), value.actor_limit);
         }
 
-        let net_worker_lb_address = ActorAddress::new(config.general.hostname.clone(), config.general.name.clone(), NET_CLUSTER_POOL, NET_CLUSTER_LB);
+        let net_worker_lb_address = ActorAddress::new(config.general.hostname.clone(), config.general.name.clone(), CLUSTER_POOL, CLUSTER_LB);
 
         let state = SystemState::new(wakeup_manager.clone(), Arc::new(thread_pool_max_actors), net_worker_lb_address, config.general.name.clone(), config.general.hostname.clone());
 

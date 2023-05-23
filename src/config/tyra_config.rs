@@ -7,8 +7,6 @@ use serde::{Deserialize, Serialize};
 use crate::prelude::ClusterConfig;
 
 pub const DEFAULT_POOL: &str = "default";
-pub const NET_CLUSTER_POOL: &str = "cluster";
-pub const NET_CLUSTER_LB: &str = "cluster-router";
 
 /// See [default.toml](https://github.com/sers-dev/tyra/blob/master/src/config/default.toml) for documentation of all configurations & their defaults
 #[derive(Debug, Serialize, Deserialize, Clone)]

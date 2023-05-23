@@ -64,6 +64,7 @@ impl Handler<ReceiveTcpMessage> for NetWorker {
         _context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
         let stream = self.streams.get_mut(&msg.stream_id);
+
         if stream.is_none() {
             // temporary implementation for our instant http response, later on we won't have to care here if the stream is active, we'll just forward the message
             debug!("Stream ID no longer exists, can't reply to request");

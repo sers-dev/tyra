@@ -33,7 +33,8 @@ where
     on_stop_udp_timeout: Duration,
     router: ActorWrapper<R>,
     workers: Vec<ActorWrapper<T>>,
-    net_configs: Vec<NetConfig>,
+    server_configs: Vec<NetConfig>,
+    client_configs: Vec<NetConfig>,
     is_stopping: Arc<AtomicBool>,
     is_stopped: Arc<AtomicBool>,
 }
@@ -49,7 +50,8 @@ where
     R: Router<T> + Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage>,
 {
     pub fn new(
-        net_configs: Vec<NetConfig>,
+        server_configs: Vec<NetConfig>,
+        client_configs: Vec<NetConfig>,
         graceful_shutdown_time_in_seconds: Duration,
         on_stop_udp_timeout: Duration,
         workers: Vec<ActorWrapper<T>>,
@@ -64,7 +66,8 @@ where
             on_stop_udp_timeout,
             router,
             workers,
-            net_configs,
+            server_configs,
+            client_configs,
             is_stopping,
             is_stopped,
         };
@@ -90,7 +93,7 @@ where
         self.is_stopping.store(true, Ordering::Relaxed);
 
         for _ in 0..iterations {
-            for net_config in &self.net_configs {
+            for net_config in &self.server_configs {
                 let address = format!("{}:{}", net_config.host, net_config.port);
                 match net_config.protocol {
                     NetProtocol::TCP => {
@@ -123,7 +126,7 @@ where
         }
 
         self.is_stopped.store(true, Ordering::Relaxed);
-        for net_config in &self.net_configs {
+        for net_config in &self.server_configs {
             let address = format!("{}:{}", net_config.host, net_config.port);
             match net_config.protocol {
                 NetProtocol::TCP => {
@@ -154,7 +157,8 @@ where
         + 'static,
     R: Router<T> + Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage>,
 {
-    net_configs: Vec<NetConfig>,
+    server_configs: Vec<NetConfig>,
+    client_configs: Vec<NetConfig>,
     graceful_shutdown_time_in_seconds: Duration,
     on_stop_udp_timeout: Duration,
     workers: Vec<ActorWrapper<T>>,
@@ -173,14 +177,16 @@ where
     R: Router<T> + Handler<AddUdpSocket> + Handler<ReceiveUdpMessage> + Handler<AddTcpConnection> + Handler<RemoveTcpConnection> + Handler<ReceiveTcpMessage>,
 {
     pub fn new(
-        net_configs: Vec<NetConfig>,
+        server_configs: Vec<NetConfig>,
+        client_configs: Vec<NetConfig>,
         graceful_shutdown_time_in_seconds: Duration,
         on_stop_udp_timeout: Duration,
         workers: Vec<ActorWrapper<T>>,
         router: ActorWrapper<R>,
     ) -> Self {
         return Self {
-            net_configs,
+            server_configs,
+            client_configs,
             graceful_shutdown_time_in_seconds,
             on_stop_udp_timeout,
             workers,
@@ -205,7 +211,8 @@ where
     ) -> Result<NetManager<T, R>, Box<dyn Error>> {
         context.actor_ref.send(ActorInitMessage::new()).unwrap();
         return Ok(NetManager::new(
-            self.net_configs.clone(),
+            self.server_configs.clone(),
+            self.client_configs.clone(),
             self.graceful_shutdown_time_in_seconds,
             self.on_stop_udp_timeout,
             self.workers.clone(),
@@ -233,7 +240,8 @@ where
         let router = self.router.clone();
         let is_stopping = self.is_stopping.clone();
         let is_stopped = self.is_stopped.clone();
-        let mut net_configs = self.net_configs.clone();
+        let mut server_configs = self.server_configs.clone();
+        let mut client_configs = self.client_configs.clone();
         let mut last_udp_message_received = Instant::now();
         let on_stop_udp_timeout = self.on_stop_udp_timeout.clone();
         let context = context.clone();
@@ -250,8 +258,10 @@ where
             let mut poll = poll.unwrap();
 
             let mut i = 0;
-            net_configs.sort_by_key(|c| c.protocol);
-            for net_config in &net_configs {
+            server_configs.sort_by_key(|c| c.protocol);
+            client_configs.sort_by_key(|c| c.protocol);
+            server_configs.append(&mut client_configs);
+            for net_config in &server_configs {
                 if net_config.connection_type == NetConnectionType::CLIENT {
                     println!("TEST: {:?}", net_config);
                     continue;
@@ -309,7 +319,7 @@ where
                 }
             }
             let num_tcp_listeners = tcp_listeners.len();
-            let num_total_listeners = net_configs.len();
+            let num_total_listeners = server_configs.len();
 
             let mut events = Events::with_capacity(1024);
             let mut streams = HashMap::new();
