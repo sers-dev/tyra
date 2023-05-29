@@ -1,6 +1,9 @@
+use simple_logger::SimpleLogger;
 use tyra::prelude::*;
 
 fn main() {
+    SimpleLogger::new().init().unwrap();
+
     // generate config
     let mut actor_config = TyraConfig::new().unwrap();
     actor_config.cluster.enabled = true;

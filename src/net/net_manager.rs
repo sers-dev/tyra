@@ -262,13 +262,14 @@ where
             client_configs.sort_by_key(|c| c.protocol);
             server_configs.append(&mut client_configs);
             for net_config in &server_configs {
+
+                let token = Token(i);
+                i += 1;
+
                 if net_config.connection_type == NetConnectionType::CLIENT {
                     println!("TEST: {:?}", net_config);
                     continue;
                 }
-                let token = Token(i);
-                i += 1;
-
                 let address = format!("{}:{}", net_config.host, net_config.port)
                     .parse()
                     .unwrap();
@@ -330,7 +331,7 @@ where
                     return;
                 }
 
-                let res = poll.poll(&mut events, None);
+                let res = poll.poll(&mut events, Some(Duration::from_secs(10)));
                 if res.is_err() {
                     debug!("Can't poll Network Events");
                     continue;
@@ -432,7 +433,6 @@ where
                                         return res;
                                     }
                                     Err(err) => {
-                                        warn!("Could not read from stream: {:?}", err);
                                         return String::from("");
                                     }
                                 })
