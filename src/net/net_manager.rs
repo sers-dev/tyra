@@ -10,7 +10,7 @@ use mio::net::{TcpListener, TcpStream, UdpSocket};
 use mio::{Events, Interest, Poll, Token};
 use std::collections::HashMap;
 use std::error::Error;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Write};
 use std::marker::PhantomData;
 use std::net::Shutdown;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -267,7 +267,23 @@ where
                 i += 1;
 
                 if net_config.connection_type == NetConnectionType::CLIENT {
-                    println!("TEST: {:?}", net_config);
+                    let client = TcpStream::connect(format!("{}:{}", net_config.host, net_config.port).parse().unwrap());
+                    if client.is_err() {
+                        warn!("Can't connect to client: {:?}", net_config);
+                        continue;
+                    }
+                    let mut client = client.unwrap();
+                    let res =
+                        poll.registry()
+                            .register(&mut client, token, Interest::READABLE);
+                    if res.is_err() {
+                        error!("Can't register TCP Stream: {:?}", res.err());
+                        is_stopped.store(true, Ordering::Relaxed);
+                        let _ = context.actor_ref.stop();
+                        return;
+                    }
+                    //tcp_listeners.insert(token, client);
+                    println!("!!!!!!!");
                     continue;
                 }
                 let address = format!("{}:{}", net_config.host, net_config.port)
@@ -348,6 +364,8 @@ where
                     }
                     let token = &event.token();
                     if token.0 < num_tcp_listeners {
+                        println!("!!!!!!!");
+
                         let listener = tcp_listeners.get(token);
                         if listener.is_none() {
                             warn!("Can't find TcpListener for {:?}", token);

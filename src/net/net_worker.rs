@@ -3,7 +3,7 @@ use crate::net::net_messages::{
 };
 use crate::prelude::{Actor, ActorContext, ActorFactory, ActorResult, Handler, SerializedMessage};
 use io_arc::IoArc;
-use log::{debug, warn};
+use log::{debug, trace, warn};
 use mio::net::{TcpStream, UdpSocket};
 use std::collections::HashMap;
 use std::error::Error;
@@ -96,6 +96,7 @@ impl Handler<AddTcpConnection> for NetWorker {
         msg: AddTcpConnection,
         _context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
+        trace!("Add TCP Connection: {:?}", msg.address);
         let key_already_exists = self.streams.remove(&msg.stream_id);
         if key_already_exists.is_some() {
             warn!("Stream ID already exists, dropping old  one in favor of the new connection.");
@@ -116,6 +117,8 @@ impl Handler<RemoveTcpConnection> for NetWorker {
         msg: RemoveTcpConnection,
         _context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
+        trace!("Remove TCP Connection: {:?}", msg.stream_id);
+
         let _ = self.streams.remove(&msg.stream_id);
         return Ok(ActorResult::Ok);
     }
