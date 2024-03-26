@@ -167,7 +167,7 @@ impl ActorSystem {
     /// ```
     pub fn add_pool_with_config(&self, name: &str, thread_pool_config: ThreadPoolConfig) {
         self.state
-            .add_pool_actor_limit(String::from(name.clone()), thread_pool_config.actor_limit);
+            .add_pool_actor_limit(String::from(name), thread_pool_config.actor_limit);
         self.thread_pool_manager
             .add_pool_with_config(name, thread_pool_config);
     }

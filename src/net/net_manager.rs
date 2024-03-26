@@ -10,7 +10,7 @@ use mio::net::{TcpListener, TcpStream, UdpSocket};
 use mio::{Events, Interest, Poll, Token};
 use std::collections::HashMap;
 use std::error::Error;
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader};
 use std::marker::PhantomData;
 use std::net::Shutdown;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -450,7 +450,7 @@ where
                                     Ok(res) => {
                                         return res;
                                     }
-                                    Err(err) => {
+                                    Err(_err) => {
                                         return String::from("");
                                     }
                                 })
