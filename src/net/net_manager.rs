@@ -85,14 +85,28 @@ where
 
 {
     fn pre_stop(&mut self, _context: &ActorContext<Self>) {
-        let iterations = 10;
-        let iterate_graceful_stop = self.graceful_shutdown_time_in_seconds / iterations;
+        let iterate_graceful_stop_sleep_duration_in_seconds = 1;
+        let sleep_duration = Duration::from_secs(iterate_graceful_stop_sleep_duration_in_seconds);
 
-        sleep(iterate_graceful_stop);
+        let iterations = if self.graceful_shutdown_time_in_seconds.as_secs() > 0 {
+            self.graceful_shutdown_time_in_seconds.as_secs() / iterate_graceful_stop_sleep_duration_in_seconds
+        } else {
+            0
+        };
+
+        sleep(sleep_duration);
 
         self.is_stopping.store(true, Ordering::Relaxed);
 
-        for _ in 0..iterations {
+        let mut i = 0;
+        loop {
+            if self.graceful_shutdown_time_in_seconds.as_secs() > 0 {
+                if i > iterations {
+                    return;
+                }
+                i += 1;
+            }
+
             for net_config in &self.server_configs {
                 let address = format!("{}:{}", net_config.host, net_config.port);
                 match net_config.protocol {
@@ -113,7 +127,7 @@ where
             if self.is_stopped.load(Ordering::Relaxed) {
                 return;
             }
-            sleep(iterate_graceful_stop);
+            sleep(sleep_duration);
         }
     }
     fn post_stop(&mut self, _context: &ActorContext<Self>) {
@@ -283,7 +297,7 @@ where
                         return;
                     }
                     //tcp_listeners.insert(token, client);
-                    println!("!!!!!!!");
+                    println!("!!!!!!?");
                     continue;
                 }
                 let address = format!("{}:{}", net_config.host, net_config.port)

@@ -143,7 +143,7 @@ impl Handler<Finish> for Aggregator {
                 "{} It took {:?} to finish {} actors",
                 self.name, duration, self.total_actors
             );
-            self.ctx.system.stop(Duration::from_secs(60));
+            self.ctx.system.stop();
         }
         Ok(ActorResult::Ok)
     }

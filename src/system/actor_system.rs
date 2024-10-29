@@ -88,17 +88,18 @@ impl ActorSystem {
             sigint_received: Arc::new(AtomicBool::new(false)),
         };
 
-        if config.general.signal_graceful_timeout_in_seconds > 0 {
+        if config.general.enable_signal_handling {
             let sys = system.clone();
+            let graceful_timeout = config.general.graceful_timeout_in_seconds.clone();
             ctrlc::set_handler(move || {
-                sys.sigint_handler(Duration::from_secs(300));
+                sys.sigint_handler(Duration::from_secs(graceful_timeout));
             })
             .unwrap();
         }
 
         system.internal_actor_manager.init(system.clone());
         if config.cluster.enabled {
-            Cluster::init(&system, &config.cluster);
+            Cluster::init(&system, &config.cluster, Duration::from_secs(config.general.graceful_timeout_in_seconds));
         }
 
         system
@@ -116,7 +117,7 @@ impl ActorSystem {
     ///
     /// let mut actor_config = TyraConfig::new().unwrap();
     /// //disable automatic setup of sigint handling, so that we can set it manually
-    /// actor_config.general.signal_graceful_timeout_in_seconds = 0;
+    /// actor_config.general.enable_signal_handling = false;
     /// let actor_system = ActorSystem::new(actor_config);
     /// ctrlc::set_handler(move || {actor_system.sigint_handler(Duration::from_secs(60));}).unwrap();
     /// ```
@@ -125,7 +126,7 @@ impl ActorSystem {
             self.force_stop();
         }
         self.sigint_received.store(true, Ordering::Relaxed);
-        self.stop(graceful_termination_timeout);
+        self.stop_override_graceful_termination_timeout(graceful_termination_timeout);
     }
     /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyra/blob/master/src/config/default.toml)
     ///
@@ -289,10 +290,31 @@ impl ActorSystem {
     ///
     /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
-    /// actor_system.stop(Duration::from_secs(1));
+    /// actor_system.stop_override_graceful_termination_timeout(Duration::from_secs(1));
     /// ```
-    pub fn stop(&self, graceful_termination_timeout: Duration) {
+    pub fn stop_override_graceful_termination_timeout(&self, graceful_termination_timeout: Duration) {
         self.state.stop(graceful_termination_timeout);
+    }
+
+    /// Sends a SystemStopMessage to all running Actors, and wakes them up if necessary.
+    /// Users can implement their own clean system stop behavior, by implementing [Actor.on_system_stop](../prelude/trait.Actor.html#method.on_system_stop) and [Actor.on_actor_stop](../prelude/trait.Actor.html#method.on_actor_stop)
+    ///
+    /// System will stop after all actors have been stopped or after `general.graceful_timeout_in_seconds`
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ThreadPoolConfig};
+    /// use std::time::Duration;
+    ///
+    /// let actor_config = TyraConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// actor_system.stop();
+    /// ```
+    pub fn stop(&self) {
+        self.stop_override_graceful_termination_timeout(Duration::from_secs(self.config.general.graceful_timeout_in_seconds));
     }
 
     pub fn force_stop(&self) {
@@ -315,7 +337,7 @@ impl ActorSystem {
     /// ```
     pub fn stop_with_code(&self, graceful_termination_timeout: Duration, code: i32) {
         self.state.use_forced_exit_code(code);
-        self.stop(graceful_termination_timeout);
+        self.stop_override_graceful_termination_timeout(graceful_termination_timeout);
     }
 
     /// Waits for the system to stop
@@ -339,7 +361,7 @@ impl ActorSystem {
     ///
     /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
-    /// actor_system.stop(Duration::from_secs(3));
+    /// actor_system.stop();
     /// exit(actor_system.await_shutdown());
     /// ```
     pub fn await_shutdown(&self) -> i32 {

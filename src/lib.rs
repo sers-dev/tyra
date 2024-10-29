@@ -59,7 +59,7 @@
 //!
 //!     // cleanup
 //!     actor.stop().unwrap();
-//!     actor_system.stop(Duration::from_millis(5000));
+//!     actor_system.stop();
 //!     exit(actor_system.await_shutdown());
 //! }
 //! ```

@@ -7,5 +7,6 @@ pub struct GeneralConfig {
     pub default_mailbox_size: usize,
     pub default_message_throughput: usize,
     pub override_panic_hook: bool,
-    pub signal_graceful_timeout_in_seconds: usize,
+    pub enable_signal_handling: bool,
+    pub graceful_timeout_in_seconds: u64,
 }

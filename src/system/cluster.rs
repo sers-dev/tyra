@@ -73,7 +73,7 @@ impl Cluster {
 
     }
 
-    fn setup_actors(system: &ActorSystem, server_configs: Vec<NetConfig>, client_configs: Vec<NetConfig>) {
+    fn setup_actors(system: &ActorSystem, server_configs: Vec<NetConfig>, client_configs: Vec<NetConfig>, graceful_timeout_in_seconds: Duration) {
         let worker_factory = NetWorkerFactory::new();
         let router_factory =  ShardedRouterFactory::new(false, false);
         let router = system.builder().set_pool_name(CLUSTER_POOL).spawn(CLUSTER_LB, router_factory).unwrap();
@@ -97,7 +97,7 @@ impl Cluster {
                 NetManagerFactory::new(
                     server_configs,
                     client_configs,
-                    Duration::from_secs(10),
+                    graceful_timeout_in_seconds,
                     Duration::from_secs(3),
                     workers,
                     router,
@@ -106,13 +106,13 @@ impl Cluster {
             .unwrap();
     }
 
-    pub fn init(system: &ActorSystem, cluster_config: &ClusterConfig) {
+    pub fn init(system: &ActorSystem, cluster_config: &ClusterConfig, graceful_timeout_in_seconds: Duration) {
 
         let server_configs = Self::generate_net_config(&cluster_config.hosts, NetConnectionType::SERVER);
         let client_configs = Self::generate_net_config(&cluster_config.members, NetConnectionType::CLIENT);
         let client_configs = Self::resolve_dns(&client_configs);
 
-        Self::setup_actors(system, server_configs, client_configs);
+        Self::setup_actors(system, server_configs, client_configs, graceful_timeout_in_seconds);
 
 
     }

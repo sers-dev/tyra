@@ -15,7 +15,10 @@
    - if a message is really intended to be sent it should obviously also implement `Deserialize`
  - Added `.is_mailbox_stopped()`, `is_stopped()` and `wait_for_stop()` to `ActorWrapper<A>`
  - Added ability to re-initialize `ActorWrapper<A>` after deserializing
- - Added `general.signal_graceful_timeout_in_seconds` to config
+ - Added `general.graceful_timeout_in_seconds` to config
+   - reworked `system.stop()` to make use of configured value
+     - added `system.stop_override_graceful_termination_timeout(Duration)` to allow override of configured default
+   - value is also used for signal handling graceful timeout and timeout for network manager
  - Added `ActorBuilder<A>.spawn_multiple()`
  - All routers now support a `SendToAllTargetsMessage<M>` that will forward `M` to all active targets
  - Users can now use `ActorBuilder.get_existing(address: ActorAddress)` to get an `ActorWrapper<A>` for an already existing `Actor`

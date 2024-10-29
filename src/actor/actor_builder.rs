@@ -177,7 +177,7 @@ where
     ///     let err = this_is_not_working_either.err().unwrap();
     ///     assert_eq!(err, ActorError::InvalidActorTypeError, "Error is not correct");
     ///
-    ///     actor_system.stop(Duration::from_millis(3000));
+    ///     actor_system.stop();
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
     /// ```
@@ -334,7 +334,7 @@ where
     ///     let this_works :Result<ActorWrapper<TestActor>, ActorError> = actor_system.builder().get_existing(&address);
     ///     assert!(this_works.is_ok(), "The TestActor did not exist");
     ///
-    ///     actor_system.stop(Duration::from_millis(3000));
+    ///     actor_system.stop();
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
     /// ```
@@ -390,7 +390,7 @@ where
     ///     let address = ActorAddress::new("remote", "system", "pool", "actor");
     ///     let actor_wrapper :ActorWrapper<TestActor> = actor_system.builder().init_after_deserialize(&address);
     ///
-    ///     actor_system.stop(Duration::from_millis(3000));
+    ///     actor_system.stop();
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
     /// ```
@@ -465,7 +465,7 @@ where
     ///     let err = pool_full.err().unwrap();
     ///     assert_eq!(err, ActorError::ThreadPoolHasTooManyActorsError, "Error is not correct");
     ///
-    ///     actor_system.stop(Duration::from_millis(3000));
+    ///     actor_system.stop();
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
     /// ```

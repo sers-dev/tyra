@@ -63,7 +63,7 @@ impl Handler<MessageA> for Benchmark {
             );
         }
         if self.count == self.total_msgs {
-            context.system.stop(Duration::from_secs(60));
+            context.system.stop();
         }
         Ok(ActorResult::Ok)
     }

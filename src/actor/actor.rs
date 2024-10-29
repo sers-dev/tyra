@@ -123,7 +123,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized + 'static {
     /// }
     /// impl Actor for TestActor {
     ///     fn on_panic(&mut self, context: &ActorContext<Self>, source: ActorPanicSource) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///         return Ok(ActorResult::Kill);
     ///     }
     /// }
@@ -188,7 +188,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized + 'static {
     /// }
     /// impl Actor for TestActor {
     ///     fn on_error(&mut self, context: &ActorContext<Self>, err: Box<dyn Error>) -> ActorResult {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///         return ActorResult::Kill;
     ///     }
     /// }
@@ -246,7 +246,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized + 'static {
     /// }
     /// impl Actor for TestActor {
     ///     fn pre_start(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///         return Ok(ActorResult::Kill);
     ///     }
     /// }
@@ -301,7 +301,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized + 'static {
     /// }
     /// impl Actor for TestActor {
     ///     fn pre_restart(&mut self, context: &ActorContext<Self>) {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///     }
     /// }
     ///
@@ -351,7 +351,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized + 'static {
     /// }
     /// impl Actor for TestActor {
     ///     fn pre_stop(&mut self, context: &ActorContext<Self>) {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///     }
     /// }
     ///
@@ -401,7 +401,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized + 'static {
     /// }
     /// impl Actor for TestActor {
     ///     fn post_stop(&mut self, context: &ActorContext<Self>) {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///     }
     /// }
     ///
@@ -473,7 +473,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized + 'static {
     ///
     /// impl Handler<ActorInitMessage> for TestActor {
     ///     fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///         return Ok(ActorResult::Ok);
     ///     }
     /// }

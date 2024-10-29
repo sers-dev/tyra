@@ -38,7 +38,7 @@ impl Handler<TestMsg> for RemoteActor {
         context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
         println!("{}", msg.content);
-        context.system.stop(Duration::from_secs(10));
+        context.system.stop();
         Ok(ActorResult::Stop)
     }
 }
