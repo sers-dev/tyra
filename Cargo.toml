@@ -18,13 +18,13 @@ name = "tyra"
 path = "src/lib.rs"
 
 [dependencies]
-config = "0.13.2"
+config = "0.13.4"
 hostname = "0.3.1"
-num_cpus = "1.13.1"
+num_cpus = "1.16.0"
 threadpool = "1.8.1"
-crossbeam-channel = "0.5.6"
+crossbeam-channel = "0.5.13"
 flume = "0.10.14"
-dashmap = "5.4.0"
+dashmap = "5.5.3"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
 log = "0.4"
