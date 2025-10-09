@@ -6,7 +6,7 @@
 
 See [default.toml](./src/config/default.toml) for a list of all configuration parameters and their defaults.
 
-Configuration can be adjusted by providing a `./config/tyra.toml`.
+Configuration can be adjusted by providing a `./config/tyra.toml` or by creating a mutable config in code.
 
 ## Clustering
 

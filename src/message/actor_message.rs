@@ -9,6 +9,7 @@ use std::hash::{Hash, Hasher};
 /// All messages that use this trait directly should also implement a dynamic `Handler<M>` that applies to any `Actor`
 pub trait BaseActorMessage: Send + Sync + Hash + Serialize {}
 
+
 /// This trait is used by Messages defined by the system
 /// All messages that use this trait should also implement a dynamic `Handler<M>` that applies to any `Actor`
 pub trait DefaultActorMessage: Send + Sync + Hash + Serialize {}
