@@ -5,6 +5,7 @@ pub mod internal_actor_manager;
 pub mod system_state;
 mod thread_pool_manager;
 pub mod wakeup_manager;
+mod cluster;
 
 pub mod prelude {
     pub use crate::system::actor_error::ActorError;

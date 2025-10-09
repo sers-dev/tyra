@@ -1,3 +1,32 @@
+# 1.1.0
+
+ - upgrade dependencies
+ - `LeastMessageRouter.min_mailbox_size` is now working correctly
+ - Routers now come with 2 new configurations to configure behavior
+   - `stop_on_system_stop` => if false, the user needs to manually stop the router for a clean and quick shutdown of the system
+   - `stop_on_empty_targets` => automatically stops the router if there are no more targets to receive a message to be routed. This does not apply to manually removed targets
+ - Routers now automatically remove stopped actors from their target pool if they have been stopped
+ - `Sharded_Router` now makes use of `HashRing`
+ - `ActorMessage` now needs to implement `Hash` and no longer need to explicitly implement `ActorMessage.get_id()` to be able to properly make use of the `ShardedRouter`
+   - renamed `ActorMessage.get_id()` to `ActorMessage.get_hash()` and changed return type to u64
+   - changed default implementation to `ActorMessage.get_hash()` to make use of `Hash` implementation
+ - `ActorMessage` now needs to implement `Serialize` 
+   - this requirement comes from the fact, that all messages need to be serializable in theory to be able to be sent to other actor systems
+   - if a message is really intended to be sent it should obviously also implement `Deserialize`
+ - Added `.is_mailbox_stopped()`, `is_stopped()` and `wait_for_stop()` to `ActorWrapper<A>`
+ - Added ability to re-initialize `ActorWrapper<A>` after deserializing
+ - Added `general.graceful_timeout_in_seconds` to config
+   - reworked `system.stop()` to make use of configured value
+     - added `system.stop_override_graceful_termination_timeout(Duration)` to allow override of configured default
+   - value is also used for signal handling graceful timeout and timeout for network manager
+ - Added `ActorBuilder<A>.spawn_multiple()`
+ - All routers now support a `SendToAllTargetsMessage<M>` that will forward `M` to all active targets
+ - Users can now use `ActorBuilder.get_existing(address: ActorAddress)` to get an `ActorWrapper<A>` for an already existing `Actor`
+   - `ActorBuilder.spawn()` will continue to return the `ActorWrapper<A>` for already existing actors
+ - renamed config `global.name` to `global.hostname`
+     - also renamed `ActorAddress.remote` to `ActorAddress.hostname`
+     - added new config `global.name` that defaults to the cargo package name or `tyra` if the application is not built using cargo
+
 # 1.0.0
 
  - added `LeastMessageRouter`

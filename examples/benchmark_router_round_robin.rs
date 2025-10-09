@@ -1,17 +1,21 @@
+use serde::Serialize;
 use std::error::Error;
 use std::process::exit;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use tyra::prelude::*;
 use tyra::router::{AddActorMessage, RoundRobinRouterFactory};
 
+#[derive(Hash, Serialize)]
 struct MessageA {}
 
 impl ActorMessage for MessageA {}
 
+#[derive(Hash, Serialize)]
 struct Finish {}
 
 impl ActorMessage for Finish {}
 
+#[derive(Hash, Serialize)]
 struct Start {}
 
 impl ActorMessage for Start {}
@@ -134,7 +138,7 @@ impl Handler<Finish> for Aggregator {
                 "{} It took {:?} to finish {} actors",
                 self.name, duration, self.total_actors
             );
-            self.ctx.system.stop(Duration::from_secs(60));
+            self.ctx.system.stop();
         }
         Ok(ActorResult::Ok)
     }
@@ -158,7 +162,7 @@ fn main() {
     let message_count = 10000000;
     let actor_count = 10;
 
-    let router_factory = RoundRobinRouterFactory::new();
+    let router_factory = RoundRobinRouterFactory::new(true, true);
     let router = actor_system
         .builder()
         .spawn("benchmark-router", router_factory)

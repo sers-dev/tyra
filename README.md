@@ -99,7 +99,7 @@ impl ActorFactory<TestActor> for TestActorFactory {
 impl Handler<TestMessage> for TestActor {
     fn handle(&mut self, _msg: TestMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
         println!("HELLO WORLD!");
-        context.system.stop(Duration::from_millis(1000));
+        context.system.stop();
         Ok(ActorResult::Ok)
     }
 }

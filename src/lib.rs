@@ -15,8 +15,10 @@
 //! use std::process::exit;
 //! use std::time::Duration;
 //! use std::error::Error;
+//! use serde::Serialize;
 //!
 //! // define message
+//! #[derive(Hash, Serialize)]
 //! struct FooBar {}
 //! impl ActorMessage for FooBar {}
 //!
@@ -25,6 +27,7 @@
 //! impl Actor for HelloWorld {}
 //!
 //! // setup required Factory
+//! #[derive(Clone)]
 //! struct HelloWorldFactory {}
 //! impl ActorFactory<HelloWorld> for HelloWorldFactory {
 //!     fn new_actor(&mut self, _context: ActorContext<HelloWorld>) -> Result<HelloWorld, Box<dyn Error>> {
@@ -56,7 +59,7 @@
 //!
 //!     // cleanup
 //!     actor.stop().unwrap();
-//!     actor_system.stop(Duration::from_millis(5000));
+//!     actor_system.stop();
 //!     exit(actor_system.await_shutdown());
 //! }
 //! ```
@@ -107,15 +110,19 @@
 mod actor;
 mod config;
 mod message;
+mod net;
 mod routers;
 mod system;
+mod wrapper;
 
 /// core components
 pub mod prelude {
     pub use crate::actor::prelude::*;
     pub use crate::config::prelude::*;
     pub use crate::message::prelude::*;
+    pub use crate::net::prelude::*;
     pub use crate::system::prelude::*;
+    pub use crate::wrapper::prelude::*;
 }
 
 /// collection of different router implementations

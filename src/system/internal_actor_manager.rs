@@ -24,7 +24,7 @@ impl InternalActorManager {
             .builder()
             .set_pool_name("tyra")
             .set_mailbox_unbounded()
-            .spawn("delay-router", RoundRobinRouterFactory::new())
+            .spawn("delay-router", RoundRobinRouterFactory::new(true, true))
             .unwrap();
         let remaining_actors = system.get_available_actor_count_for_pool("tyra").unwrap();
         for i in 0..remaining_actors {

@@ -1,4 +1,3 @@
-use crate::message::actor_stop_message::ActorStopMessage;
 use crate::prelude::{ActorContext, ActorPanicSource, ActorResult, SerializedMessage};
 use log::error;
 use std::error::Error;
@@ -92,7 +91,7 @@ use std::panic::UnwindSafe;
 ///   └─◄─┴──────────────────────────────◄─┴──────────────────────◄─┴─────────────────────────────────────────────────────┘            └─────────────────────────────────────────────┘
 ///
 /// ```
-pub trait Actor: Send + Sync + UnwindSafe + Sized {
+pub trait Actor: Send + Sync + UnwindSafe + Sized + 'static {
     /// executed whenever Actor receives a [SerializedMessage](../prelude/struct.SerializedMessage.html)
     /// panic triggers `self.on_panic()` with `source = ActorPanicSource::Message`
     fn handle_serialized_message(
@@ -124,7 +123,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// impl Actor for TestActor {
     ///     fn on_panic(&mut self, context: &ActorContext<Self>, source: ActorPanicSource) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///         return Ok(ActorResult::Kill);
     ///     }
     /// }
@@ -189,7 +188,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// impl Actor for TestActor {
     ///     fn on_error(&mut self, context: &ActorContext<Self>, err: Box<dyn Error>) -> ActorResult {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///         return ActorResult::Kill;
     ///     }
     /// }
@@ -247,7 +246,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// impl Actor for TestActor {
     ///     fn pre_start(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///         return Ok(ActorResult::Kill);
     ///     }
     /// }
@@ -302,7 +301,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// impl Actor for TestActor {
     ///     fn pre_restart(&mut self, context: &ActorContext<Self>) {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///     }
     /// }
     ///
@@ -335,6 +334,56 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// ```
     fn pre_restart(&mut self, _context: &ActorContext<Self>) {}
 
+    /// executed before mailbox will be disabled
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tyra::prelude::*;
+    /// use std::error::Error;
+    /// use std::time::Duration;
+    ///
+    /// struct TestActor {}
+    /// impl TestActor {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl Actor for TestActor {
+    ///     fn pre_stop(&mut self, context: &ActorContext<Self>) {
+    ///         context.system.stop();
+    ///     }
+    /// }
+    ///
+    /// struct TestActorFactory {}
+    /// impl TestActorFactory {
+    ///     pub fn new() -> Self {
+    ///         Self {}
+    ///     }
+    /// }
+    /// impl ActorFactory<TestActor> for TestActorFactory {
+    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
+    ///         Ok(TestActor::new())
+    ///     }
+    /// }
+    ///
+    /// impl Handler<ActorInitMessage> for TestActor {
+    ///     fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
+    ///         return Ok(ActorResult::Stop);
+    ///     }
+    /// }
+    ///
+    /// #[ntest::timeout(10000)]
+    /// fn main() {
+    ///     let actor_config = TyraConfig::new().unwrap();
+    ///     let actor_system = ActorSystem::new(actor_config);
+    ///     let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
+    ///     actor.send(ActorInitMessage::new()).unwrap();
+    ///     std::process::exit(actor_system.await_shutdown());
+    /// }
+    /// ```
+    fn pre_stop(&mut self, _context: &ActorContext<Self>) {}
+
     /// executed after the last message is handled
     ///
     /// # Examples
@@ -352,7 +401,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// }
     /// impl Actor for TestActor {
     ///     fn post_stop(&mut self, context: &ActorContext<Self>) {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///     }
     /// }
     ///
@@ -424,7 +473,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///
     /// impl Handler<ActorInitMessage> for TestActor {
     ///     fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
-    ///         context.system.stop(Duration::from_millis(5000));
+    ///         context.system.stop();
     ///         return Ok(ActorResult::Ok);
     ///     }
     /// }
@@ -443,12 +492,13 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
         &mut self,
         context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
-        let result = context.actor_ref.send(ActorStopMessage::new());
+        let result = context.actor_ref.stop();
         if result.is_err() {
             error!(
                 "Could not forward message ActorStopMessage to target {}",
                 context.actor_ref.get_address().actor
             );
+            return Ok(ActorResult::Stop);
         }
         return Ok(ActorResult::Ok);
     }

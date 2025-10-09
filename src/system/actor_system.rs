@@ -9,9 +9,11 @@ use crate::system::system_state::SystemState;
 use crate::system::thread_pool_manager::ThreadPoolManager;
 use crate::system::wakeup_manager::WakeupManager;
 use dashmap::DashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
+use crate::system::cluster::{Cluster, CLUSTER_LB, CLUSTER_POOL};
 
 /// Manages thread pools and actors
 #[derive(Clone)]
@@ -20,8 +22,10 @@ pub struct ActorSystem {
     thread_pool_manager: ThreadPoolManager,
     wakeup_manager: WakeupManager,
     name: String,
+    hostname: String,
     config: Arc<TyraConfig>,
     internal_actor_manager: InternalActorManager,
+    sigint_received: Arc<AtomicBool>,
 }
 
 impl ActorSystem {
@@ -42,7 +46,10 @@ impl ActorSystem {
             std::panic::set_hook(Box::new(|_| {}));
         }
 
-        let thread_pool_config = config.thread_pool.clone();
+        let mut thread_pool_config = config.thread_pool.clone();
+        if !config.cluster.enabled {
+            thread_pool_config.config.remove("cluster");
+        }
 
         let thread_pool_manager = ThreadPoolManager::new();
         let wakeup_manager = WakeupManager::new();
@@ -53,7 +60,10 @@ impl ActorSystem {
             thread_pool_manager.add_pool_with_config(key, value.clone());
             thread_pool_max_actors.insert(key.clone(), value.actor_limit);
         }
-        let state = SystemState::new(wakeup_manager.clone(), Arc::new(thread_pool_max_actors));
+
+        let net_worker_lb_address = ActorAddress::new(config.general.hostname.clone(), config.general.name.clone(), CLUSTER_POOL, CLUSTER_LB);
+
+        let state = SystemState::new(wakeup_manager.clone(), Arc::new(thread_pool_max_actors), net_worker_lb_address, config.general.name.clone(), config.general.hostname.clone());
 
         let s = state.clone();
         let t = thread_pool_manager.clone();
@@ -72,15 +82,52 @@ impl ActorSystem {
             thread_pool_manager,
             wakeup_manager,
             name: config.general.name.clone(),
+            hostname: config.general.hostname.clone(),
             config: Arc::new(config.clone()),
             internal_actor_manager: InternalActorManager::new(),
+            sigint_received: Arc::new(AtomicBool::new(false)),
         };
 
+        if config.general.enable_signal_handling {
+            let sys = system.clone();
+            let graceful_timeout = config.general.graceful_timeout_in_seconds.clone();
+            ctrlc::set_handler(move || {
+                sys.sigint_handler(Duration::from_secs(graceful_timeout));
+            })
+            .unwrap();
+        }
+
         system.internal_actor_manager.init(system.clone());
+        if config.cluster.enabled {
+            Cluster::init(&system, &config.cluster, Duration::from_secs(config.general.graceful_timeout_in_seconds));
+        }
 
         system
     }
 
+    /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyra/blob/master/src/config/default.toml)
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use std::time::Duration;
+    /// use tyra::prelude::{TyraConfig, ActorSystem};
+    ///
+    /// let mut actor_config = TyraConfig::new().unwrap();
+    /// //disable automatic setup of sigint handling, so that we can set it manually
+    /// actor_config.general.enable_signal_handling = false;
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// ctrlc::set_handler(move || {actor_system.sigint_handler(Duration::from_secs(60));}).unwrap();
+    /// ```
+    pub fn sigint_handler(&self, graceful_termination_timeout: Duration) {
+        if self.sigint_received.load(Ordering::Relaxed) {
+            self.force_stop();
+        }
+        self.sigint_received.store(true, Ordering::Relaxed);
+        self.stop_override_graceful_termination_timeout(graceful_termination_timeout);
+    }
     /// Adds a new named pool using the [default pool configuration](https://github.com/sers-dev/tyra/blob/master/src/config/default.toml)
     ///
     /// # Examples
@@ -147,10 +194,12 @@ impl ActorSystem {
     ///
     /// ```rust
     /// use std::error::Error;
+    /// use serde::Serialize;
     /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorResult, ActorMessage};
     ///
     /// struct TestActor {}
     ///
+    /// #[derive(Hash, Serialize)]
     /// struct HelloWorld {}
     /// impl ActorMessage for HelloWorld {}
     /// impl Actor for TestActor {
@@ -180,9 +229,9 @@ impl ActorSystem {
     /// let actor_system = ActorSystem::new(actor_config);
     /// let actor_wrapper = actor_system.builder().spawn("test", TestFactory{}).unwrap();
     /// let address = actor_wrapper.get_address();
-    /// actor_system.send_to_address(address, SerializedMessage::new(Vec::new()));
+    /// actor_system.send_to_address(address, Vec::new());
     /// ```
-    pub fn send_to_address(&self, address: &ActorAddress, msg: SerializedMessage) {
+    pub fn send_to_address(&self, address: &ActorAddress, msg: Vec<u8>) {
         self.state.send_to_address(address, msg);
     }
 
@@ -241,10 +290,35 @@ impl ActorSystem {
     ///
     /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
-    /// actor_system.stop(Duration::from_secs(1));
+    /// actor_system.stop_override_graceful_termination_timeout(Duration::from_secs(1));
     /// ```
-    pub fn stop(&self, graceful_termination_timeout: Duration) {
+    pub fn stop_override_graceful_termination_timeout(&self, graceful_termination_timeout: Duration) {
         self.state.stop(graceful_termination_timeout);
+    }
+
+    /// Sends a SystemStopMessage to all running Actors, and wakes them up if necessary.
+    /// Users can implement their own clean system stop behavior, by implementing [Actor.on_system_stop](../prelude/trait.Actor.html#method.on_system_stop) and [Actor.on_actor_stop](../prelude/trait.Actor.html#method.on_actor_stop)
+    ///
+    /// System will stop after all actors have been stopped or after `general.graceful_timeout_in_seconds`
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ThreadPoolConfig};
+    /// use std::time::Duration;
+    ///
+    /// let actor_config = TyraConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// actor_system.stop();
+    /// ```
+    pub fn stop(&self) {
+        self.stop_override_graceful_termination_timeout(Duration::from_secs(self.config.general.graceful_timeout_in_seconds));
+    }
+
+    pub fn force_stop(&self) {
+        self.state.force_stop();
     }
 
     /// Same as stop, but with fixed user defined exit code
@@ -263,7 +337,7 @@ impl ActorSystem {
     /// ```
     pub fn stop_with_code(&self, graceful_termination_timeout: Duration, code: i32) {
         self.state.use_forced_exit_code(code);
-        self.stop(graceful_termination_timeout);
+        self.stop_override_graceful_termination_timeout(graceful_termination_timeout);
     }
 
     /// Waits for the system to stop
@@ -287,7 +361,7 @@ impl ActorSystem {
     ///
     /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
-    /// actor_system.stop(Duration::from_secs(3));
+    /// actor_system.stop();
     /// exit(actor_system.await_shutdown());
     /// ```
     pub fn await_shutdown(&self) -> i32 {
@@ -333,5 +407,24 @@ impl ActorSystem {
     /// ```
     pub fn get_name(&self) -> &str {
         &self.name
+    }
+
+    /// Returns the configured hostname of the system
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```rust
+    /// use tyra::prelude::{TyraConfig, ActorSystem, ThreadPoolConfig};
+    /// use std::time::Duration;
+    /// use std::process::exit;
+    ///
+    /// let actor_config = TyraConfig::new().unwrap();
+    /// let actor_system = ActorSystem::new(actor_config);
+    /// let name = actor_system.get_hostname();
+    /// ```
+    pub fn get_hostname(&self) -> &str {
+        &self.hostname
     }
 }

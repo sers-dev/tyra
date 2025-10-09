@@ -1,8 +1,10 @@
+use serde::Serialize;
 use std::error::Error;
-use std::time::Duration;
 use tyra::prelude::*;
 
 // define an `ActorMessage` that can be sent to `Actors` that implement the corresponding `Handler<T>`
+
+#[derive(Hash, Serialize)]
 struct TestMessage {}
 impl TestMessage {
     pub fn new() -> Self {
@@ -44,7 +46,7 @@ impl Handler<TestMessage> for TestActor {
         context: &ActorContext<Self>,
     ) -> Result<ActorResult, Box<dyn Error>> {
         println!("HELLO WORLD!");
-        context.system.stop(Duration::from_millis(1000));
+        context.system.stop();
         Ok(ActorResult::Ok)
     }
 }

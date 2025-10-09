@@ -1,8 +1,10 @@
+use serde::Serialize;
 use std::error::Error;
 use std::process::exit;
 use std::time::{Duration, Instant};
 use tyra::prelude::*;
 
+#[derive(Hash, Serialize)]
 struct MessageA {}
 
 impl ActorMessage for MessageA {}
@@ -61,7 +63,7 @@ impl Handler<MessageA> for Benchmark {
             );
         }
         if self.count == self.total_msgs {
-            context.system.stop(Duration::from_secs(60));
+            context.system.stop();
         }
         Ok(ActorResult::Ok)
     }

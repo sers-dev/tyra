@@ -1,3 +1,4 @@
+use crate::actor::actor::Actor;
 use crate::actor::actor_address::ActorAddress;
 use crate::actor::actor_send_error::ActorSendError;
 use crate::actor::handler::Handler;
@@ -5,58 +6,39 @@ use crate::actor::mailbox::Mailbox;
 use crate::message::actor_message::BaseActorMessage;
 use crate::message::actor_stop_message::ActorStopMessage;
 use crate::message::sleep_message::SleepMessage;
-use crate::prelude::Actor;
+use crate::prelude::ActorWrapper;
 use crate::system::internal_actor_manager::InternalActorManager;
 use crate::system::wakeup_manager::WakeupManager;
-use std::fmt::{Debug, Formatter};
 use std::panic::UnwindSafe;
+use std::thread::sleep;
 use std::time::Duration;
 
-/// Wrapper used to interact with [Actor]
-pub struct ActorWrapper<A>
+pub struct LocalActorWrapper<A>
 where
     A: Actor,
 {
     mailbox: Mailbox<A>,
-    address: ActorAddress,
     wakeup_manager: WakeupManager,
     internal_actor_manager: Box<InternalActorManager>,
 }
 
-impl<A> Debug for ActorWrapper<A>
-where
-    A: Actor,
-{
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "")
-    }
-}
-
-impl<A> UnwindSafe for ActorWrapper<A> where A: Actor {}
-
-impl<A> ActorWrapper<A>
+impl<A> LocalActorWrapper<A>
 where
     A: Actor + UnwindSafe,
 {
-    /// Automatically called by the [ActorBuilder.build](../prelude/struct.ActorBuilder.html#method.build)
     pub fn new(
         mailbox: Mailbox<A>,
-        address: ActorAddress,
         wakeup_manager: WakeupManager,
         internal_actor_manager: InternalActorManager,
     ) -> Self {
         Self {
             mailbox,
-            address,
             wakeup_manager,
             internal_actor_manager: Box::new(internal_actor_manager),
         }
     }
 
-    /// Sends a message to the actor that is then processed through the corresponding Handler<M> implementation
-    /// Blocks until message has been sent, or fails if the target has been stopped
-    /// It is NOT recommended to use this to send messages to Actors with a limited mailbox. Use send_timeout() or send_after() for these cases
-    pub fn send<M>(&self, msg: M) -> Result<(), ActorSendError>
+    pub fn send<M>(&self, msg: M, address: ActorAddress) -> Result<(), ActorSendError>
     where
         A: Handler<M>,
         M: BaseActorMessage + 'static,
@@ -72,14 +54,18 @@ where
         }
 
         if self.mailbox.is_sleeping() {
-            self.wakeup_manager.wakeup(self.address.clone());
+            self.wakeup_manager.wakeup(address);
         }
 
         return Ok(());
     }
 
-    /// Same as send, but with a user defined timeout
-    pub fn send_timeout<M>(&self, msg: M, timeout: Duration) -> Result<(), ActorSendError>
+    pub fn send_timeout<M>(
+        &self,
+        msg: M,
+        timeout: Duration,
+        address: ActorAddress,
+    ) -> Result<(), ActorSendError>
     where
         A: Handler<M>,
         M: BaseActorMessage + 'static,
@@ -95,14 +81,18 @@ where
         }
 
         if self.mailbox.is_sleeping() {
-            self.wakeup_manager.wakeup(self.address.clone());
+            self.wakeup_manager.wakeup(address);
         }
 
         return Ok(());
     }
 
-    /// Sends a message to the actor after a specified delay
-    pub fn send_after<M>(&self, msg: M, delay: Duration) -> Result<(), ActorSendError>
+    pub fn send_after<M>(
+        &self,
+        msg: M,
+        delay: Duration,
+        destination: ActorWrapper<A>,
+    ) -> Result<(), ActorSendError>
     where
         A: Handler<M> + 'static,
         M: BaseActorMessage + 'static,
@@ -112,32 +102,40 @@ where
         }
 
         self.internal_actor_manager
-            .send_after(msg, self.clone(), delay);
+            .send_after(msg, destination, delay);
 
         return Ok(());
     }
 
-    /// Tells the actor to stop accepting message and to shutdown after all existing messages have been processed
-    pub fn stop(&self) -> Result<(), ActorSendError> {
-        return self.send(ActorStopMessage::new());
+    pub fn stop(&self, address: ActorAddress) -> Result<(), ActorSendError> {
+        return self.send(ActorStopMessage::new(), address);
     }
 
-    /// Tells the actor to sleep for the specified duration
-    pub fn sleep(&self, duration: Duration) -> Result<(), ActorSendError> {
-        return self.send(SleepMessage { duration });
-    }
-
-    /// Returns a reference to the address of the actor
-    pub fn get_address(&self) -> &ActorAddress {
-        &self.address
+    pub fn sleep(&self, duration: Duration, address: ActorAddress) -> Result<(), ActorSendError> {
+        return self.send(SleepMessage { duration }, address);
     }
 
     pub fn get_mailbox_size(&self) -> usize {
         return self.mailbox.len();
     }
+
+    pub fn is_mailbox_stopped(&self) -> bool {
+        return self.mailbox.is_stopped();
+    }
+
+    pub fn is_stopped(&self) -> bool {
+        return self.get_mailbox_size() == 0 && self.mailbox.is_stopped();
+    }
+
+    pub fn wait_for_stop(&self, address: ActorAddress) {
+        let _ = self.stop(address);
+        while !self.is_stopped() {
+            sleep(Duration::from_millis(25));
+        }
+    }
 }
 
-impl<A> Clone for ActorWrapper<A>
+impl<A> Clone for LocalActorWrapper<A>
 where
     A: Actor + UnwindSafe,
 {
@@ -145,7 +143,6 @@ where
         Self {
             wakeup_manager: self.wakeup_manager.clone(),
             mailbox: self.mailbox.clone(),
-            address: self.address.clone(),
             internal_actor_manager: self.internal_actor_manager.clone(),
         }
     }
