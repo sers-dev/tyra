@@ -4,58 +4,25 @@ use std::time::{Duration, Instant};
 use tyra::prelude::*;
 use tyra::router::{AddActorMessage, RoundRobinRouterFactory};
 
+#[derive(ActorMessage)]
 struct MessageA {}
 
-impl ActorMessage for MessageA {}
-
+#[derive(ActorMessage)]
 struct Finish {}
 
-impl ActorMessage for Finish {}
-
+#[derive(ActorMessage)]
 struct Start {}
 
-impl ActorMessage for Start {}
-
+#[derive(Actor, ActorFactory)]
 struct Benchmark {
     aggregator: ActorWrapper<Aggregator>,
     total_msgs: usize,
     name: String,
+    #[tyra(default = "0")]
     count: usize,
+    #[tyra(default = "Instant::now()")]
     start: Instant,
 }
-
-struct BenchmarkFactory {
-    total_msgs: usize,
-    aggregator: ActorWrapper<Aggregator>,
-    name: String,
-}
-
-impl ActorFactory<Benchmark> for BenchmarkFactory {
-    fn new_actor(
-        &mut self,
-        _context: ActorContext<Benchmark>,
-    ) -> Result<Benchmark, Box<dyn Error>> {
-        Ok(Benchmark::new(
-            self.total_msgs,
-            self.name.clone(),
-            self.aggregator.clone(),
-        ))
-    }
-}
-
-impl Benchmark {
-    pub fn new(total_msgs: usize, name: String, aggregator: ActorWrapper<Aggregator>) -> Self {
-        Self {
-            aggregator,
-            total_msgs,
-            name,
-            count: 0,
-            start: Instant::now(),
-        }
-    }
-}
-
-impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
     fn handle(
@@ -147,11 +114,11 @@ fn main() {
             .builder()
             .spawn(
                 format!("benchmark-single-actor-{}", i),
-                BenchmarkFactory {
-                    name: String::from(format!("benchmark-{}", i)),
-                    total_msgs: (message_count.clone() / actor_count.clone()) as usize,
-                    aggregator: aggregator.clone(),
-                },
+                Benchmark::factory(
+                    aggregator.clone(),
+                    (message_count.clone() / actor_count.clone()) as usize,
+                    format!("benchmark-{}", i),
+                ),
             )
             .unwrap();
         router.send(AddActorMessage::new(actor)).unwrap();
