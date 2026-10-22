@@ -3,63 +3,27 @@ use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tyra::prelude::*;
-use tyra::router::{AddActorMessage, BulkRouterMessage, RoundRobinRouterFactory};
+use tyra::router::{AddActorMessage, BulkRouterMessage, RoundRobinRouter};
 
+#[derive(ActorMessage)]
 struct MessageA {}
 
-impl ActorMessage for MessageA {}
-
+#[derive(ActorMessage)]
 struct Finish {}
 
-impl ActorMessage for Finish {}
-
+#[derive(ActorMessage)]
 struct Start {}
 
-impl ActorMessage for Start {}
-
+#[derive(Actor, ActorFactory)]
 struct Benchmark {
     aggregator: ActorWrapper<Aggregator>,
     total_msgs: usize,
     name: String,
+    #[tyra(default = "0")]
     count: usize,
+    #[tyra(default = "Instant::now()")]
     start: Instant,
 }
-
-struct BenchmarkFactory {
-    total_msgs: usize,
-    aggregator: ActorWrapper<Aggregator>,
-    name: String,
-}
-
-impl ActorFactory<Benchmark> for BenchmarkFactory {
-    fn new_actor(&mut self, context: ActorContext<Benchmark>) -> Result<Benchmark, Box<dyn Error>> {
-        Ok(Benchmark::new(
-            self.total_msgs,
-            self.name.clone(),
-            context,
-            self.aggregator.clone(),
-        ))
-    }
-}
-
-impl Benchmark {
-    pub fn new(
-        total_msgs: usize,
-        name: String,
-        _context: ActorContext<Self>,
-        aggregator: ActorWrapper<Aggregator>,
-    ) -> Self {
-        Self {
-            aggregator,
-            total_msgs,
-            name,
-            count: 0,
-            start: Instant::now(),
-        }
-    }
-}
-
-impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
     fn handle(
@@ -86,44 +50,15 @@ impl Handler<MessageA> for Benchmark {
     }
 }
 
+#[derive(Actor, ActorFactory)]
 struct Aggregator {
     ctx: ActorContext<Self>,
     total_actors: usize,
     name: String,
+    #[tyra(default = "0")]
     actors_finished: usize,
+    #[tyra(default = "Instant::now()")]
     start: Instant,
-}
-
-struct AggregatorFactory {
-    total_actors: usize,
-    name: String,
-}
-
-impl Aggregator {
-    pub fn new(total_actors: usize, name: String, context: ActorContext<Self>) -> Self {
-        Self {
-            ctx: context,
-            total_actors,
-            name,
-            actors_finished: 0,
-            start: Instant::now(),
-        }
-    }
-}
-
-impl Actor for Aggregator {}
-
-impl ActorFactory<Aggregator> for AggregatorFactory {
-    fn new_actor(
-        &mut self,
-        context: ActorContext<Aggregator>,
-    ) -> Result<Aggregator, Box<dyn Error>> {
-        Ok(Aggregator::new(
-            self.total_actors,
-            self.name.clone(),
-            context,
-        ))
-    }
 }
 
 impl Handler<Finish> for Aggregator {
@@ -165,7 +100,7 @@ fn main() {
     // ideal number is "amount of threads - 3"
     let actor_count = 7;
 
-    let router_factory = RoundRobinRouterFactory::new();
+    let router_factory = RoundRobinRouter::factory();
     let router = actor_system
         .builder()
         .spawn("benchmark-router", router_factory)
@@ -175,10 +110,7 @@ fn main() {
         .builder()
         .spawn(
             "aggregator",
-            AggregatorFactory {
-                total_actors: actor_count,
-                name: String::from("aggregator"),
-            },
+            Aggregator::factory(actor_count, String::from("aggregator")),
         )
         .unwrap();
     for i in 0..actor_count {
@@ -186,11 +118,11 @@ fn main() {
             .builder()
             .spawn(
                 format!("benchmark-single-actor-{}", i),
-                BenchmarkFactory {
-                    name: String::from(format!("benchmark-{}", i)),
-                    total_msgs: (message_count.clone() / actor_count.clone()) as usize,
-                    aggregator: aggregator.clone(),
-                },
+                Benchmark::factory(
+                    aggregator.clone(),
+                    (message_count.clone() / actor_count.clone()) as usize,
+                    format!("benchmark-{}", i),
+                ),
             )
             .unwrap();
 

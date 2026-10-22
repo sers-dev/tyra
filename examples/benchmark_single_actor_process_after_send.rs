@@ -3,40 +3,18 @@ use std::process::exit;
 use std::time::{Duration, Instant};
 use tyra::prelude::*;
 
+#[derive(ActorMessage)]
 struct MessageA {}
 
-impl ActorMessage for MessageA {}
-
+#[derive(Actor, ActorFactory)]
 struct Benchmark {
     total_msgs: usize,
     name: String,
+    #[tyra(default = "0")]
     count: usize,
+    #[tyra(default = "Instant::now()")]
     start: Instant,
 }
-
-struct BenchmarkFactory {
-    total_msgs: usize,
-    name: String,
-}
-
-impl ActorFactory<Benchmark> for BenchmarkFactory {
-    fn new_actor(&mut self, context: ActorContext<Benchmark>) -> Result<Benchmark, Box<dyn Error>> {
-        return Ok(Benchmark::new(self.total_msgs, self.name.clone(), context));
-    }
-}
-
-impl Benchmark {
-    pub fn new(total_msgs: usize, name: String, _context: ActorContext<Self>) -> Self {
-        Self {
-            total_msgs,
-            name,
-            count: 0,
-            start: Instant::now(),
-        }
-    }
-}
-
-impl Actor for Benchmark {}
 
 impl Handler<MessageA> for Benchmark {
     fn handle(
@@ -77,10 +55,7 @@ fn main() {
         .builder()
         .spawn(
             "benchmark-single-actor",
-            BenchmarkFactory {
-                name: String::from("benchmark"),
-                total_msgs: message_count as usize,
-            },
+            Benchmark::factory(message_count as usize, String::from("benchmark")),
         )
         .unwrap();
     println!("Actors have been created");

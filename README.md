@@ -65,35 +65,12 @@ use std::error::Error;
 use std::time::Duration;
 
 // define an `ActorMessage` that can be sent to `Actors` that implement the corresponding `Handler<T>`
+#[derive(ActorMessage)]
 struct TestMessage {}
-impl TestMessage {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-impl ActorMessage for TestMessage {}
 
 // define the actual `Actor` that should process messages
+#[derive(Actor, ActorFactory, Clone)]
 struct TestActor {}
-impl TestActor {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-impl Actor for TestActor {}
-
-// define a factory that creates the `Actor` for us
-struct TestActorFactory {}
-impl TestActorFactory {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-impl ActorFactory<TestActor> for TestActorFactory {
-    fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-        Ok(TestActor::new())
-    }
-}
 
 // implement our message for the `Actor`
 impl Handler<TestMessage> for TestActor {
@@ -110,7 +87,7 @@ fn main() {
     // start system with config
     let actor_system = ActorSystem::new(actor_config);
     // create actor on the system
-    let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
+    let actor = actor_system.builder().spawn("test", TestActor::factory()).unwrap();
     // send a message to the actor
     actor.send(TestMessage::new()).unwrap();
     // wait for the system to stop

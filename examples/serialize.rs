@@ -4,14 +4,12 @@ use std::process::exit;
 use std::time::{Duration, Instant};
 use tyra::prelude::*;
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, ActorMessage)]
 struct TestMsg {
     content: String,
 }
 
-impl ActorMessage for TestMsg {}
-
-#[derive(Clone)]
+#[derive(Clone, ActorFactory)]
 struct RemoteActor {}
 
 impl Actor for RemoteActor {
@@ -43,23 +41,14 @@ impl Handler<TestMsg> for RemoteActor {
     }
 }
 
-struct RemoteActorFactory {}
-
-impl ActorFactory<RemoteActor> for RemoteActorFactory {
-    fn new_actor(
-        &mut self,
-        _context: ActorContext<RemoteActor>,
-    ) -> Result<RemoteActor, Box<dyn Error>> {
-        Ok(RemoteActor {})
-    }
-}
-
 fn main() {
     let actor_config = TyraConfig::new().unwrap();
     let actor_system = ActorSystem::new(actor_config);
 
-    let hw = RemoteActorFactory {};
-    let x = actor_system.builder().spawn("hello-world", hw).unwrap();
+    let x = actor_system
+        .builder()
+        .spawn("hello-world", RemoteActor::factory())
+        .unwrap();
     let msg = TestMsg {
         content: String::from("Hello World!"),
     };

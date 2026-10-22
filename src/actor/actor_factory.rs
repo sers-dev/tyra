@@ -16,17 +16,8 @@ use std::panic::UnwindSafe;
 /// use std::error::Error;
 /// use tyra::prelude::*;
 ///
+/// #[derive(Actor, ActorFactory, Clone)]
 /// struct TestActor {}
-///
-/// impl Actor for TestActor {}
-///
-/// struct TestFactory {}
-///
-/// impl ActorFactory<TestActor> for TestFactory {
-///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-///         Ok(TestActor {})
-///     }
-/// }
 /// ```
 pub trait ActorFactory<A>: UnwindSafe
 where

@@ -17,20 +17,12 @@
 //! use std::error::Error;
 //!
 //! // define message
+//! #[derive(ActorMessage)]
 //! struct FooBar {}
-//! impl ActorMessage for FooBar {}
 //!
 //! // define actor
+//! #[derive(Actor, ActorFactory, Clone)]
 //! struct HelloWorld {}
-//! impl Actor for HelloWorld {}
-//!
-//! // setup required Factory
-//! struct HelloWorldFactory {}
-//! impl ActorFactory<HelloWorld> for HelloWorldFactory {
-//!     fn new_actor(&mut self, _context: ActorContext<HelloWorld>) -> Result<HelloWorld, Box<dyn Error>> {
-//!         Ok(HelloWorld {})
-//!     }
-//! }
 //!
 //! // each supported message has its own Handler implementation
 //! // this is where the actual work is done
@@ -47,10 +39,9 @@
 //!     let actor_system = ActorSystem::new(actor_config);
 //!
 //!     // create an actor and send it a message
-//!     let factory = HelloWorldFactory {};
 //!     let actor = actor_system
 //!         .builder()
-//!         .spawn("hello-world", factory)
+//!         .spawn("hello-world", HelloWorld::factory())
 //!         .unwrap();
 //!     actor.send(FooBar {}).unwrap();
 //!
@@ -116,6 +107,7 @@ pub mod prelude {
     pub use crate::config::prelude::*;
     pub use crate::message::prelude::*;
     pub use crate::system::prelude::*;
+    pub use tyra_macros::{Actor, ActorFactory, ActorMessage};
 }
 
 /// collection of different router implementations

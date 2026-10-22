@@ -1,33 +1,14 @@
 use crate::message::actor_message::BaseActorMessage;
 use crate::message::delayed_message::DelayedMessage;
 use crate::prelude::{Actor, ActorContext, ActorFactory, ActorResult, Handler};
+use crate as tyra;
 use log::error;
 use std::error::Error;
 use std::thread::sleep;
 use std::time::Duration;
 
+#[derive(Actor, ActorFactory, Clone)]
 pub struct DelayActor {}
-impl Actor for DelayActor {}
-impl DelayActor {
-    fn new() -> Self {
-        Self {}
-    }
-}
-
-pub struct DelayActorFactory {}
-impl ActorFactory<DelayActor> for DelayActorFactory {
-    fn new_actor(
-        &mut self,
-        _context: ActorContext<DelayActor>,
-    ) -> Result<DelayActor, Box<dyn Error>> {
-        return Ok(DelayActor::new());
-    }
-}
-impl DelayActorFactory {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 
 impl<A, M> Handler<DelayedMessage<A, M>> for DelayActor
 where
