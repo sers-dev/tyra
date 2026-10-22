@@ -9,8 +9,26 @@ struct TestMsg {
     content: String,
 }
 
-#[derive(Clone, Actor, ActorFactory)]
+#[derive(Clone, ActorFactory)]
 struct RemoteActor {}
+
+impl Actor for RemoteActor {
+    fn handle_serialized_message(
+        &mut self,
+        msg: SerializedMessage,
+        context: &ActorContext<Self>,
+    ) -> Result<ActorResult, Box<dyn Error>> {
+        let result = bincode::deserialize(&msg.content);
+        if result.is_err() {
+            return Ok(ActorResult::Ok);
+        }
+        let decoded: TestMsg = result.unwrap();
+        context
+            .actor_ref
+            .send_after(decoded, Duration::from_millis(50))?;
+        Ok(ActorResult::Ok)
+    }
+}
 
 impl Handler<TestMsg> for RemoteActor {
     fn handle(
