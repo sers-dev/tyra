@@ -23,11 +23,8 @@ use std::panic::UnwindSafe;
 /// ```rust
 /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor};
 ///
+/// #[derive(Actor)]
 /// struct TestActor {}
-///
-/// impl Actor for TestActor {}
-///
-///
 /// ```
 ///
 /// # Architecture
