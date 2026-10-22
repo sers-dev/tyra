@@ -26,7 +26,11 @@ impl<A> BaseActorMessage for A where A: DefaultActorMessage {}
 /// use tyra::prelude::ActorMessage;
 ///
 /// #[derive(ActorMessage)]
-/// struct FooBar {}
+/// struct FooBar {
+///     pub a: String,
+/// }
+///
+/// let foo = FooBar::new(String::from("test"));
 /// ```
 pub trait ActorMessage: Send + Sync {
     /// returns the message id

@@ -5,11 +5,6 @@ use tyra::prelude::*;
 // define an `ActorMessage` that can be sent to `Actors` that implement the corresponding `Handler<T>`
 #[derive(ActorMessage)]
 struct TestMessage {}
-impl TestMessage {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 
 // define the actual `Actor` that should process messages
 #[derive(Actor, ActorFactory, Clone)]
