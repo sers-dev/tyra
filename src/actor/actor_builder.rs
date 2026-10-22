@@ -106,7 +106,7 @@ where
     ///
     /// struct SecondActorFactory {}
     /// impl SecondActorFactory {
-    ///     pub fn new() -> Self {
+    ///     pub fn factory() -> Self {
     ///         Self {}
     ///     }
     /// }
@@ -145,13 +145,13 @@ where
     ///     assert_eq!(err, ActorError::ThreadPoolDoesNotExistError, "Error is not correct");
     ///
     ///     //this does not work, because although there's not yet an actor called `second` on the pool the `new_actor` method returns an error
-    ///     let this_is_not_working = actor_system.builder().spawn("second", SecondActorFactory::new());
+    ///     let this_is_not_working = actor_system.builder().spawn("second", SecondActorFactory::factory());
     ///     assert!(this_is_not_working.is_err(), "The SecondActor was spawned");
     ///     let err = this_is_not_working.err().unwrap();
     ///     assert_eq!(err, ActorError::InitError, "Error is not correct");
     ///
     ///     //this does not work, because there's already an actor called `test` with a different type on the pool
-    ///     let this_is_not_working_either = actor_system.builder().spawn(actor_name, SecondActorFactory::new());
+    ///     let this_is_not_working_either = actor_system.builder().spawn(actor_name, SecondActorFactory::factory());
     ///     assert!(this_is_not_working_either.is_err(), "Illegal Actor type conversion");
     ///     let err = this_is_not_working_either.err().unwrap();
     ///     assert_eq!(err, ActorError::InvalidActorTypeError, "Error is not correct");

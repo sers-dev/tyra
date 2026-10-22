@@ -1,8 +1,8 @@
 use crate::message::actor_message::BaseActorMessage;
 use crate::message::delayed_message::DelayedMessage;
 use crate::prelude::{ActorSystem, ActorWrapper, Handler};
-use crate::router::{AddActorMessage, RoundRobinRouter, RoundRobinRouterFactory};
-use crate::system::delay_actor::{DelayActor, DelayActorFactory};
+use crate::router::{AddActorMessage, RoundRobinRouter};
+use crate::system::delay_actor::DelayActor;
 use log::error;
 use std::time::Duration;
 
@@ -24,12 +24,12 @@ impl InternalActorManager {
             .builder()
             .set_pool_name("tyra")
             .set_mailbox_unbounded()
-            .spawn("delay-router", RoundRobinRouterFactory::new())
+            .spawn("delay-router", RoundRobinRouter::factory())
             .unwrap();
         let remaining_actors = system.get_available_actor_count_for_pool("tyra").unwrap();
         for i in 0..remaining_actors {
             let delay_actor = delay_builder
-                .spawn(format!("delay-{}", i), DelayActorFactory::new())
+                .spawn(format!("delay-{}", i), DelayActor::factory())
                 .unwrap();
             let result = delay_router.send(AddActorMessage::new(delay_actor));
             if result.is_err() {

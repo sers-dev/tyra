@@ -2,7 +2,7 @@ use std::error::Error;
 use std::process::exit;
 use std::time::{Duration, Instant};
 use tyra::prelude::*;
-use tyra::router::{AddActorMessage, RoundRobinRouterFactory};
+use tyra::router::{AddActorMessage, RoundRobinRouter};
 
 #[derive(ActorMessage)]
 struct MessageA {}
@@ -96,7 +96,7 @@ fn main() {
     let message_count = 10000000;
     let actor_count = 10;
 
-    let router_factory = RoundRobinRouterFactory::new();
+    let router_factory = RoundRobinRouter::factory();
     let router = actor_system
         .builder()
         .spawn("benchmark-router", router_factory)

@@ -3,7 +3,7 @@ use std::process::exit;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tyra::prelude::*;
-use tyra::router::{AddActorMessage, BulkRouterMessage, RoundRobinRouterFactory};
+use tyra::router::{AddActorMessage, BulkRouterMessage, RoundRobinRouter};
 
 #[derive(ActorMessage)]
 struct MessageA {}
@@ -100,7 +100,7 @@ fn main() {
     // ideal number is "amount of threads - 3"
     let actor_count = 7;
 
-    let router_factory = RoundRobinRouterFactory::new();
+    let router_factory = RoundRobinRouter::factory();
     let router = actor_system
         .builder()
         .spawn("benchmark-router", router_factory)
