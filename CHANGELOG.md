@@ -1,3 +1,11 @@
+# 1.1.0
+
+ - added `derive` functionality
+   - can be used for `Actor`, `ActorFactory` and `ActorMessage`
+ - changed usage for all routers slightly
+   - instead of `RouterNameFactory::new()` use `RouterName::factory()` to follow derived naming of functions
+
+
 # 1.0.0
 
  - added `LeastMessageRouter`

@@ -2,6 +2,7 @@ use std::error::Error;
 use std::time::Duration;
 use tyra::prelude::*;
 
+// define an `ActorMessage` that can be sent to `Actors` that implement the corresponding `Handler<T>`
 struct TestMessage {}
 impl TestMessage {
     pub fn new() -> Self {
@@ -10,6 +11,7 @@ impl TestMessage {
 }
 impl ActorMessage for TestMessage {}
 
+// define the actual `Actor` that should process messages
 struct TestActor {}
 impl Actor for TestActor {}
 
@@ -23,6 +25,7 @@ impl ActorFactory<TestActor> for TestActorFactory {
     }
 }
 
+// implement our message for the `Actor`
 impl Handler<TestMessage> for TestActor {
     fn handle(
         &mut self,
