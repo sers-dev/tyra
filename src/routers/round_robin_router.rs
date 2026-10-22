@@ -37,23 +37,14 @@ where
 /// impl ActorMessage for FooBar {}
 ///
 /// // define actor
+/// #[derive(Actor, ActorFactory)]
 /// struct HelloWorld {}
-/// impl Actor for HelloWorld {}
-///
-/// // setup required Factory
-/// struct HelloWorldFactory {}
-/// impl ActorFactory<HelloWorld> for HelloWorldFactory {
-///     fn new_actor(&mut self, _context: ActorContext<HelloWorld>) -> Result<HelloWorld, Box<dyn Error>> {
-///         Ok(HelloWorld {})
-///     }
-/// }
 ///
 /// // setup Message Handler for Actor
 /// impl Handler<FooBar> for HelloWorld {
 ///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
 ///         Ok(ActorResult::Ok)
 ///     }
-///
 /// }
 ///
 /// // create a new actor system with the default config
@@ -61,7 +52,7 @@ where
 /// let actor_system = ActorSystem::new(actor_config);
 ///
 /// // create the actor
-/// let actor_factory = HelloWorldFactory {};
+/// let actor_factory = HelloWorld::factory();
 /// let actor = actor_system
 ///     .builder()
 ///     .spawn("hello-world", actor_factory)

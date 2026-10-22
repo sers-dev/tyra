@@ -149,6 +149,7 @@ impl ActorSystem {
     /// use std::error::Error;
     /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorResult, ActorMessage};
     ///
+    /// #[derive(ActorFactory)]
     /// struct TestActor {}
     ///
     /// struct HelloWorld {}
@@ -167,18 +168,9 @@ impl ActorSystem {
     ///     }
     /// }
     ///
-    /// struct TestFactory {}
-    ///
-    /// impl ActorFactory<TestActor> for TestFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-    ///         Ok(TestActor {})
-    ///     }
-    /// }
-    ///
-    ///
     /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
-    /// let actor_wrapper = actor_system.builder().spawn("test", TestFactory{}).unwrap();
+    /// let actor_wrapper = actor_system.builder().spawn("test", TestActor::factory()).unwrap();
     /// let address = actor_wrapper.get_address();
     /// actor_system.send_to_address(address, SerializedMessage::new(Vec::new()));
     /// ```
@@ -195,24 +187,13 @@ impl ActorSystem {
     /// ```rust
     /// use std::error::Error;
     /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor};
-    ///
+    /// #[derive(Actor, ActorFactory)]
     /// struct TestActor {}
-    ///
-    /// impl Actor for TestActor {}
-    ///
-    /// struct TestFactory {}
-    ///
-    /// impl ActorFactory<TestActor> for TestFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-    ///         Ok(TestActor {})
-    ///     }
-    /// }
-    ///
     ///
     /// let actor_config = TyraConfig::new().unwrap();
     /// let actor_system = ActorSystem::new(actor_config);
     /// let builder = actor_system.builder();
-    /// builder.spawn("test", TestFactory{}).unwrap();
+    /// builder.spawn("test", TestActor::factory()).unwrap();
     /// ```
     pub fn builder<A>(&self) -> ActorBuilder<A>
     where

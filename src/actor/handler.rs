@@ -17,11 +17,11 @@ use std::error::Error;
 /// use std::error::Error;
 /// use tyra::prelude::{TyraConfig, ActorSystem, ActorFactory, ActorContext, SerializedMessage, Handler, Actor, ActorResult, ActorMessage};
 ///
+/// #[derive(Actor)]
 /// struct TestActor {}
-/// impl Actor for TestActor {}
 ///
+/// #[derive(ActorMessage)]
 /// struct FooBar {}
-/// impl ActorMessage for FooBar {}
 ///
 /// impl Handler<FooBar> for TestActor {
 ///     fn handle(&mut self, _msg: FooBar, _context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {

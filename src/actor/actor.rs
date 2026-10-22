@@ -113,6 +113,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// use std::error::Error;
     /// use std::time::Duration;
     ///
+    /// #[derive(ActorFactory)]
     /// struct TestActor {}
     /// impl TestActor {
     ///     pub fn new() -> Self {
@@ -126,18 +127,6 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// struct TestActorFactory {}
-    /// impl TestActorFactory {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl ActorFactory<TestActor> for TestActorFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-    ///         Ok(TestActor::new())
-    ///     }
-    /// }
-    ///
     /// impl Handler<ActorInitMessage> for TestActor {
     ///     fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
     ///         panic!("trigger on panic");
@@ -148,7 +137,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
-    ///     let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
+    ///     let actor = actor_system.builder().spawn("test", TestActor::factory()).unwrap();
     ///     actor.send(ActorInitMessage::new()).unwrap();
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
@@ -178,6 +167,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// use std::time::Duration;
     /// use std::io::ErrorKind;
     ///
+    /// #[derive(ActorFactory)]
     /// struct TestActor {}
     /// impl TestActor {
     ///     pub fn new() -> Self {
@@ -188,18 +178,6 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     fn on_error(&mut self, context: &ActorContext<Self>, err: Box<dyn Error>) -> ActorResult {
     ///         context.system.stop(Duration::from_millis(5000));
     ///         return ActorResult::Kill;
-    ///     }
-    /// }
-    ///
-    /// struct TestActorFactory {}
-    /// impl TestActorFactory {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl ActorFactory<TestActor> for TestActorFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-    ///         Ok(TestActor::new())
     ///     }
     /// }
     ///
@@ -214,7 +192,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
-    ///     let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
+    ///     let actor = actor_system.builder().spawn("test", TestActor::factory()).unwrap();
     ///     actor.send(ActorInitMessage::new()).unwrap();
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
@@ -236,6 +214,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// use std::error::Error;
     /// use std::time::Duration;
     ///
+    /// #[derive(ActorFactory)]
     /// struct TestActor {}
     /// impl TestActor {
     ///     pub fn new() -> Self {
@@ -249,18 +228,6 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     }
     /// }
     ///
-    /// struct TestActorFactory {}
-    /// impl TestActorFactory {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl ActorFactory<TestActor> for TestActorFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-    ///         Ok(TestActor::new())
-    ///     }
-    /// }
-    ///
     /// impl Handler<ActorInitMessage> for TestActor {
     ///     fn handle(&mut self, _msg: ActorInitMessage, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
     ///         return Ok(ActorResult::Ok);
@@ -271,7 +238,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
-    ///     let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
+    ///     let actor = actor_system.builder().spawn("test", TestActor::factory()).unwrap();
     ///     actor.send(ActorInitMessage::new()).unwrap();
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
@@ -291,6 +258,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// use std::error::Error;
     /// use std::time::Duration;
     ///
+    /// #[derive(ActorFactory)]
     /// struct TestActor {}
     /// impl TestActor {
     ///     pub fn new() -> Self {
@@ -300,18 +268,6 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// impl Actor for TestActor {
     ///     fn pre_restart(&mut self, context: &ActorContext<Self>) {
     ///         context.system.stop(Duration::from_millis(5000));
-    ///     }
-    /// }
-    ///
-    /// struct TestActorFactory {}
-    /// impl TestActorFactory {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl ActorFactory<TestActor> for TestActorFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-    ///         Ok(TestActor::new())
     ///     }
     /// }
     ///
@@ -325,7 +281,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
-    ///     let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
+    ///     let actor = actor_system.builder().spawn("test", TestActor::factory()).unwrap();
     ///     actor.send(ActorInitMessage::new()).unwrap();
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
@@ -341,6 +297,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// use std::error::Error;
     /// use std::time::Duration;
     ///
+    /// #[derive(ActorFactory)]
     /// struct TestActor {}
     /// impl TestActor {
     ///     pub fn new() -> Self {
@@ -350,18 +307,6 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// impl Actor for TestActor {
     ///     fn post_stop(&mut self, context: &ActorContext<Self>) {
     ///         context.system.stop(Duration::from_millis(5000));
-    ///     }
-    /// }
-    ///
-    /// struct TestActorFactory {}
-    /// impl TestActorFactory {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl ActorFactory<TestActor> for TestActorFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-    ///         Ok(TestActor::new())
     ///     }
     /// }
     ///
@@ -375,7 +320,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
-    ///     let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
+    ///     let actor = actor_system.builder().spawn("test", TestActor::factory()).unwrap();
     ///     actor.send(ActorInitMessage::new()).unwrap();
     ///     std::process::exit(actor_system.await_shutdown());
     /// }
@@ -394,6 +339,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// use std::error::Error;
     /// use std::time::Duration;
     ///
+    /// #[derive(ActorFactory)]
     /// struct TestActor {}
     /// impl TestActor {
     ///     pub fn new() -> Self {
@@ -404,18 +350,6 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     ///     fn on_system_stop(&mut self, context: &ActorContext<Self>) -> Result<ActorResult, Box<dyn Error>> {
     ///         context.system.stop_with_code(Duration::from_millis(1), 1337);
     ///         return Ok(ActorResult::Kill);
-    ///     }
-    /// }
-    ///
-    /// struct TestActorFactory {}
-    /// impl TestActorFactory {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl ActorFactory<TestActor> for TestActorFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-    ///         Ok(TestActor::new())
     ///     }
     /// }
     ///
@@ -430,7 +364,7 @@ pub trait Actor: Send + Sync + UnwindSafe + Sized {
     /// fn main() {
     ///     let actor_config = TyraConfig::new().unwrap();
     ///     let actor_system = ActorSystem::new(actor_config);
-    ///     let actor = actor_system.builder().spawn("test", TestActorFactory::new()).unwrap();
+    ///     let actor = actor_system.builder().spawn("test", TestActor::factory()).unwrap();
     ///     actor.send(ActorInitMessage::new()).unwrap();
     ///     let result = actor_system.await_shutdown();
     ///     assert_eq!(1337, result);

@@ -98,33 +98,11 @@ where
     /// use std::error::Error;
     /// use std::time::Duration;
     ///
+    /// #[derive(Actor, ActorFactory)]
     /// struct TestActor {}
-    /// impl TestActor {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl Actor for TestActor {}
     ///
-    /// struct TestActorFactory {}
-    /// impl TestActorFactory {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl ActorFactory<TestActor> for TestActorFactory {
-    ///     fn new_actor(&mut self, _context: ActorContext<TestActor>) -> Result<TestActor, Box<dyn Error>> {
-    ///         Ok(TestActor::new())
-    ///     }
-    /// }
-    ///
+    /// #[derive(Actor)]
     /// struct SecondActor {}
-    /// impl SecondActor {
-    ///     pub fn new() -> Self {
-    ///         Self {}
-    ///     }
-    /// }
-    /// impl Actor for SecondActor {}
     ///
     /// struct SecondActorFactory {}
     /// impl SecondActorFactory {
@@ -147,21 +125,21 @@ where
     ///     let actor_name = "test";
     ///
     ///     //this works, because there's no actor called `test` yet on the pool
-    ///     let this_works = actor_system.builder().spawn(actor_name, TestActorFactory::new());
+    ///     let this_works = actor_system.builder().spawn(actor_name, TestActor::factory());
     ///     assert!(this_works.is_ok(), "The actor could not be spawned");
     ///
     ///     //this works, because there's already an actor called `test` with type `TestActor` on the pool, therefore the result is the same actor that was created in the previous spawn command
-    ///     let this_works_as_well = actor_system.builder().spawn(actor_name, TestActorFactory::new());
+    ///     let this_works_as_well = actor_system.builder().spawn(actor_name, TestActor::factory());
     ///     assert!(this_works_as_well.is_ok(), "The `ActorWrapper` could not be fetched");
     ///
     ///     //this does not work, because the pool is currently configured to only allow a single actor
-    ///     let pool_full = actor_system.builder().spawn("full", TestActorFactory::new());
+    ///     let pool_full = actor_system.builder().spawn("full", TestActor::factory());
     ///     assert!(pool_full.is_err(), "The actor could not be spawned");
     ///     let err = pool_full.err().unwrap();
     ///     assert_eq!(err, ActorError::ThreadPoolHasTooManyActorsError, "Error is not correct");
     ///
     ///     //this does not work, because the pool does not exist in the configuration
-    ///     let invalid_pool = actor_system.builder().set_pool_name("invalid").spawn(actor_name, TestActorFactory::new());
+    ///     let invalid_pool = actor_system.builder().set_pool_name("invalid").spawn(actor_name, TestActor::factory());
     ///     assert!(invalid_pool.is_err(), "The Actor was spawned");
     ///     let err = invalid_pool.err().unwrap();
     ///     assert_eq!(err, ActorError::ThreadPoolDoesNotExistError, "Error is not correct");

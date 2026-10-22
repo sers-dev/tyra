@@ -31,20 +31,12 @@ where
 /// use std::time::Duration;
 /// use tyra::router::{LeastMessageRouterFactory, AddActorMessage};
 /// // define message
+/// #[derive(ActorMessage)]
 /// struct FooBar {}
-/// impl ActorMessage for FooBar {}
 ///
 /// // define actor
+/// #[derive(Actor, ActorFactory)]
 /// struct HelloWorld {}
-/// impl Actor for HelloWorld {}
-///
-/// // setup required Factory
-/// struct HelloWorldFactory {}
-/// impl ActorFactory<HelloWorld> for HelloWorldFactory {
-///     fn new_actor(&mut self, _context: ActorContext<HelloWorld>) -> Result<HelloWorld, Box<dyn Error>> {
-///         Ok(HelloWorld {})
-///     }
-/// }
 ///
 /// // setup Message Handler for Actor
 /// impl Handler<FooBar> for HelloWorld {
@@ -59,10 +51,9 @@ where
 /// let actor_system = ActorSystem::new(actor_config);
 ///
 /// // create the actor
-/// let actor_factory = HelloWorldFactory {};
 /// let actor = actor_system
 ///     .builder()
-///     .spawn("hello-world", actor_factory)
+///     .spawn("hello-world", HelloWorld::factory())
 ///     .unwrap();
 ///
 /// // create the router, fill it, and route a message
@@ -72,7 +63,7 @@ where
 ///     .spawn("router-hello-world", router_factory)
 ///     .unwrap();
 /// router.send(AddActorMessage::new(actor.clone())).unwrap();
-/// router.send(FooBar{}).unwrap();
+/// router.send(FooBar::new()).unwrap();
 /// ```
 pub struct LeastMessageRouterFactory {
     min_mailbox_size: usize,
