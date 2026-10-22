@@ -81,7 +81,7 @@ impl Handler<MessageA> for Benchmark {
     }
 }
 
-#[derive(Actor, Clone)]
+#[derive(Actor, ActorFactory, Clone)]
 struct Aggregator {
     ctx: ActorContext<Self>,
     total_actors: usize,
@@ -90,24 +90,6 @@ struct Aggregator {
     actors_finished: usize,
     #[tyra(default = "Instant::now()")]
     start: Instant,
-}
-
-struct AggregatorFactory {
-    total_actors: usize,
-    name: String,
-}
-
-impl ActorFactory<Aggregator> for AggregatorFactory {
-    fn new_actor(
-        &mut self,
-        context: ActorContext<Aggregator>,
-    ) -> Result<Aggregator, Box<dyn Error>> {
-        Ok(Aggregator::new(
-            self.total_actors,
-            self.name.clone(),
-            context,
-        ))
-    }
 }
 
 impl Handler<Finish> for Aggregator {
@@ -157,10 +139,7 @@ fn main() {
         .builder()
         .spawn(
             "aggregator",
-            AggregatorFactory {
-                total_actors: actor_count,
-                name: String::from("aggregator"),
-            },
+            Aggregator::factory(actor_count, String::from("aggregator")),
         )
         .unwrap();
     for i in 0..actor_count {

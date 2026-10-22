@@ -31,7 +31,7 @@ fn main() {
     // create actor on the system
     let actor = actor_system
         .builder()
-        .spawn("test", TestActor::new())
+        .spawn("test", TestActor::factory())
         .unwrap();
     // send a message to the actor
     actor.send(TestMessage::new()).unwrap();

@@ -87,7 +87,7 @@ fn main() {
     // start system with config
     let actor_system = ActorSystem::new(actor_config);
     // create actor on the system
-    let actor = actor_system.builder().spawn("test", TestActor::new()).unwrap();
+    let actor = actor_system.builder().spawn("test", TestActor::factory()).unwrap();
     // send a message to the actor
     actor.send(TestMessage::new()).unwrap();
     // wait for the system to stop
