@@ -9,11 +9,6 @@ struct TestMessage {}
 // define the actual `Actor` that should process messages
 #[derive(Actor, ActorFactory, Clone)]
 struct TestActor {}
-impl TestActor {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 
 // implement our message for the `Actor`
 impl Handler<TestMessage> for TestActor {

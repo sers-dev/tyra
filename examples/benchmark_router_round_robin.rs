@@ -81,11 +81,14 @@ impl Handler<MessageA> for Benchmark {
     }
 }
 
+#[derive(Actor, Clone)]
 struct Aggregator {
     ctx: ActorContext<Self>,
     total_actors: usize,
     name: String,
+    #[tyra(default = "0")]
     actors_finished: usize,
+    #[tyra(default = "Instant::now()")]
     start: Instant,
 }
 
@@ -93,20 +96,6 @@ struct AggregatorFactory {
     total_actors: usize,
     name: String,
 }
-
-impl Aggregator {
-    pub fn new(total_actors: usize, name: String, context: ActorContext<Self>) -> Self {
-        Self {
-            ctx: context,
-            total_actors,
-            name,
-            actors_finished: 0,
-            start: Instant::now(),
-        }
-    }
-}
-
-impl Actor for Aggregator {}
 
 impl ActorFactory<Aggregator> for AggregatorFactory {
     fn new_actor(
