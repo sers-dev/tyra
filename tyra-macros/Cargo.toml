@@ -6,6 +6,11 @@ edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/sers-dev/tyra/tree/master/tyra-macros"
 homepage = "https://github.com/sers-dev/tyra"
+documentation = "https://docs.rs/tyra"
+description = "Typed Actor System"
+keywords = ["typed", "actor", "scaling", "concurrency", "tyra"]
+categories = ["network-programming", "asynchronous", "concurrency"]
+exclude = ["/.github", ".gitignore"]
 
 [lib]
 proc-macro = true
