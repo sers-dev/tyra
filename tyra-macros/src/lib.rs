@@ -158,6 +158,7 @@ pub fn actor_factory_derive(input: TokenStream) -> TokenStream {
 
     let mut factory_params = Vec::new();
     let mut factory_field_inits = Vec::new();
+    let mut factory_struct_fields = Vec::new();
     let mut actor_field_inits = Vec::new();
 
     if let syn::Data::Struct(data) = &input.data {
@@ -169,17 +170,18 @@ pub fn actor_factory_derive(input: TokenStream) -> TokenStream {
 
                     if let Some(default_expr) = get_tyra_default(&field.attrs) {
                         factory_field_inits.push(quote! { #field_name: #default_expr });
+                        factory_struct_fields.push(quote! { pub #field_name: #field_type });
                         actor_field_inits.push(quote! { #field_name: self.#field_name.clone() });
                     } else {
                         let type_str = field_type.to_token_stream().to_string();
                         let is_ctx = type_str.contains("ActorContext") && type_str.contains("Self");
 
                         if is_ctx {
-                            factory_field_inits.push(quote! { #field_name: tyra::prelude::ActorContext::dummy() });
                             actor_field_inits.push(quote! { #field_name: context });
                         } else {
                             factory_params.push(quote! { #field_name: #field_type });
                             factory_field_inits.push(quote! { #field_name });
+                            factory_struct_fields.push(quote! { pub #field_name: #field_type });
                             actor_field_inits.push(quote! { #field_name: self.#field_name.clone() });
                         }
                     }
@@ -189,17 +191,23 @@ pub fn actor_factory_derive(input: TokenStream) -> TokenStream {
         }
     }
 
+    let factory_name = quote::format_ident!("{}Factory", name);
+
     let expanded = quote! {
+        #[derive(Clone)]
+        pub struct #factory_name #ty_generics #where_clause {
+            #( #factory_struct_fields ),*
+        }
         impl #impl_generics #name #ty_generics #where_clause {
-            pub fn factory(#( #factory_params ),*) -> Self {
-                Self {
+            pub fn factory(#( #factory_params ),*) -> #factory_name #ty_generics {
+                #factory_name {
                     #( #factory_field_inits ),*
                 }
             }
         }
-        impl #impl_generics tyra::prelude::ActorFactory<#name #ty_generics> for #name #ty_generics #where_clause {
-            fn new_actor(&mut self, context: tyra::prelude::ActorContext<Self>) -> Result<Self, Box<dyn std::error::Error>> {
-                Ok(Self {
+        impl #impl_generics tyra::prelude::ActorFactory<#name #ty_generics> for #factory_name #ty_generics #where_clause {
+            fn new_actor(&mut self, context: tyra::prelude::ActorContext<#name #ty_generics>) -> Result<#name #ty_generics, Box<dyn std::error::Error>> {
+                Ok(#name {
                     #( #actor_field_inits ),*
                 })
             }

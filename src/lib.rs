@@ -41,7 +41,7 @@
 //!     // create an actor and send it a message
 //!     let actor = actor_system
 //!         .builder()
-//!         .spawn("hello-world", HelloWorld {})
+//!         .spawn("hello-world", HelloWorld::factory())
 //!         .unwrap();
 //!     actor.send(FooBar {}).unwrap();
 //!

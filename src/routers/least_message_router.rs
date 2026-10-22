@@ -22,8 +22,6 @@ where
     can_route: bool,
 }
 
-pub use LeastMessageRouter as LeastMessageRouterFactory;
-
 impl<A> LeastMessageRouter<A>
 where
     A: Actor + 'static,

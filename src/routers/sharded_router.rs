@@ -26,8 +26,6 @@ where
     can_route: bool,
 }
 
-pub use ShardedRouter as ShardedRouterFactory;
-
 impl<A> ShardedRouter<A>
 where
     A: Actor + 'static,
