@@ -5,18 +5,32 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Attribute, Expr, Meta, NestedMeta, Lit};
 use quote::ToTokens;
 
-fn get_tyra_default(attrs: &[Attribute]) -> Option<Expr> {
+enum TyraDefault {
+    None,
+    Some(Expr),
+    Empty,
+}
+
+fn get_tyra_default(attrs: &[Attribute]) -> TyraDefault {
     for attr in attrs {
         if let Ok(meta) = attr.parse_meta() {
             if meta.path().is_ident("tyra") {
                 if let Meta::List(list) = meta {
                     for nested in list.nested {
-                        if let NestedMeta::Meta(Meta::NameValue(nv)) = nested {
-                            if nv.path.is_ident("default") {
-                                if let Lit::Str(lit_str) = &nv.lit {
-                                    return lit_str.parse().ok();
+                        if let NestedMeta::Meta(meta) = nested {
+                            if meta.path().is_ident("default") {
+                                if let Meta::NameValue(nv) = meta {
+                                    if let Lit::Str(lit_str) = &nv.lit {
+                                        if let Ok(expr) = lit_str.parse() {
+                                            return TyraDefault::Some(expr);
+                                        }
+                                    }
+                                    if let Ok(expr) = syn::parse2(nv.lit.to_token_stream()) {
+                                        return TyraDefault::Some(expr);
+                                    }
+                                } else if let Meta::Path(_) = meta {
+                                    return TyraDefault::Empty;
                                 }
-                                return Some(syn::parse2(nv.lit.to_token_stream()).ok()?);
                             }
                         }
                     }
@@ -24,7 +38,18 @@ fn get_tyra_default(attrs: &[Attribute]) -> Option<Expr> {
             }
         }
     }
-    None
+    TyraDefault::None
+}
+
+fn is_option(ty: &syn::Type) -> bool {
+    if let syn::Type::Path(tp) = ty {
+        if tp.qself.is_none() {
+            if let Some(last_segment) = tp.path.segments.last() {
+                return last_segment.ident == "Option";
+            }
+        }
+    }
+    false
 }
 
 #[proc_macro_derive(Actor, attributes(tyra))]
@@ -44,7 +69,20 @@ pub fn actor_derive(input: TokenStream) -> TokenStream {
                     let field_name = &field.ident;
                     let field_type = &field.ty;
 
-                    if let Some(default_expr) = get_tyra_default(&field.attrs) {
+                    let tyra_default = get_tyra_default(&field.attrs);
+                    let default_expr = match tyra_default {
+                        TyraDefault::Some(expr) => Some(expr),
+                        TyraDefault::Empty => {
+                            if is_option(field_type) {
+                                Some(syn::parse_quote! { None })
+                            } else {
+                                panic!("Empty default is only allowed for Option fields");
+                            }
+                        }
+                        TyraDefault::None => None,
+                    };
+
+                    if let Some(default_expr) = default_expr {
                         field_inits.push(quote! { #field_name: #default_expr });
                     } else {
                         let is_ctx = field_name.as_ref().map(|n| n == "ctx" || n == "context").unwrap_or(false);
@@ -97,7 +135,21 @@ pub fn actor_message_derive(input: TokenStream) -> TokenStream {
                 for field in &fields.named {
                     let field_name = &field.ident;
                     let field_type = &field.ty;
-                    if let Some(default_expr) = get_tyra_default(&field.attrs) {
+
+                    let tyra_default = get_tyra_default(&field.attrs);
+                    let default_expr = match tyra_default {
+                        TyraDefault::Some(expr) => Some(expr),
+                        TyraDefault::Empty => {
+                            if is_option(field_type) {
+                                Some(syn::parse_quote! { None })
+                            } else {
+                                panic!("Empty default is only allowed for Option fields");
+                            }
+                        }
+                        TyraDefault::None => None,
+                    };
+
+                    if let Some(default_expr) = default_expr {
                         field_inits.push(quote! { #field_name: #default_expr });
                     } else {
                         new_params.push(quote! { #field_name: #field_type });
@@ -109,7 +161,21 @@ pub fn actor_message_derive(input: TokenStream) -> TokenStream {
                 is_tuple = true;
                 for (i, field) in fields.unnamed.iter().enumerate() {
                     let field_type = &field.ty;
-                    if let Some(default_expr) = get_tyra_default(&field.attrs) {
+
+                    let tyra_default = get_tyra_default(&field.attrs);
+                    let default_expr = match tyra_default {
+                        TyraDefault::Some(expr) => Some(expr),
+                        TyraDefault::Empty => {
+                            if is_option(field_type) {
+                                Some(syn::parse_quote! { None })
+                            } else {
+                                panic!("Empty default is only allowed for Option fields");
+                            }
+                        }
+                        TyraDefault::None => None,
+                    };
+
+                    if let Some(default_expr) = default_expr {
                         field_inits.push(quote! { #default_expr });
                     } else {
                         let arg_name = quote::format_ident!("arg{}", i);
@@ -168,7 +234,20 @@ pub fn actor_factory_derive(input: TokenStream) -> TokenStream {
                     let field_name = &field.ident;
                     let field_type = &field.ty;
 
-                    if let Some(default_expr) = get_tyra_default(&field.attrs) {
+                    let tyra_default = get_tyra_default(&field.attrs);
+                    let default_expr = match tyra_default {
+                        TyraDefault::Some(expr) => Some(expr),
+                        TyraDefault::Empty => {
+                            if is_option(field_type) {
+                                Some(syn::parse_quote! { None })
+                            } else {
+                                panic!("Empty default is only allowed for Option fields");
+                            }
+                        }
+                        TyraDefault::None => None,
+                    };
+
+                    if let Some(default_expr) = default_expr {
                         factory_field_inits.push(quote! { #field_name: #default_expr });
                         factory_struct_fields.push(quote! { pub #field_name: #field_type });
                         actor_field_inits.push(quote! { #field_name: self.#field_name.clone() });
