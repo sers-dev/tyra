@@ -1,7 +1,7 @@
 # 1.2.0
 
  - added macro `tyra::setup_router!(....)` that simplifies the creation of a router and its targets
- - allow empty defaults for `Option<>` that automatically translates to `None`
+ - allow empty defaults for derived `Option<>` that automatically translates to `None`
 
 # 1.1.0
 
