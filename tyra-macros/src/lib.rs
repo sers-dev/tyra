@@ -2,8 +2,9 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Attribute, Expr, Meta, NestedMeta, Lit};
+use syn::{parse_macro_input, DeriveInput, Attribute, Expr, Token};
 use quote::ToTokens;
+use syn::parse::{Parse, ParseStream};
 
 enum TyraDefault {
     None,
@@ -11,30 +12,70 @@ enum TyraDefault {
     Empty,
 }
 
+struct TyraAttribute {
+    default: TyraDefault,
+}
+
+impl Parse for TyraAttribute {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut default = TyraDefault::None;
+        while !input.is_empty() {
+            let ident: syn::Ident = input.parse()?;
+            if ident == "default" {
+                if input.peek(Token![=]) {
+                    input.parse::<Token![=]>()?;
+                    let expr: Expr = input.parse()?;
+                    // Check if it's a string literal and try to parse it as an expression
+                    if let Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(lit_str), .. }) = &expr {
+                        if let Ok(parsed_expr) = lit_str.parse() {
+                            default = TyraDefault::Some(parsed_expr);
+                        } else {
+                            default = TyraDefault::Some(expr);
+                        }
+                    } else {
+                        default = TyraDefault::Some(expr);
+                    }
+                } else if input.peek(syn::token::Paren) {
+                    let content;
+                    syn::parenthesized!(content in input);
+                    let expr: Expr = content.parse()?;
+                    // Also check for string literal in parenthesized case
+                    if let Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(lit_str), .. }) = &expr {
+                        if let Ok(parsed_expr) = lit_str.parse() {
+                            default = TyraDefault::Some(parsed_expr);
+                        } else {
+                            default = TyraDefault::Some(expr);
+                        }
+                    } else {
+                        default = TyraDefault::Some(expr);
+                    }
+                } else {
+                    default = TyraDefault::Empty;
+                }
+            } else {
+                // Skip other idents if any
+                if input.peek(Token![=]) {
+                    input.parse::<Token![=]>()?;
+                    input.parse::<Expr>()?;
+                }
+            }
+            if input.peek(Token![,]) {
+                input.parse::<Token![,]>()?;
+            }
+        }
+        Ok(TyraAttribute { default })
+    }
+}
+
 fn get_tyra_default(attrs: &[Attribute]) -> TyraDefault {
     for attr in attrs {
-        if let Ok(meta) = attr.parse_meta() {
-            if meta.path().is_ident("tyra") {
-                if let Meta::List(list) = meta {
-                    for nested in list.nested {
-                        if let NestedMeta::Meta(meta) = nested {
-                            if meta.path().is_ident("default") {
-                                if let Meta::NameValue(nv) = meta {
-                                    if let Lit::Str(lit_str) = &nv.lit {
-                                        if let Ok(expr) = lit_str.parse() {
-                                            return TyraDefault::Some(expr);
-                                        }
-                                    }
-                                    if let Ok(expr) = syn::parse2(nv.lit.to_token_stream()) {
-                                        return TyraDefault::Some(expr);
-                                    }
-                                } else if let Meta::Path(_) = meta {
-                                    return TyraDefault::Empty;
-                                }
-                            }
-                        }
-                    }
+        if attr.path.is_ident("tyra") {
+            let res = attr.parse_args::<TyraAttribute>();
+            if let Ok(tyra_attr) = res {
+                if let TyraDefault::None = tyra_attr.default {
+                    continue;
                 }
+                return tyra_attr.default;
             }
         }
     }
