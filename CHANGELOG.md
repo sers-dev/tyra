@@ -1,3 +1,7 @@
+# 1.2.0
+
+ - added macro `tyra::setup_router!(....)` that simplifies the creation of a router and its targets
+
 # 1.1.0
 
  - added `derive` functionality
